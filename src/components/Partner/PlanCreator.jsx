@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
-import { Plus, Check, DollarSign, Calendar } from 'lucide-react';
+import { Plus, Check, IndianRupee, Calendar } from 'lucide-react';
 import { useAppContext } from '../../context/AppContext';
 
 const PlanCreator = ({ onClose }) => {
@@ -51,7 +51,7 @@ const PlanCreator = ({ onClose }) => {
                     <div>
                         <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>PRICE (₹)</label>
                         <div style={{ position: 'relative' }}>
-                            <DollarSign size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
+                            <IndianRupee size={16} style={{ position: 'absolute', left: '12px', top: '14px', color: 'var(--text-muted)' }} />
                             <input
                                 className="iron-input-border"
                                 type="number"

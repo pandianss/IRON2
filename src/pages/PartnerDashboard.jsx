@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
-import { Users, Activity, DollarSign, Scan, Settings, TrendingUp, Plus, ChevronDown } from 'lucide-react';
+import { Users, Activity, IndianRupee, Scan, Settings, TrendingUp, Plus, ChevronDown } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import PlanCreator from '../components/Partner/PlanCreator';
 import MemberProfileModal from '../components/Partner/MemberProfileModal';
@@ -117,7 +117,7 @@ const PartnerDashboard = () => {
                 <Card noPadding className="glass-panel" onClick={() => handleStatClick('Revenue')} style={{ cursor: 'pointer' }}>
                     <div className="stat-card-inner">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', justifyContent: 'center' }}>
-                            <DollarSign size={14} color="var(--accent-orange)" />
+                            <IndianRupee size={14} color="var(--accent-orange)" />
                             <span className="stat-label" style={{ marginBottom: 0 }}>REVENUE</span>
                         </div>
                         <div className="stat-value">

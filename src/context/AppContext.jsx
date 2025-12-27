@@ -22,11 +22,11 @@ export const AppProvider = ({ children }) => {
     ]);
     const [selectedGymId, setSelectedGymId] = useState('g1');
     const [members, setMembers] = useState([
-        { id: 1, name: "Marcus V.", gymId: 'g1', rank: 'IRON IV', status: 'Active', plan: 'Annual PR', expiry: '2025-12-01', lastLogin: '2m ago', medical: 'None' },
-        { id: 2, name: "Sarah J.", gymId: 'g1', rank: 'IRON II', status: 'Active', plan: 'Quarterly', expiry: '2025-06-15', lastLogin: '5m ago', medical: 'Asthma' },
-        { id: 3, name: "Mike T.", gymId: 'g1', rank: 'NON-IRON', status: 'Expired', plan: 'Monthly', expiry: '2024-11-20', lastLogin: '2d ago', medical: 'Knee Injury' },
-        { id: 4, name: "Rahul D.", gymId: 'g2', rank: 'IRON I', status: 'Active', plan: 'Annual', expiry: '2025-08-10', lastLogin: '1h ago', medical: 'None' },
-        { id: 5, name: "Priya S.", gymId: 'g2', rank: 'IRON III', status: 'Active', plan: 'Special Camp', expiry: '2025-02-28', lastLogin: 'Just now', medical: 'None' }
+        { id: 1, name: "Marcus V.", gymId: 'g1', rank: 'IRON IV', status: 'Active', plan: 'Annual PR', expiry: '01/12/2025', lastLogin: '2m ago', medical: 'None' },
+        { id: 2, name: "Sarah J.", gymId: 'g1', rank: 'IRON II', status: 'Active', plan: 'Quarterly', expiry: '15/06/2025', lastLogin: '5m ago', medical: 'Asthma' },
+        { id: 3, name: "Mike T.", gymId: 'g1', rank: 'NON-IRON', status: 'Expired', plan: 'Monthly', expiry: '20/11/2024', lastLogin: '2d ago', medical: 'Knee Injury' },
+        { id: 4, name: "Rahul D.", gymId: 'g2', rank: 'IRON I', status: 'Active', plan: 'Annual', expiry: '10/08/2025', lastLogin: '1h ago', medical: 'None' },
+        { id: 5, name: "Priya S.", gymId: 'g2', rank: 'IRON III', status: 'Active', plan: 'Special Camp', expiry: '28/02/2025', lastLogin: 'Just now', medical: 'None' }
     ]);
     const [partnerPlans, setPartnerPlans] = useState([]);
 
