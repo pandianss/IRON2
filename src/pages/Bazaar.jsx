@@ -2,12 +2,18 @@ import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import ProductCard from '../components/UI/ProductCard';
-import { ShoppingCart, ShoppingBag, ChevronRight } from 'lucide-react';
+import { ShoppingCart, Tag, Star, ChevronRight, Search, Filter } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 const Bazaar = () => {
+    const { showToast } = useAppContext();
     const [activeCategory, setActiveCategory] = useState("FUEL");
 
     const categories = ["FUEL", "ARMOR", "EQUIPMENT"];
+
+    const handlePurchase = (item) => {
+        showToast(`${item} added to locker`);
+    };
 
     const items = [
         {

@@ -2,26 +2,26 @@ import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { Share2, Users, Flame, Copy, Check } from 'lucide-react';
+import { useAppContext } from '../context/AppContext';
 
 const Viral = () => {
+    const { showToast } = useAppContext();
     const [copied, setCopied] = useState(false);
     const inviteCode = "IRON-M-1337";
 
     const handleCopy = () => {
         setCopied(true);
+        showToast("Invite key copied");
         setTimeout(() => setCopied(false), 2000);
+    };
+
+    const handleShare = () => {
+        showToast("Link shared to network");
     };
 
     return (
         <div className="page-container">
-            <header className="page-header">
-                <div className="header-title-group">
-                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Circuit</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        SCARCITY DRIVES STRENGTH. INVITE THE DEDICATED.
-                    </p>
-                </div>
-            </header>
+            {/* Waitlist Status */}
 
             {/* Waitlist Status */}
             <section style={{ marginBottom: '40px' }}>
@@ -55,7 +55,7 @@ const Viral = () => {
                     </p>
 
                     <div style={{ display: 'grid', gap: '12px' }}>
-                        <Button fullWidth variant="primary" icon={Share2}>
+                        <Button fullWidth variant="primary" icon={Share2} onClick={handleShare}>
                             Jump the Line (+50 Spots)
                         </Button>
                         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>

@@ -6,6 +6,7 @@ import SelectionCard from '../components/UI/SelectionCard';
 
 const Onboarding = () => {
     const navigate = useNavigate();
+    const { completeOnboarding } = useAppContext();
     const [step, setStep] = useState(0);
     const [userType, setUserType] = useState(null);
 
@@ -23,6 +24,7 @@ const Onboarding = () => {
                 setStep(3);
             }, 3000); // 3 seconds suspense
         } else if (step === 3) {
+            completeOnboarding();
             navigate('/');
         }
     };

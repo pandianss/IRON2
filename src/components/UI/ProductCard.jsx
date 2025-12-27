@@ -7,7 +7,8 @@ const ProductCard = ({
     price,
     levelRequired,
     isLocked = true,
-    tag
+    tag,
+    onPurchase
 }) => {
     return (
         <div className="glass-panel" style={{
@@ -92,13 +93,20 @@ const ProductCard = ({
                     {isLocked ? (
                         <Info size={18} color="var(--text-muted)" />
                     ) : (
-                        <div style={{
-                            padding: '10px',
-                            background: 'var(--accent-orange)',
-                            borderRadius: '10px',
-                            color: '#000',
-                            display: 'flex'
-                        }}>
+                        <div
+                            onClick={(e) => {
+                                e.stopPropagation();
+                                onPurchase && onPurchase();
+                            }}
+                            style={{
+                                padding: '10px',
+                                background: 'var(--accent-orange)',
+                                borderRadius: '10px',
+                                color: '#000',
+                                display: 'flex',
+                                cursor: 'pointer'
+                            }}
+                        >
                             <ShoppingCart size={18} />
                         </div>
                     )}

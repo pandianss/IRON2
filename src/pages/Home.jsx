@@ -6,7 +6,12 @@ import { Trophy, TrendingUp, Search, AlertTriangle, Activity, Heart } from 'luci
 import { useAppContext } from '../context/AppContext';
 
 const Home = () => {
-    const { isRusting, bpm } = useAppContext();
+    const { isRusting, bpm, showToast } = useAppContext();
+
+    const handleLogActivity = () => {
+        showToast("Activity logged! XP +50");
+    };
+
     const activities = [
         {
             userName: "Marcus V.",

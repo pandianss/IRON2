@@ -7,6 +7,15 @@ const AppContext = createContext();
 export const AppProvider = ({ children }) => {
     const [isRusting, setIsRusting] = useState(false);
     const [bpm, setBpm] = useState(72);
+    const [toast, setToast] = useState(null);
+    const [onboardingCompleted, setOnboardingCompleted] = useState(() => {
+        return localStorage.getItem('iron_onboarding_done') === 'true';
+    });
+
+    const completeOnboarding = () => {
+        localStorage.setItem('iron_onboarding_done', 'true');
+        setOnboardingCompleted(true);
+    };
 
     // In a real app, this would be calculated from the last activity timestamp
     // For now, we provide a way to toggle it manually for demonstration
@@ -33,7 +42,19 @@ export const AppProvider = ({ children }) => {
     }, [isRusting]);
 
     return (
-        <AppContext.Provider value={{ isRusting, setIsRusting, toggleRust, bpm }}>
+        <AppContext.Provider value={{
+            isRusting,
+            setIsRusting,
+            toggleRust,
+            bpm,
+            onboardingCompleted,
+            completeOnboarding,
+            toast,
+            showToast: (msg) => {
+                setToast(msg);
+                setTimeout(() => setToast(null), 3000);
+            }
+        }}>
             {children}
             {isRusting && <div className="rust-texture" />}
         </AppContext.Provider>

@@ -17,19 +17,7 @@ const ExpertStudio = () => {
 
     return (
         <div className="page-container">
-            <header className="page-header">
-                <div className="header-title-group">
-                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Studio</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        CONTENT TO CASH. ZERO FRICTION.
-                    </p>
-                </div>
-                <div>
-                    <Button variant="secondary" style={{ padding: '8px 12px' }}>
-                        <BarChart3 size={20} />
-                    </Button>
-                </div>
-            </header>
+            {/* Quick Stats */}
 
             {/* Quick Stats */}
             <div className="stat-grid">

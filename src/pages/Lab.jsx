@@ -6,7 +6,15 @@ import { Settings, Save, Activity, Zap, Heart, ShieldCheck, Calendar, History } 
 import { useAppContext } from '../context/AppContext';
 
 const Lab = () => {
-    const { bpm } = useAppContext();
+    const { bpm, showToast } = useAppContext();
+
+    const handleSave = () => {
+        showToast("Passport synchronized");
+    };
+
+    const handleUtilitySelect = (name) => {
+        showToast(`${name} loading...`);
+    };
     return (
         <div style={{ paddingBottom: '100px' }}>
             <header style={{ marginBottom: '32px' }}>
@@ -43,7 +51,7 @@ const Lab = () => {
                     userId="IRN-7742-X90"
                 />
                 <div style={{ marginTop: '16px' }}>
-                    <Button variant="secondary" fullWidth icon={Save}>
+                    <Button variant="secondary" fullWidth icon={Save} onClick={handleSave}>
                         Save to Iron Passport
                     </Button>
                 </div>
@@ -59,7 +67,11 @@ const Lab = () => {
             </h3>
 
             <div style={{ display: 'grid', gap: '12px' }}>
-                <Card className="glass-panel" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px' }}>
+                <Card
+                    className="glass-panel"
+                    onClick={() => handleUtilitySelect("Planner")}
+                    style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', cursor: 'pointer' }}
+                >
                     <div style={{ padding: '12px', background: 'rgba(255, 77, 0, 0.1)', borderRadius: '14px' }}>
                         <Calendar size={24} color="var(--accent-orange)" />
                     </div>
@@ -69,7 +81,11 @@ const Lab = () => {
                     </div>
                 </Card>
 
-                <Card className="glass-panel" style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px' }}>
+                <Card
+                    className="glass-panel"
+                    onClick={() => handleUtilitySelect("Logs")}
+                    style={{ display: 'flex', alignItems: 'center', gap: '16px', padding: '16px', cursor: 'pointer' }}
+                >
                     <div style={{ padding: '12px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '14px' }}>
                         <History size={24} color="var(--text-primary)" />
                     </div>
