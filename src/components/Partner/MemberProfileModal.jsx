@@ -1,4 +1,4 @@
-import React, { useAppContext } from '../context/AppContext';
+import React, { useAppContext } from '../../context/AppContext';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
 import { X, User, Activity, AlertCircle, Calendar, Ban, History as HistoryIcon, CheckCircle } from 'lucide-react';
