@@ -20,18 +20,35 @@ export const AppProvider = ({ children }) => {
         { id: 'g1', name: 'Iron Forge Bandra', location: 'Bandra West' },
         { id: 'g2', name: 'Iron Forge Juhu', location: 'Juhu Beach' }
     ]);
-    const [selectedGymId, setSelectedGymId] = useState('g1');
     const [members, setMembers] = useState([
-        { id: 1, name: "Marcus V.", gymId: 'g1', rank: 'IRON IV', status: 'Active', plan: 'Annual PR', expiry: '01/12/2025', lastLogin: '2m ago', medical: 'None' },
-        { id: 2, name: "Sarah J.", gymId: 'g1', rank: 'IRON II', status: 'Active', plan: 'Quarterly', expiry: '15/06/2025', lastLogin: '5m ago', medical: 'Asthma' },
-        { id: 3, name: "Mike T.", gymId: 'g1', rank: 'NON-IRON', status: 'Expired', plan: 'Monthly', expiry: '20/11/2024', lastLogin: '2d ago', medical: 'Knee Injury' },
-        { id: 4, name: "Rahul D.", gymId: 'g2', rank: 'IRON I', status: 'Active', plan: 'Annual', expiry: '10/08/2025', lastLogin: '1h ago', medical: 'None' },
-        { id: 5, name: "Priya S.", gymId: 'g2', rank: 'IRON III', status: 'Active', plan: 'Special Camp', expiry: '28/02/2025', lastLogin: 'Just now', medical: 'None' }
+        { id: 1, name: "Marcus V.", gymId: 'g1', rank: 'IRON IV', status: 'Active', plan: 'Annual PR', expiry: '01/12/2025', lastLogin: '2m ago', medical: 'None', history: [] },
+        { id: 2, name: "Sarah J.", gymId: 'g1', rank: 'IRON II', status: 'Active', plan: 'Quarterly', expiry: '15/06/2025', lastLogin: '5m ago', medical: 'Asthma', history: [] },
+        { id: 3, name: "Mike T.", gymId: 'g1', rank: 'NON-IRON', status: 'Expired', plan: 'Monthly', expiry: '20/11/2024', lastLogin: '2d ago', medical: 'Knee Injury', history: [] },
+        { id: 4, name: "Rahul D.", gymId: 'g2', rank: 'IRON I', status: 'Active', plan: 'Annual', expiry: '10/08/2025', lastLogin: '1h ago', medical: 'None', history: [] },
+        { id: 5, name: "Priya S.", gymId: 'g2', rank: 'IRON III', status: 'Active', plan: 'Special Camp', expiry: '28/02/2025', lastLogin: 'Just now', medical: 'None', history: [] }
     ]);
     const [partnerPlans, setPartnerPlans] = useState([]);
 
     const addPlan = (plan) => {
         setPartnerPlans([...partnerPlans, plan]);
+    };
+
+    const toggleBanMember = (memberId) => {
+        setMembers(prevMembers => prevMembers.map(member => {
+            if (member.id === memberId) {
+                const isBanned = member.status === 'Banned';
+                const newStatus = isBanned ? 'Active' : 'Banned';
+                const action = isBanned ? 'Unbanned' : 'Banned';
+                const date = new Date().toLocaleDateString('en-GB'); // DD/MM/YYYY
+
+                return {
+                    ...member,
+                    status: newStatus,
+                    history: [...member.history, { action, date }]
+                };
+            }
+            return member;
+        }));
     };
 
     const switchGym = (gymId) => setSelectedGymId(gymId);
@@ -82,6 +99,7 @@ export const AppProvider = ({ children }) => {
             switchGym,
             partnerPlans,
             addPlan,
+            toggleBanMember,
             toast,
             showToast: (msg) => {
                 setToast(msg);
