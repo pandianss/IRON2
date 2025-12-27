@@ -67,14 +67,18 @@ const PartnerDashboard = () => {
                                 fontWeight: '700',
                                 fontSize: '0.9rem',
                                 outline: 'none',
-                                cursor: 'pointer'
+                                cursor: 'pointer',
+                                appearance: 'none',
+                                WebkitAppearance: 'none',
+                                MozAppearance: 'none',
+                                paddingRight: '24px' // Space for custom arrow
                             }}
                         >
                             {gyms.map(gym => (
-                                <option key={gym.id} value={gym.id}>{gym.name}</option>
+                                <option key={gym.id} value={gym.id} style={{ background: '#111', color: '#fff' }}>{gym.name}</option>
                             ))}
                         </select>
-                        <ChevronDown size={16} color="var(--accent-orange)" />
+                        <ChevronDown size={16} color="var(--accent-orange)" style={{ marginLeft: '-20px', pointerEvents: 'none' }} />
                     </div>
                 </div>
                 <div
