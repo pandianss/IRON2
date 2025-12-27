@@ -7,7 +7,7 @@ import { useAppContext } from '../../context/AppContext';
 const AppShell = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { onboardingCompleted, toast } = useAppContext();
+    const { onboardingCompleted, toast, userType } = useAppContext();
 
     useEffect(() => {
         if (!onboardingCompleted) {
@@ -24,6 +24,7 @@ const AppShell = () => {
             case '/studio': return 'STUDIO';
             case '/settings': return 'SETTINGS';
             case '/profile': return 'IDENTITY';
+            case '/partner': return 'COMMAND';
             default: return '';
         }
     };
@@ -145,7 +146,8 @@ const AppShell = () => {
                 </div>
             )}
 
-            <BottomNav />
+            {/* Only show navigation for standard users, not partners */}
+            {userType !== 'gym' && <BottomNav />}
         </div>
     );
 };

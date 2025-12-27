@@ -25,8 +25,12 @@ const Onboarding = () => {
                 setStep(3);
             }, 3000); // 3 seconds suspense
         } else if (step === 3) {
-            completeOnboarding();
-            navigate('/');
+            completeOnboarding(userType);
+            if (userType === 'gym') {
+                navigate('/partner');
+            } else {
+                navigate('/');
+            }
         }
     };
 

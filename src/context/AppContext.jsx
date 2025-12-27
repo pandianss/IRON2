@@ -11,9 +11,14 @@ export const AppProvider = ({ children }) => {
     const [onboardingCompleted, setOnboardingCompleted] = useState(() => {
         return localStorage.getItem('iron_onboarding_done') === 'true';
     });
+    const [userType, setUserType] = useState(() => {
+        return localStorage.getItem('iron_user_type') || 'enthusiast';
+    });
 
-    const completeOnboarding = () => {
+    const completeOnboarding = (type = 'enthusiast') => {
         localStorage.setItem('iron_onboarding_done', 'true');
+        localStorage.setItem('iron_user_type', type);
+        setUserType(type);
         setOnboardingCompleted(true);
     };
 
@@ -49,6 +54,7 @@ export const AppProvider = ({ children }) => {
             bpm,
             onboardingCompleted,
             completeOnboarding,
+            userType,
             toast,
             showToast: (msg) => {
                 setToast(msg);
