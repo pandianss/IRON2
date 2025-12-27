@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ChefHat, Rocket, Trophy, ChevronRight, Loader2 } from 'lucide-react';
+import { Dumbbell, Shield, MapPin, ChevronRight, Loader2, ChefHat, Rocket, Trophy } from 'lucide-react';
 import Button from '../components/UI/Button';
 import SelectionCard from '../components/UI/SelectionCard';
 import { useAppContext } from '../context/AppContext';
