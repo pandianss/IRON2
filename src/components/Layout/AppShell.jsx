@@ -1,7 +1,8 @@
+import React, { useEffect } from 'react';
+import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { Share2, PencilLine, ArrowLeft, ChevronLeft } from 'lucide-react';
 import BottomNav from './BottomNav';
 import { useAppContext } from '../../context/AppContext';
-import { useLocation } from 'react-router-dom';
 
 const AppShell = () => {
     const navigate = useNavigate();

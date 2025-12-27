@@ -14,9 +14,9 @@ const Hub = () => {
         <div className="page-container" style={{ paddingBottom: '100px' }}>
             <header className="page-header">
                 <div className="header-title-group">
-                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Lab</h1>
+                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Hub</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        YOUR CRYPTOGRAPHIC FITNESS IDENTITY.
+                        FIND YOUR SQUAD. CONNECT WITH EXPERTS.
                     </p>
                 </div>
             </header>
@@ -102,7 +102,9 @@ const Hub = () => {
             </div>
 
             <div style={{ marginTop: '32px' }}>
-                <Button fullWidth variant="primary">Become an Expert</Button>
+                <Button fullWidth variant="primary" onClick={() => handleAction("Expert certification flow loading...")}>
+                    Become an Expert
+                </Button>
             </div>
         </div>
     );

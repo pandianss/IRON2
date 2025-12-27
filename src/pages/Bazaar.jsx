@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import ProductCard from '../components/UI/ProductCard';
-import { ShoppingCart, Tag, Star, ChevronRight, Search, Filter } from 'lucide-react';
+import { ShoppingCart, ShoppingBag, Tag, Star, ChevronRight, Search, Filter } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 const Bazaar = () => {
@@ -123,7 +123,11 @@ const Bazaar = () => {
                 gap: '16px'
             }}>
                 {items.map((item, idx) => (
-                    <ProductCard key={idx} {...item} />
+                    <ProductCard
+                        key={idx}
+                        {...item}
+                        onPurchase={() => handlePurchase(item.title)}
+                    />
                 ))}
             </div>
 

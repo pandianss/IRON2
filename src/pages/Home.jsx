@@ -110,20 +110,13 @@ const Home = () => {
 
             {/* Primary Action */}
             <div style={{ marginBottom: '32px' }}>
-                <Button fullWidth variant="accent">
+                <Button fullWidth variant="accent" onClick={handleLogActivity}>
                     Log Activity
                 </Button>
             </div>
 
             {/* Activities List */}
-            <h3 className="title-display" style={{
-                fontSize: '1rem',
-                color: 'var(--text-muted)',
-                marginBottom: '16px',
-                letterSpacing: '1px'
-            }}>
-                FEED
-            </h3>
+            <h3 className="section-label">THE FEED</h3>
 
             {activities.map((activity, index) => (
                 <ActivityCard key={index} {...activity} />

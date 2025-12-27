@@ -16,8 +16,18 @@ const ExpertStudio = () => {
     };
 
     return (
-        <div className="page-container">
-            {/* Quick Stats */}
+        <div className="page-container" style={{ paddingBottom: '100px' }}>
+            <header className="page-header">
+                <div className="header-title-group">
+                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Studio</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        ROUTINE ARCHITECT & CLIENT SYSTEM.
+                    </p>
+                </div>
+                <div className="icon-box icon-box-muted" style={{ width: '45px', height: '45px' }}>
+                    <BarChart3 size={20} />
+                </div>
+            </header>
 
             {/* Quick Stats */}
             <div className="stat-grid">

@@ -19,9 +19,9 @@ const Lab = () => {
         <div className="page-container" style={{ paddingBottom: '100px' }}>
             <header className="page-header">
                 <div className="header-title-group">
-                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Hub</h1>
+                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Lab</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        FIND YOUR SQUAD. CONNECT WITH EXPERTS.
+                        YOUR CRYPTOGRAPHIC FITNESS IDENTITY.
                     </p>
                 </div>
             </header>
