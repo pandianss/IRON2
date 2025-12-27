@@ -2,14 +2,18 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Lock, ShoppingCart, Info } from 'lucide-react';
 
+import { useAppContext } from '../../context/AppContext';
+
 const ProductCard = ({
     title,
     price,
     levelRequired,
-    isLocked = true,
+    isLocked: initialLocked = true,
     tag,
     onPurchase
 }) => {
+    const { userType } = useAppContext();
+    const isLocked = userType === 'gym' ? false : initialLocked;
     return (
         <div className="glass-panel" style={{
             borderRadius: '20px',

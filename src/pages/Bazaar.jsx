@@ -6,13 +6,18 @@ import { ShoppingCart, ShoppingBag, Tag, Star, ChevronRight, Search, Filter } fr
 import { useAppContext } from '../context/AppContext';
 
 const Bazaar = () => {
-    const { showToast } = useAppContext();
+    const { showToast, userType } = useAppContext();
     const [activeCategory, setActiveCategory] = useState("FUEL");
+    const [searchQuery, setSearchQuery] = useState("");
 
     const categories = ["FUEL", "ARMOR", "EQUIPMENT"];
 
-    const handlePurchase = (item) => {
-        showToast(`${item} added to locker`);
+    const handlePurchase = (itemTitle) => {
+        showToast(`Purchased ${itemTitle}! Added to inventory.`);
+    };
+
+    const handleSell = () => {
+        showToast("Opening listing editor...");
     };
 
     const items = [
@@ -50,12 +55,23 @@ const Bazaar = () => {
                 <div className="header-title-group">
                     <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Bazaar</h1>
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        GEAR FOR THE ELITE. EARNED, NOT BOUGHT.
+                        GEAR, SUPPLEMENTS & UPGRADES.
                     </p>
                 </div>
-                <div className="icon-box icon-box-muted" style={{ width: '45px', height: '45px' }}>
-                    <ShoppingCart size={20} />
-                </div>
+                {userType === 'gym' ? (
+                    <div
+                        onClick={handleSell}
+                        className="icon-box icon-box-muted"
+                        style={{ width: 'auto', height: '45px', padding: '0 16px', gap: '8px', cursor: 'pointer', borderColor: 'var(--accent-orange)' }}
+                    >
+                        <Tag size={18} color="var(--accent-orange)" />
+                        <span style={{ fontSize: '0.8rem', fontWeight: 'bold', color: 'var(--accent-orange)' }}>SELL ITEM</span>
+                    </div>
+                ) : (
+                    <div className="icon-box icon-box-muted" style={{ width: '45px', height: '45px' }}>
+                        <ShoppingCart size={20} />
+                    </div>
+                )}
             </header>
 
             {/* Categories */}
