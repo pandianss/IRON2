@@ -7,7 +7,7 @@ import PlanCreator from '../components/Partner/PlanCreator';
 import MemberProfileModal from '../components/Partner/MemberProfileModal';
 
 const PartnerDashboard = () => {
-    const { showToast, gyms, selectedGymId, switchGym, members, partnerPlans } = useAppContext();
+    const { showToast, gyms, selectedGymId, switchGym, members } = useAppContext();
     const [showPlanCreator, setShowPlanCreator] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
 
@@ -40,7 +40,10 @@ const PartnerDashboard = () => {
             )}
 
             {selectedMember && (
-                <MemberProfileModal member={selectedMember} onClose={() => setSelectedMember(null)} />
+                <MemberProfileModal
+                    member={members.find(m => m.id === selectedMember)}
+                    onClose={() => setSelectedMember(null)}
+                />
             )}
 
             <header className="page-header">
@@ -157,10 +160,10 @@ const PartnerDashboard = () => {
                 </div>
 
                 <div style={{ display: 'grid', gap: '12px' }}>
-                    {gymMembers.map((member, idx) => (
+                    {gymMembers.map((member) => (
                         <div
-                            key={idx}
-                            onClick={() => setSelectedMember(member)}
+                            key={member.id} // Changed key to member.id
+                            onClick={() => setSelectedMember(member.id)} // Set member ID
                             className="list-item-standard"
                             style={{
                                 background: 'rgba(255,255,255,0.02)',

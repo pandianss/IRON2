@@ -44,7 +44,7 @@ export const AppProvider = ({ children }) => {
                 return {
                     ...member,
                     status: newStatus,
-                    history: [...member.history, { action, date }]
+                    history: [...(member.history || []), { action, date }]
                 };
             }
             return member;
