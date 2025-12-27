@@ -15,13 +15,14 @@ const AppShell = () => {
     }, [onboardingCompleted, navigate]);
 
     const isSubPage = location.pathname !== '/';
-    const showBack = ['/viral', '/studio', '/settings'].includes(location.pathname);
+    const showBack = ['/viral', '/studio', '/settings', '/profile'].includes(location.pathname);
 
     const getPageTitle = (path) => {
         switch (path) {
             case '/viral': return 'THE CIRCUIT';
             case '/studio': return 'STUDIO';
             case '/settings': return 'SETTINGS';
+            case '/profile': return 'IDENTITY';
             default: return '';
         }
     };
@@ -90,19 +91,23 @@ const AppShell = () => {
                                 </div>
                             </>
                         )}
-                        <div style={{
-                            width: '40px',
-                            height: '40px',
-                            borderRadius: '12px',
-                            background: 'linear-gradient(45deg, #222, #111)',
-                            border: '1px solid var(--border-glass)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            fontSize: '0.8rem',
-                            fontWeight: 'bold',
-                            color: 'var(--text-secondary)'
-                        }}>
+                        <div
+                            onClick={() => navigate('/profile')}
+                            style={{
+                                width: '40px',
+                                height: '40px',
+                                borderRadius: '12px',
+                                background: 'linear-gradient(45deg, #222, #111)',
+                                border: '1px solid var(--border-glass)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.8rem',
+                                fontWeight: '900',
+                                color: 'var(--accent-orange)',
+                                cursor: 'pointer',
+                                boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
+                            }}>
                             MV
                         </div>
                     </div>

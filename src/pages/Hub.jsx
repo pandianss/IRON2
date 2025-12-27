@@ -5,25 +5,24 @@ import { MapPin, Star, ShieldAlert, Users, ArrowRight } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 const Hub = () => {
-    const { isRusting, toggleRust } = useAppContext();
+    const { isRusting, toggleRust, showToast } = useAppContext();
+
+    const handleAction = (msg) => {
+        showToast(msg);
+    };
     return (
-        <div style={{ paddingBottom: '100px' }}>
-            <header style={{ marginBottom: '32px' }}>
-                <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Hub</h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    FIND YOUR SQUAD. CONNECT WITH EXPERTS.
-                </p>
+        <div className="page-container" style={{ paddingBottom: '100px' }}>
+            <header className="page-header">
+                <div className="header-title-group">
+                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Lab</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        YOUR CRYPTOGRAPHIC FITNESS IDENTITY.
+                    </p>
+                </div>
             </header>
 
             <section style={{ marginBottom: '32px' }}>
-                <h3 className="title-display" style={{
-                    fontSize: '1rem',
-                    color: 'var(--text-muted)',
-                    marginBottom: '16px',
-                    letterSpacing: '1px'
-                }}>
-                    NEARBY FORGES
-                </h3>
+                <h3 className="section-label">NEARBY FORGES</h3>
 
                 <Card noPadding className="glass-panel" style={{ overflow: 'hidden' }}>
                     <div style={{ height: '140px', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
@@ -70,7 +69,9 @@ const Hub = () => {
                 </Card>
             </section>
 
-            <h3 className="section-label">VERIFIED EXPERTS</h3>
+            <section>
+                <h3 className="section-label">VERIFIED EXPERTS</h3>
+            </section>
 
             <div style={{ display: 'grid', gap: '12px' }}>
                 {[

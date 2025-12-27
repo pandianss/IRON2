@@ -16,16 +16,19 @@ const Lab = () => {
         showToast(`${name} loading...`);
     };
     return (
-        <div style={{ paddingBottom: '100px' }}>
-            <header style={{ marginBottom: '32px' }}>
-                <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Lab</h1>
-                <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                    YOUR CRYPTOGRAPHIC FITNESS IDENTITY.
-                </p>
+        <div className="page-container" style={{ paddingBottom: '100px' }}>
+            <header className="page-header">
+                <div className="header-title-group">
+                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>The Hub</h1>
+                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                        FIND YOUR SQUAD. CONNECT WITH EXPERTS.
+                    </p>
+                </div>
             </header>
 
             {/* Biometric Sync Status */}
             <section style={{ marginBottom: '32px' }}>
+                <h3 className="section-label">BIOMETRICS</h3>
                 <Card className="glass-panel" style={{ padding: '16px', background: 'rgba(0, 255, 148, 0.05)', border: '1px solid rgba(0, 255, 148, 0.2)' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
                         <div style={{ position: 'relative' }}>
@@ -45,6 +48,7 @@ const Lab = () => {
 
             {/* Unified Passport */}
             <section style={{ marginBottom: '40px' }}>
+                <h3 className="section-label">FORGE ACCESS</h3>
                 <PassportCard
                     userName="Marcus V."
                     rank="IRON IV"
@@ -57,14 +61,7 @@ const Lab = () => {
                 </div>
             </section>
 
-            <h3 className="title-display" style={{
-                fontSize: '1rem',
-                color: 'var(--text-muted)',
-                marginBottom: '16px',
-                letterSpacing: '1px'
-            }}>
-                UTILITIES
-            </h3>
+            <h3 className="section-label">UTILITIES</h3>
 
             <div style={{ display: 'grid', gap: '12px' }}>
                 <Card

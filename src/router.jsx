@@ -8,6 +8,7 @@ import Hub from './pages/Hub';
 import Onboarding from './pages/Onboarding';
 import Viral from './pages/Viral';
 import ExpertStudio from './pages/ExpertStudio';
+import Profile from './pages/Profile';
 
 const router = createBrowserRouter([
     {
@@ -25,6 +26,7 @@ const router = createBrowserRouter([
             { path: 'hub', element: <Hub /> },
             { path: 'viral', element: <Viral /> },
             { path: 'studio', element: <ExpertStudio /> },
+            { path: 'profile', element: <Profile /> },
         ],
     },
 ]);
