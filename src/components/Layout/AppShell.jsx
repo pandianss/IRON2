@@ -1,22 +1,48 @@
 import React, { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { Share2, PencilLine, ArrowLeft, ChevronLeft } from 'lucide-react';
+import { TrendingUp, Clapperboard, ArrowLeft, ChevronLeft, Share2 } from 'lucide-react';
 import BottomNav from './BottomNav';
 import { useAppContext } from '../../context/AppContext';
+import Notifications from '../UI/Notifications';
 
 const AppShell = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { onboardingCompleted, toast, userType } = useAppContext();
+    const { onboardingCompleted, toast, userType, currentUser, isLoading } = useAppContext();
 
     useEffect(() => {
-        if (!onboardingCompleted) {
+        if (isLoading) return; // Wait for auth check
+
+        if (!currentUser) {
+            navigate('/auth');
+        } else if (!onboardingCompleted) {
             navigate('/onboarding');
+        } else if (userType === 'gym' && (location.pathname === '/' || location.pathname === '/home')) {
+            navigate('/partner');
         }
-    }, [onboardingCompleted, navigate]);
+    }, [currentUser, onboardingCompleted, userType, navigate, location.pathname, isLoading]);
+
+    if (isLoading) {
+        return (
+            <div style={{
+                height: '100vh',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                background: '#000',
+                color: 'var(--accent-orange)'
+            }}>
+                <div className="animate-spin">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
+                    </svg>
+                </div>
+            </div>
+        );
+    }
 
     const isSubPage = location.pathname !== '/';
-    const showBack = ['/viral', '/studio', '/settings', '/profile'].includes(location.pathname);
+    const showBack = ['/settings', '/profile'].includes(location.pathname);
 
     const getPageTitle = (path) => {
         switch (path) {
@@ -75,6 +101,8 @@ const AppShell = () => {
                     </div>
 
                     <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+                        <Notifications />
+
                         {!showBack && (
                             <>
                                 <div
@@ -82,14 +110,14 @@ const AppShell = () => {
                                     className="icon-box icon-box-muted"
                                     style={{ width: '40px', height: '40px', padding: 0, cursor: 'pointer' }}
                                 >
-                                    <Share2 size={18} />
+                                    <TrendingUp size={18} />
                                 </div>
                                 <div
                                     onClick={() => navigate('/studio')}
                                     className="icon-box icon-box-muted"
                                     style={{ width: '40px', height: '40px', padding: 0, cursor: 'pointer' }}
                                 >
-                                    <PencilLine size={18} />
+                                    <Clapperboard size={18} />
                                 </div>
                             </>
                         )}

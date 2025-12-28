@@ -2,19 +2,64 @@ import React from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import PassportCard from '../components/UI/PassportCard';
-import { Settings, Save, Activity, Zap, Heart, ShieldCheck, Calendar, History } from 'lucide-react';
+import { Settings, Save, Activity, Zap, Heart, ShieldCheck, Calendar, History, ArrowLeft } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 const Lab = () => {
     const { bpm, showToast } = useAppContext();
+
+    const [activeView, setActiveView] = React.useState('main');
 
     const handleSave = () => {
         showToast("Passport synchronized");
     };
 
     const handleUtilitySelect = (name) => {
-        showToast(`${name} loading...`);
+        if (name === 'Planner') setActiveView('planner');
+        if (name === 'Logs') setActiveView('logs');
     };
+
+    if (activeView === 'planner') {
+        return (
+            <div className="page-container fade-in">
+                <header className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <Button variant="ghost" onClick={() => setActiveView('main')} style={{ padding: '8px' }}>
+                        <ArrowLeft size={24} />
+                    </Button>
+                    <h2 className="title-display" style={{ fontSize: '1.5rem', margin: 0 }}>SESSION PLANNER</h2>
+                </header>
+                <div style={{ textAlign: 'center', marginTop: '40px', opacity: 0.6 }}>
+                    <Calendar size={48} color="var(--accent-orange)" style={{ marginBottom: '16px' }} />
+                    <p>Drag & Drop Routine Builder coming soon.</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (activeView === 'logs') {
+        return (
+            <div className="page-container fade-in">
+                <header className="page-header" style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    <Button variant="ghost" onClick={() => setActiveView('main')} style={{ padding: '8px' }}>
+                        <ArrowLeft size={24} />
+                    </Button>
+                    <h2 className="title-display" style={{ fontSize: '1.5rem', margin: 0 }}>RE-FORGING LOGS</h2>
+                </header>
+                <div style={{ marginTop: '24px' }}>
+                    {[1, 2, 3].map(i => (
+                        <div key={i} className="glass-panel" style={{ padding: '16px', marginBottom: '12px', display: 'flex', justifyContent: 'space-between' }}>
+                            <div>
+                                <h4 style={{ fontWeight: '700' }}>Cycle {i} Complete</h4>
+                                <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Dec {10 + i}, 2025</span>
+                            </div>
+                            <span style={{ color: 'var(--accent-green)', fontWeight: '700' }}>+120 XP</span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="page-container" style={{ paddingBottom: '100px' }}>
             <header className="page-header">

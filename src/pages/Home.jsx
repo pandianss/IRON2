@@ -1,4 +1,5 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import ActivityCard from '../components/UI/ActivityCard';
@@ -6,37 +7,15 @@ import { Trophy, TrendingUp, Search, AlertTriangle, Activity, Heart } from 'luci
 import { useAppContext } from '../context/AppContext';
 
 const Home = () => {
-    const { isRusting, bpm, showToast } = useAppContext();
+    const { isRusting, bpm, showToast, feedActivities, isLoading, currentUser } = useAppContext();
+    const navigate = useNavigate();
 
     const handleLogActivity = () => {
         showToast("Activity logged! XP +50");
     };
 
-    const activities = [
-        {
-            userName: "Marcus V.",
-            activityType: "HEAVY LIFTING",
-            location: "ANVIL GYM",
-            timeAgo: "12m",
-            isPR: true,
-            stats: [
-                { label: "Weight", value: "240kg" },
-                { label: "Reps", value: "5", accent: true },
-                { label: "XP", value: "+450" }
-            ]
-        },
-        {
-            userName: "Elena S.",
-            activityType: "STAMINA SPRINT",
-            location: "STADIUM X",
-            timeAgo: "45m",
-            stats: [
-                { label: "Distance", value: "5.2km" },
-                { label: "Pace", value: "4'12\"" },
-                { label: "Heart", value: "168bpm" }
-            ]
-        }
-    ];
+    // Use real feed or empty array
+    const activities = feedActivities || [];
 
     return (
         <div className="page-container">
@@ -80,7 +59,12 @@ const Home = () => {
                             <span className="stat-label" style={{ marginBottom: 0 }}>RANK</span>
                         </div>
                         <div className="stat-value">
-                            #17 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '400' }}>IRON IV</span>
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginRight: '4px' }}>#</span>
+                            {/* Mock Global Rank logic or simple field */}
+                            {currentUser?.globalRank || '--'}
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '6px' }}>
+                                {currentUser?.rank || 'UNRANKED'}
+                            </span>
                         </div>
                     </div>
                 </Card>
@@ -91,7 +75,11 @@ const Home = () => {
                             <span className="stat-label" style={{ marginBottom: 0 }}>LEVEL</span>
                         </div>
                         <div className="stat-value">
-                            12 <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '400' }}>78%</span>
+                            {currentUser?.level || 1}
+                            <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', fontWeight: '400', marginLeft: '6px' }}>
+                                {/* Mock progress calculation based on XP */}
+                                {currentUser?.xp ? `${(currentUser.xp % 100)}%` : '0%'}
+                            </span>
                         </div>
                     </div>
                 </Card>
@@ -109,9 +97,22 @@ const Home = () => {
             </div>
 
             {/* Primary Action */}
-            <div style={{ marginBottom: '32px' }}>
-                <Button fullWidth variant="accent" onClick={handleLogActivity}>
-                    Log Activity
+            <div style={{ marginBottom: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+                <Button
+                    variant="secondary"
+                    icon={Search}
+                    onClick={() => navigate('/gyms')}
+                    style={{ height: '56px' }}
+                >
+                    FIND GYM
+                </Button>
+                <Button
+                    variant="accent"
+                    icon={Activity}
+                    onClick={handleLogActivity}
+                    style={{ height: '56px' }}
+                >
+                    LOG WORK
                 </Button>
             </div>
 
@@ -123,14 +124,15 @@ const Home = () => {
             ))}
 
             {/* Skeleton / Zero-Loading State Indicator */}
-            <div style={{
-                textAlign: 'center',
-                padding: '20px',
-                color: 'var(--text-muted)',
-                fontSize: '0.8rem'
-            }}>
-                Synchronizing live data...
-            </div>
+            {isLoading ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    Synchronizing live data...
+                </div>
+            ) : activities.length === 0 ? (
+                <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
+                    No recent activity. Start the fire.
+                </div>
+            ) : null}
         </div>
     );
 };

@@ -1,22 +1,31 @@
 import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
-import { Users, Activity, IndianRupee, Scan, Settings, TrendingUp, Plus, ChevronDown } from 'lucide-react';
+import { Users, Activity, IndianRupee, Scan, TrendingUp, Plus, ChevronDown, UserPlus, CheckCircle, MessageSquare } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import PlanCreator from '../components/Partner/PlanCreator';
 import MemberProfileModal from '../components/Partner/MemberProfileModal';
+import AddMemberModal from '../components/Partner/AddMemberModal';
 
 const PartnerDashboard = () => {
-    const { showToast, gyms, selectedGymId, switchGym, members } = useAppContext();
+    const { showToast, gyms, selectedGymId, switchGym, members, approveMember, toggleBanMember, enquiries } = useAppContext();
     const [showPlanCreator, setShowPlanCreator] = useState(false);
+    const [showAddMember, setShowAddMember] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
+    const [showGymSelector, setShowGymSelector] = useState(false);
 
     const currentGym = gyms.find(g => g.id === selectedGymId) || gyms[0];
-    const gymMembers = members.filter(m => m.gymId === selectedGymId);
+    const allGymMembers = members.filter(m => m.gymId === selectedGymId);
+
+    // Filter enquiries for this gym
+    const gymEnquiries = enquiries?.filter(e => e.gymId === selectedGymId) || [];
+
+    const pendingMembers = allGymMembers.filter(m => m.status === 'Pending');
+    const rosterMembers = allGymMembers.filter(m => m.status !== 'Pending');
 
     // Derived Metrics
-    const totalMembers = gymMembers.length;
-    const activeMembers = gymMembers.filter(m => m.status === 'Active').length;
+    const totalMembers = rosterMembers.length;
+    const activeMembers = rosterMembers.filter(m => m.status === 'Active').length;
     const revenue = activeMembers * 5000; // Mock calculation
 
     const handleScan = () => {
@@ -39,6 +48,8 @@ const PartnerDashboard = () => {
                 </div>
             )}
 
+            {showAddMember && <AddMemberModal onClose={() => setShowAddMember(false)} />}
+
             {selectedMember && (
                 <MemberProfileModal
                     member={members.find(m => m.id === selectedMember)}
@@ -50,38 +61,63 @@ const PartnerDashboard = () => {
                 <div className="header-title-group">
                     <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Command</h1>
 
-                    {/* Gym Selector */}
-                    <div className="glass-panel" style={{
-                        display: 'inline-flex',
-                        alignItems: 'center',
-                        gap: '8px',
-                        padding: '8px 16px',
-                        borderRadius: '20px',
-                        border: '1px solid var(--border-glass)',
-                        cursor: 'pointer'
-                    }}>
-                        <select
-                            value={selectedGymId}
-                            onChange={(e) => switchGym(e.target.value)}
+                    {/* Custom Gym Selector */}
+                    <div style={{ position: 'relative' }}>
+                        <div
+                            className="glass-panel"
+                            onClick={() => setShowGymSelector(!showGymSelector)}
                             style={{
-                                background: 'transparent',
-                                border: 'none',
-                                color: 'var(--text-primary)',
-                                fontWeight: '700',
-                                fontSize: '0.9rem',
-                                outline: 'none',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                padding: '8px 16px',
+                                borderRadius: '20px',
+                                border: '1px solid var(--border-glass)',
                                 cursor: 'pointer',
-                                appearance: 'none',
-                                WebkitAppearance: 'none',
-                                MozAppearance: 'none',
-                                paddingRight: '24px' // Space for custom arrow
+                                minWidth: '200px',
+                                justifyContent: 'space-between'
                             }}
                         >
-                            {gyms.map(gym => (
-                                <option key={gym.id} value={gym.id} style={{ background: '#111', color: '#fff' }}>{gym.name}</option>
-                            ))}
-                        </select>
-                        <ChevronDown size={16} color="var(--accent-orange)" style={{ marginLeft: '-20px', pointerEvents: 'none' }} />
+                            <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{currentGym.name}</span>
+                            <ChevronDown size={16} color="var(--accent-orange)" />
+                        </div>
+
+                        {showGymSelector && (
+                            <div className="glass-panel" style={{
+                                position: 'absolute',
+                                top: '110%',
+                                left: 0,
+                                width: '100%',
+                                padding: '8px',
+                                borderRadius: '12px',
+                                zIndex: 100,
+                                border: '1px solid var(--border-glass)',
+                                background: 'rgba(10, 10, 10, 0.95)',
+                                backdropFilter: 'blur(10px)'
+                            }}>
+                                {gyms.map(gym => (
+                                    <div
+                                        key={gym.id}
+                                        onClick={() => {
+                                            switchGym(gym.id);
+                                            setShowGymSelector(false);
+                                        }}
+                                        style={{
+                                            padding: '10px',
+                                            borderRadius: '8px',
+                                            cursor: 'pointer',
+                                            fontSize: '0.9rem',
+                                            fontWeight: gym.id === selectedGymId ? '700' : '400',
+                                            color: gym.id === selectedGymId ? 'var(--accent-orange)' : '#fff',
+                                            background: gym.id === selectedGymId ? 'rgba(255, 77, 0, 0.1)' : 'transparent',
+                                            marginBottom: '4px'
+                                        }}
+                                    >
+                                        {gym.name}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
                     </div>
                 </div>
                 <div
@@ -130,8 +166,78 @@ const PartnerDashboard = () => {
                 </Card>
             </div>
 
-            {/* Actions: Scanner & Plans */}
-            <section style={{ marginBottom: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
+            {/* Pending Approvals Section */}
+            {pendingMembers.length > 0 && (
+                <section style={{ marginBottom: '32px' }}>
+                    <h3 className="section-label" style={{ color: 'var(--accent-orange)' }}>PENDING APPROVALS ({pendingMembers.length})</h3>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                        {pendingMembers.map(member => (
+                            <div key={member.id} className="glass-panel" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--accent-orange)' }}>
+                                <div>
+                                    <h4 style={{ fontWeight: '700', fontSize: '1rem' }}>{member.name}</h4>
+                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Requested: {member.plan}</span>
+                                </div>
+                                <div style={{ display: 'flex', gap: '8px' }}>
+                                    <Button
+                                        variant="accent"
+                                        icon={CheckCircle}
+                                        onClick={() => {
+                                            approveMember(member.id);
+                                            showToast(`${member.name} approved`);
+                                        }}
+                                    >
+                                        Approve
+                                    </Button>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => {
+                                            toggleBanMember(member.id); // Assuming we can use ban to 'reject' or just leave them pending for now, or use delete? User only asked for addition/approval. 
+                                            // Actually, for now let's just implement Approve. Banning a pending user essentially rejects them.
+                                            showToast(`${member.name} rejected`);
+                                        }}
+                                        style={{ color: 'var(--rust-primary)' }}
+                                    >
+                                        Reject
+                                    </Button>
+                                </div>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Enquiries Section */}
+            {gymEnquiries.length > 0 && (
+                <section style={{ marginBottom: '32px' }}>
+                    <h3 className="section-label" style={{ color: 'var(--accent-blue)' }}>MESSAGES ({gymEnquiries.length})</h3>
+                    <div style={{ display: 'grid', gap: '12px' }}>
+                        {gymEnquiries.map(enquiry => (
+                            <div key={enquiry.id} className="glass-panel" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'start', border: '1px solid var(--accent-blue)' }}>
+                                <div style={{ display: 'flex', gap: '12px' }}>
+                                    <div className="icon-box" style={{ width: '40px', height: '40px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-blue)' }}>
+                                        <MessageSquare size={20} />
+                                    </div>
+                                    <div>
+                                        <h4 style={{ fontWeight: '700', fontSize: '0.95rem' }}>{enquiry.userName}</h4>
+                                        <p style={{ fontSize: '0.9rem', color: '#fff', marginTop: '4px' }}>"{enquiry.message}"</p>
+                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{enquiry.date}</span>
+                                    </div>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    onClick={() => showToast("Reply feature coming soon")}
+                                    style={{ fontSize: '0.8rem' }}
+                                >
+                                    Reply
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Actions with Add Member */}
+            <section style={{ marginBottom: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
                 <Card className="glass-panel" noPadding onClick={handleScan} style={{
                     padding: '20px',
                     textAlign: 'center',
@@ -139,7 +245,7 @@ const PartnerDashboard = () => {
                     border: '1px solid var(--accent-orange)'
                 }}>
                     <Scan size={24} color="var(--accent-orange)" style={{ margin: '0 auto 8px' }} />
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>SCANNER</h3>
+                    <h3 style={{ fontSize: '0.8rem', fontWeight: '700' }}>SCANNER</h3>
                 </Card>
                 <Card className="glass-panel" noPadding onClick={() => setShowPlanCreator(true)} style={{
                     padding: '20px',
@@ -148,22 +254,31 @@ const PartnerDashboard = () => {
                     border: '1px solid var(--border-glass)'
                 }}>
                     <Plus size={24} color="#fff" style={{ margin: '0 auto 8px' }} />
-                    <h3 style={{ fontSize: '0.9rem', fontWeight: '700' }}>NEW PLAN</h3>
+                    <h3 style={{ fontSize: '0.8rem', fontWeight: '700' }}>NEW PLAN</h3>
+                </Card>
+                <Card className="glass-panel" noPadding onClick={() => setShowAddMember(true)} style={{
+                    padding: '20px',
+                    textAlign: 'center',
+                    cursor: 'pointer',
+                    border: '1px solid var(--border-glass)'
+                }}>
+                    <UserPlus size={24} color="#fff" style={{ margin: '0 auto 8px' }} />
+                    <h3 style={{ fontSize: '0.8rem', fontWeight: '700' }}>ADD MEMBER</h3>
                 </Card>
             </section>
 
-            {/* Member List */}
+            {/* Member List (Active/Banned only) */}
             <section>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
                     <h3 className="section-label" style={{ marginBottom: 0 }}>{currentGym.name.toUpperCase()} ROSTER</h3>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{gymMembers.length} MEMBERS</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{rosterMembers.length} MEMBERS</span>
                 </div>
 
                 <div style={{ display: 'grid', gap: '12px' }}>
-                    {gymMembers.map((member) => (
+                    {rosterMembers.map((member) => (
                         <div
-                            key={member.id} // Changed key to member.id
-                            onClick={() => setSelectedMember(member.id)} // Set member ID
+                            key={member.id}
+                            onClick={() => setSelectedMember(member.id)}
                             className="list-item-standard"
                             style={{
                                 background: 'rgba(255,255,255,0.02)',
@@ -210,7 +325,7 @@ const PartnerDashboard = () => {
                             </div>
                         </div>
                     ))}
-                    {gymMembers.length === 0 && (
+                    {rosterMembers.length === 0 && (
                         <div style={{ padding: '32px', textAlign: 'center', color: 'var(--text-muted)', fontStyle: 'italic' }}>
                             No active members found in this roster.
                         </div>

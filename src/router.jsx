@@ -10,8 +10,14 @@ import Viral from './pages/Viral';
 import ExpertStudio from './pages/ExpertStudio';
 import Profile from './pages/Profile';
 import PartnerDashboard from './pages/PartnerDashboard';
+import GymDirectory from './pages/GymDirectory';
+import AuthPage from './pages/AuthPage';
 
 const router = createBrowserRouter([
+    {
+        path: '/auth',
+        element: <AuthPage />,
+    },
     {
         path: '/onboarding',
         element: <Onboarding />,
@@ -29,6 +35,7 @@ const router = createBrowserRouter([
             { path: 'studio', element: <ExpertStudio /> },
             { path: 'profile', element: <Profile /> },
             { path: 'partner', element: <PartnerDashboard /> },
+            { path: 'gyms', element: <GymDirectory /> },
         ],
     },
 ]);

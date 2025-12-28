@@ -6,7 +6,7 @@ import { ShoppingCart, ShoppingBag, Tag, Star, ChevronRight, Search, Filter } fr
 import { useAppContext } from '../context/AppContext';
 
 const Bazaar = () => {
-    const { showToast, userType } = useAppContext();
+    const { showToast, userType, storeProducts, isLoading } = useAppContext();
     const [activeCategory, setActiveCategory] = useState("FUEL");
     const [searchQuery, setSearchQuery] = useState("");
 
@@ -20,34 +20,10 @@ const Bazaar = () => {
         showToast("Opening listing editor...");
     };
 
-    const items = [
-        {
-            title: "Pre-Forge X1",
-            price: "₹3,999",
-            levelRequired: 1,
-            isLocked: false,
-            tag: "BESTSELLER"
-        },
-        {
-            title: "Iron Core Belt",
-            price: "₹7,450",
-            levelRequired: 10,
-            isLocked: true
-        },
-        {
-            title: "Molten Recovery",
-            price: "₹2,499",
-            levelRequired: 5,
-            isLocked: true
-        },
-        {
-            title: "Carbon Goggles",
-            price: "₹10,999",
-            levelRequired: 50,
-            isLocked: true,
-            tag: "ELITE"
-        }
-    ];
+    // Filter items based on activeCategory (assuming items have categories, or just show all for now)
+    // For demo, we might not have categories on all items, so we'll just show all or Mock filtering if needed.
+    // Let's assume we show all for now or filter if 'category' field exists.
+    const items = storeProducts || [];
 
     return (
         <div className="page-container">

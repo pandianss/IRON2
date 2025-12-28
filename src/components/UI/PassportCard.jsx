@@ -1,8 +1,18 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { QrCode, ShieldCheck, Map } from 'lucide-react';
+import { ShieldCheck, Map } from 'lucide-react';
+import QRCode from 'react-qr-code';
 
 const PassportCard = ({ userName, rank, userId }) => {
+    // Generate QR Data securely
+    const qrData = JSON.stringify({
+        id: userId,
+        name: userName,
+        rank: rank,
+        valid: true,
+        issuer: 'IRON_FORGE_SYSTEM'
+    });
+
     return (
         <div className="glass-panel" style={{
             borderRadius: '24px',
@@ -52,7 +62,12 @@ const PassportCard = ({ userName, rank, userId }) => {
                     justifyContent: 'center',
                     padding: '8px'
                 }}>
-                    <QrCode size={100} color="#000" />
+                    <QRCode
+                        value={qrData}
+                        size={100}
+                        style={{ height: "auto", maxWidth: "100%", width: "100%" }}
+                        viewBox={`0 0 256 256`}
+                    />
                 </div>
 
                 <div style={{ flex: 1 }}>
