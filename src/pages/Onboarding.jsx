@@ -8,7 +8,7 @@ import { useAppContext } from '../context/AppContext';
 const Onboarding = () => {
     const navigate = useNavigate();
     const { state } = useLocation(); // Get passed credentials
-    const { completeOnboarding, registerUser, showToast, currentUser, checkEmail } = useAppContext();
+    const { completeOnboarding, registerUser, showToast, currentUser, checkEmail, updateUser } = useAppContext();
     const [step, setStep] = useState(0);
     const [userType, setUserType] = useState(null);
     const [formData, setFormData] = useState({
@@ -44,6 +44,10 @@ const Onboarding = () => {
 
             if (currentUser) {
                 // Already authenticated (e.g. Google Login flow or existing session)
+                // Persist the selected role
+                const role = userType === 'gym' ? 'gym_owner' : userType === 'expert' ? 'trainer' : 'user';
+                updateUser(currentUser.uid, { role });
+
                 setStep(3);
                 // Fake analysis time then success
                 setTimeout(() => setStep(4), 3000);
@@ -117,6 +121,8 @@ const Onboarding = () => {
             completeOnboarding(userType);
             if (userType === 'gym') {
                 navigate('/partner');
+            } else if (userType === 'expert') {
+                navigate('/studio');
             } else {
                 navigate('/');
             }

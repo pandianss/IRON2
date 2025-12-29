@@ -1,0 +1,86 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // --- Helper Functions ---
+
+    // 1. Check if user is signed in
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // 2. Check if user is accessing their own document
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    // 3. Check for specific Role (Stored in User Doc)
+    function hasRole(role) {
+      return isAuthenticated() && 
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == role;
+    }
+
+    // 4. Super Admin Override
+    function isSuperAdmin() {
+      return hasRole('super_admin');
+    }
+
+    // --- Collection Rules ---
+
+    // USERS Collection
+    match /users/{userId} {
+      // Anyone can read (needed for profiles/leaderboards), but limit PI in future queries
+      allow read: if isAuthenticated();
+      // Users can update their own profile; Admins can update all
+      allow write: if isOwner(userId) || isSuperAdmin();
+    }
+
+    // GYMS Collection
+    match /gyms/{gymId} {
+      // Public Read
+      allow read: if true;
+      
+      // Create: Authenticated users can apply (Status should be Pending via backend/client logic)
+      allow create: if isAuthenticated();
+      
+      // Update: Gym Owners (their own gym) or Super Admins
+      // Note: This relies on gymId matching or a field in the gym doc ownerId. 
+      // Since we don't strictly link ownerId on the Gym Doc in frontend yet (we link gymId on User),
+      // we'll rely on Super Admin for approval updates.
+      // Ideally: resource.data.ownerId == request.auth.uid
+      allow update: if isSuperAdmin(); 
+    }
+
+    // FEED ACTIVITIES
+    match /feed_activities/{activityId} {
+      allow read: if true;
+      allow create: if isAuthenticated();
+      allow update, delete: if isOwner(resource.data.userId) || isSuperAdmin();
+    }
+
+    // NOTIFICATIONS
+    match /notifications/{notificationId} {
+      allow read: if isOwner(resource.data.userId); // Only see your own
+      allow create: if isAuthenticated(); // Triggers
+    }
+
+    // ENQUIRIES
+    match /enquiries/{enquiryId} {
+      // User can create. Gym Owner can read if it matches their gymId (complex query)
+      allow create: if isAuthenticated();
+      allow read: if isAuthenticated(); // Simplified for now
+    }
+
+    // PARTNER PLANS
+    match /partner_plans/{planId} {
+       allow read: if true;
+       allow write: if hasRole('gym_owner') || isSuperAdmin();
+    }
+
+    // TRANSACTIONS
+    match /transactions/{txnId} {
+      allow read: if isOwner(resource.data.userId) || isSuperAdmin();
+      allow create: if isAuthenticated(); // Subscriptions
+    }
+  }
+}

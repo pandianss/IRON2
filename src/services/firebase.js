@@ -23,7 +23,11 @@ import {
     setDoc,
     getDoc,
     query,
-    where
+    where,
+    limit,
+    startAfter,
+    orderBy,
+    onSnapshot // Import onSnapshot
 } from "firebase/firestore";
 import {
     ref,
@@ -200,6 +204,55 @@ export const DbService = {
         } catch (error) {
             console.error(`Error getting docs from ${collectionName}:`, error);
             return [];
+        }
+    },
+
+    // Real-time Subscription
+    subscribeToCollection: (collectionName, callback, queryConstraints = []) => {
+        try {
+            const colRef = collection(db, collectionName);
+            const q = query(colRef, ...queryConstraints);
+
+            const unsubscribe = onSnapshot(q, (querySnapshot) => {
+                const data = querySnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                callback(data);
+            }, (error) => {
+                console.error(`Error subscribing to ${collectionName}:`, error);
+            });
+
+            return unsubscribe;
+        } catch (error) {
+            console.error("Subscription failed:", error);
+            return () => { };
+        }
+    },
+
+    // Get Paginated Docs
+    getPaginatedDocs: async (collectionName, pageSize = 10, lastDoc = null, orderByField = 'date') => {
+        try {
+            const colRef = collection(db, collectionName);
+            let q;
+
+            if (lastDoc) {
+                q = query(colRef, orderBy(orderByField, 'desc'), startAfter(lastDoc), limit(pageSize));
+            } else {
+                q = query(colRef, orderBy(orderByField, 'desc'), limit(pageSize));
+            }
+
+            const querySnapshot = await getDocs(q);
+            const data = querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+
+            const lastVisible = querySnapshot.docs[querySnapshot.docs.length - 1];
+            return { data, lastVisible };
+        } catch (error) {
+            console.error(`Error getting paginated docs from ${collectionName}:`, error);
+            return { data: [], lastVisible: null };
         }
     },
 

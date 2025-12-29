@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
@@ -7,15 +7,101 @@ import { Trophy, TrendingUp, Search, AlertTriangle, Activity, Heart } from 'luci
 import { useAppContext } from '../context/AppContext';
 
 const Home = () => {
-    const { isRusting, bpm, showToast, feedActivities, isLoading, currentUser } = useAppContext();
+    const { isRusting, bpm, showToast, feedActivities, isLoading, currentUser, loadMoreFeed, hasMoreFeed, logActivity } = useAppContext();
     const navigate = useNavigate();
+    const [userLocation, setUserLocation] = useState(null);
 
-    const handleLogActivity = () => {
-        showToast("Activity logged! XP +50");
+    useEffect(() => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => setUserLocation({ lat: pos.coords.latitude, lng: pos.coords.longitude }),
+                (err) => console.warn("Location access denied")
+            );
+        }
+    }, []);
+
+    const calculateDistance = (targetCoords) => {
+        if (!userLocation || !targetCoords) return null;
+        const R = 6371; // Earth radius in km
+        const dLat = (targetCoords.lat - userLocation.lat) * Math.PI / 180;
+        const dLng = (targetCoords.lng - userLocation.lng) * Math.PI / 180;
+        const a =
+            Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+            Math.cos(userLocation.lat * Math.PI / 180) * Math.cos(targetCoords.lat * Math.PI / 180) *
+            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+        const d = R * c;
+        return d < 1 ? '< 1km' : `${d.toFixed(1)}km`;
     };
 
-    // Use real feed or empty array
-    const activities = feedActivities || [];
+    const handleLogActivity = () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    logActivity({
+                        activityType: "Quick Log",
+                        location: "Field Ops",
+                        coordinates: { lat: pos.coords.latitude, lng: pos.coords.longitude }
+                    });
+                },
+                () => {
+                    // Fallback without location
+                    logActivity({ activityType: "Quick Log", location: "Unknown" });
+                    showToast("Location unavailable - Logged anyway");
+                }
+            );
+        } else {
+            logActivity({ activityType: "Quick Log", location: "Unknown" });
+        }
+    };
+
+    // Use real feed or empty array (MOCKING DATA FOR DEMO)
+    const mockActivities = [
+        {
+            userName: "Sarah C.",
+            activityType: "Live Class",
+            location: "Iron Studio",
+            timeAgo: "NOW",
+            isLive: true,
+            mediaUrl: "https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&q=80&w=800",
+            mediaType: 'video',
+            stats: []
+        },
+        {
+            userName: "Marcus V.",
+            activityType: "Deadlift PR",
+            location: "Metro Flex",
+            timeAgo: "2h ago",
+            isPR: true,
+            stats: [
+                { label: "WEIGHT", value: "405 LBS", accent: true },
+                { label: "RPE", value: "9.5" }
+            ]
+        },
+        {
+            userName: "Elena R.",
+            activityType: "Post-Run Check",
+            location: "Central Park",
+            timeAgo: "4h ago",
+            mediaUrl: "https://images.unsplash.com/photo-1483721310020-03333e577078?auto=format&fit=crop&q=80&w=800",
+            mediaType: 'image',
+            stats: [
+                { label: "DIST", value: "10K" },
+                { label: "PACE", value: "4:30" }
+            ]
+        },
+        {
+            userName: "Iron System",
+            activityType: "Achievement Unlocked",
+            location: "The Forge",
+            timeAgo: "6h ago",
+            stats: [
+                { label: "RANK", value: "IRON III", accent: true }
+            ]
+        }
+    ];
+
+    const activities = feedActivities && feedActivities.length > 0 ? feedActivities : mockActivities;
 
     return (
         <div className="page-container">
@@ -117,10 +203,14 @@ const Home = () => {
             </div>
 
             {/* Activities List */}
-            <h3 className="section-label">THE FEED</h3>
+            <h3 className="section-label">THE CIRCUIT</h3>
 
             {activities.map((activity, index) => (
-                <ActivityCard key={index} {...activity} />
+                <ActivityCard
+                    key={index}
+                    {...activity}
+                    distance={calculateDistance(activity.coordinates)}
+                />
             ))}
 
             {/* Skeleton / Zero-Loading State Indicator */}
@@ -132,7 +222,27 @@ const Home = () => {
                 <div style={{ textAlign: 'center', padding: '20px', color: 'var(--text-muted)', fontSize: '0.8rem' }}>
                     No recent activity. Start the fire.
                 </div>
-            ) : null}
+            ) : (
+                <>
+                    {/* Load More Trigger */}
+                    {hasMoreFeed && (
+                        <div style={{ display: 'flex', justifyContent: 'center', marginTop: '24px', paddingBottom: '80px' }}>
+                            <Button
+                                variant="secondary"
+                                onClick={loadMoreFeed}
+                                style={{ width: 'auto', padding: '12px 32px' }}
+                            >
+                                LOAD OLDER
+                            </Button>
+                        </div>
+                    )}
+                    {!hasMoreFeed && activities.length > 0 && (
+                        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--text-muted)', fontSize: '0.8rem', paddingBottom: '100px' }}>
+                            END OF CIRCUIT
+                        </div>
+                    )}
+                </>
+            )}
         </div>
     );
 };

@@ -145,7 +145,34 @@ const RoutinesTab = ({ routineName, setRoutineName, exercises, addExercise }) =>
 const LiveStudio = ({ onEndSession }) => {
     const [viewers, setViewers] = useState(0);
     const [isLive, setIsLive] = useState(false);
-    const [duration, setDuration] = useState("00:00:00");
+    const videoRef = React.useRef(null);
+    const streamRef = React.useRef(null);
+    const [cameraError, setCameraError] = useState(null);
+
+    React.useEffect(() => {
+        const startCamera = async () => {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+                streamRef.current = stream;
+                if (videoRef.current) {
+                    videoRef.current.srcObject = stream;
+                }
+                setCameraError(null);
+            } catch (err) {
+                console.error("Camera Access Error:", err);
+                setCameraError("Camera access denied or unavailable.");
+            }
+        };
+
+        startCamera();
+
+        return () => {
+            // Cleanup tracks on unmount
+            if (streamRef.current) {
+                streamRef.current.getTracks().forEach(track => track.stop());
+            }
+        };
+    }, []);
 
     React.useEffect(() => {
         let interval;
@@ -157,28 +184,39 @@ const LiveStudio = ({ onEndSession }) => {
         return () => clearInterval(interval);
     }, [isLive]);
 
+    const handleToggleLive = () => {
+        if (!isLive) {
+            setIsLive(true);
+            // In a real app, here we would connect to a WebRTC server or RTMP ingest
+        } else {
+            setIsLive(false);
+        }
+    };
+
     return (
         <div className="fade-in page-container" style={{ height: 'calc(100vh - 120px)', display: 'flex', flexDirection: 'column' }}>
             <div style={{ flex: 1, background: '#000', borderRadius: '16px', position: 'relative', overflow: 'hidden', border: '1px solid #333' }}>
-                {/* Camera Feed Simulation */}
-                <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: 'radial-gradient(circle, #222 0%, #000 80%)' }}>
-                    {!isLive ? (
-                        <div style={{ textAlign: 'center' }}>
-                            <Video size={48} color="#444" style={{ marginBottom: '16px' }} />
-                            <p style={{ color: '#666' }}>Camera Preview Ready</p>
-                        </div>
-                    ) : (
-                        <div style={{ textAlign: 'center' }}>
-                            <div className="pulse-circle" style={{ width: '80px', height: '80px', margin: '0 auto 16px', background: 'transparent', border: '2px solid var(--accent-orange)' }}></div>
-                            <p style={{ color: 'var(--accent-orange)' }}>LIVE SIGNAL ACTIVE</p>
-                        </div>
-                    )}
-                </div>
+                {/* Real Camera Feed */}
+                {cameraError ? (
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#111', color: 'red', flexDirection: 'column' }}>
+                        <Video size={48} style={{ marginBottom: '16px', opacity: 0.5 }} />
+                        <p>{cameraError}</p>
+                        <Button variant="ghost" onClick={() => window.location.reload()} style={{ marginTop: '16px' }}>Retry</Button>
+                    </div>
+                ) : (
+                    <video
+                        ref={videoRef}
+                        autoPlay
+                        playsInline
+                        muted
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scaleX(-1)' }}
+                    />
+                )}
 
                 {/* Overlays */}
                 <div style={{ position: 'absolute', top: '16px', left: '16px', padding: '6px 12px', background: 'rgba(0,0,0,0.6)', borderRadius: '20px', display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: isLive ? 'red' : '#666' }}></div>
-                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{isLive ? 'LIVE' : 'OFFLINE'}</span>
+                    <span style={{ fontSize: '0.8rem', fontWeight: 'bold' }}>{isLive ? 'LIVE' : 'PREVIEW'}</span>
                 </div>
 
                 <div style={{ position: 'absolute', top: '16px', right: '16px', display: 'flex', gap: '8px' }}>
@@ -186,6 +224,13 @@ const LiveStudio = ({ onEndSession }) => {
                         <Users size={14} /> {viewers}
                     </div>
                 </div>
+
+                {isLive && (
+                    <div style={{ position: 'absolute', bottom: '20px', left: '50%', transform: 'translateX(-50%)', display: 'flex', gap: '10px' }}>
+                        <div className="pulse-circle" style={{ width: '12px', height: '12px', background: 'red', borderRadius: '50%' }}></div>
+                        <span style={{ fontWeight: '900', color: 'red', textShadow: '0 0 10px red' }}>ON AIR</span>
+                    </div>
+                )}
             </div>
 
             <div style={{ marginTop: '24px', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
@@ -193,7 +238,7 @@ const LiveStudio = ({ onEndSession }) => {
                 <Button
                     variant={isLive ? "outline" : "primary"}
                     style={isLive ? { borderColor: 'red', color: 'red' } : {}}
-                    onClick={() => setIsLive(!isLive)}
+                    onClick={handleToggleLive}
                 >
                     {isLive ? "END STREAM" : "GO LIVE"}
                 </Button>

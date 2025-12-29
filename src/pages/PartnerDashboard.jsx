@@ -1,24 +1,120 @@
 import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
-import { Users, Activity, IndianRupee, Scan, TrendingUp, Plus, ChevronDown, UserPlus, CheckCircle, MessageSquare } from 'lucide-react';
+import { Users, Activity, IndianRupee, Scan, TrendingUp, Plus, ChevronDown, UserPlus, CheckCircle, MessageSquare, MapPin } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import PlanCreator from '../components/Partner/PlanCreator';
 import MemberProfileModal from '../components/Partner/MemberProfileModal';
 import AddMemberModal from '../components/Partner/AddMemberModal';
 
 const PartnerDashboard = () => {
-    const { showToast, gyms, selectedGymId, switchGym, members, approveMember, toggleBanMember, enquiries } = useAppContext();
+    const { showToast, gyms, selectedGymId, switchGym, members, approveMember, toggleBanMember, enquiries, registerGym, currentUser } = useAppContext();
     const [showPlanCreator, setShowPlanCreator] = useState(false);
     const [showAddMember, setShowAddMember] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);
     const [showGymSelector, setShowGymSelector] = useState(false);
 
+    const [newGymData, setNewGymData] = useState({ name: '', location: '' });
+    const [coords, setCoords] = useState(null);
+    const [isDetecting, setIsDetecting] = useState(false);
+
+    const detectLocation = () => {
+        setIsDetecting(true);
+        if (!navigator.geolocation) {
+            showToast("Geolocation not supported");
+            setIsDetecting(false);
+            return;
+        }
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                setCoords({ lat: latitude, lng: longitude });
+                showToast("Location Locked.");
+                setIsDetecting(false);
+            },
+            (err) => {
+                showToast("Location denied or unavailable.");
+                setIsDetecting(false);
+            }
+        );
+    };
+
+    // Handle Zero State (No Gyms)
+    if (!gyms || gyms.length === 0) {
+        return (
+            <div className="page-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+                <div className="icon-box" style={{ width: '80px', height: '80px', marginBottom: '24px', background: 'rgba(255, 77, 0, 0.1)' }}>
+                    <IndianRupee size={40} color="var(--accent-orange)" />
+                </div>
+                <h1 className="title-display" style={{ fontSize: '2rem', marginBottom: '16px' }}>ESTABLISH HQ</h1>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', textAlign: 'center', maxWidth: '400px' }}>
+                    You have clearance, but no facility. Register your gym to begin command operations.
+                </p>
+
+                <div className="glass-panel" style={{ width: '100%', maxWidth: '400px', padding: '32px', display: 'grid', gap: '16px' }}>
+                    <input
+                        type="text"
+                        placeholder="Gym Name"
+                        value={newGymData.name}
+                        onChange={e => setNewGymData({ ...newGymData, name: e.target.value })}
+                        className="iron-input-border"
+                        style={{ width: '100%', padding: '16px', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
+                    />
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        <input
+                            type="text"
+                            placeholder="Location / City"
+                            value={newGymData.location}
+                            onChange={e => setNewGymData({ ...newGymData, location: e.target.value })}
+                            className="iron-input-border"
+                            style={{ width: '100%', padding: '16px', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
+                        />
+                        <Button
+                            variant="secondary"
+                            onClick={detectLocation}
+                            disabled={isDetecting}
+                            style={{ width: 'auto', padding: '0 16px' }}
+                        >
+                            {isDetecting ? '...' : <MapPin size={20} color={coords ? 'var(--accent-green)' : '#fff'} />}
+                        </Button>
+                    </div>
+                    {coords && <div style={{ fontSize: '0.7rem', color: 'var(--accent-green)', textAlign: 'right', marginTop: '-12px' }}>
+                        GPS: {coords.lat.toFixed(4)}, {coords.lng.toFixed(4)}
+                    </div>}
+
+                    <Button
+                        fullWidth
+                        variant="accent"
+                        onClick={() => {
+                            if (!newGymData.name) return showToast("Name required");
+
+                            // Register with Coords
+                            registerGym({
+                                ...newGymData,
+                                coordinates: coords
+                            }, {
+                                uid: currentUser?.uid,
+                                email: currentUser?.email,
+                                displayName: currentUser?.displayName || 'Gym Owner'
+                            });
+                            showToast("Gym Registered. Welcome, Commander.");
+                        }}
+                    >
+                        INITIALIZE FACILITY
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Safety check for selectedGymId
     const currentGym = gyms.find(g => g.id === selectedGymId) || gyms[0];
+    if (!currentGym) return <div className="page-container">Loading Headquarters...</div>;
+
     const allGymMembers = members.filter(m => m.gymId === selectedGymId);
 
     // Filter enquiries for this gym
-    const gymEnquiries = enquiries?.filter(e => e.gymId === selectedGymId) || [];
+    const gymEnquiries = enquiries?.filter(e => e.gymId === currentGym.id) || []; // Use currentGym.id instead of selectedGymId safety
 
     const pendingMembers = allGymMembers.filter(m => m.status === 'Pending');
     const rosterMembers = allGymMembers.filter(m => m.status !== 'Pending');

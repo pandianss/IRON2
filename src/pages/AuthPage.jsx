@@ -177,105 +177,104 @@ const AuthPage = () => {
                     <Tab active={mode === 'phone'} onClick={() => setMode('phone')}>PHONE</Tab>
                 </div>
 
-                <div style={{ display: 'grid', gap: '16px' }}>
-                    {/* Google Button - Always Visible exception Register/Phone specific flows */}
-                    {mode !== 'phone' && (
-                        <Button variant="secondary" fullWidth icon={Globe} onClick={handleGoogle}>
-                            Continue with Google
+                {/* Google Button - Always Visible exception Register/Phone specific flows */}
+                {mode !== 'phone' && (
+                    <Button variant="secondary" fullWidth icon={Globe} onClick={handleGoogle}>
+                        Continue with Google
+                    </Button>
+                )}
+
+                {(mode === 'login' || mode === 'register') && (
+                    <form onSubmit={(e) => { e.preventDefault(); mode === 'login' ? handleEmailLogin() : handleRegister(); }} style={{ display: 'grid', gap: '16px' }}>
+                        {mode === 'register' && (
+                            <Input
+                                icon={Check}
+                                placeholder="Display Name"
+                                value={name}
+                                onChange={e => setName(e.target.value)}
+                            />
+                        )}
+                        <Input
+                            icon={Mail}
+                            placeholder="Email Address"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                        />
+                        <Input
+                            icon={Lock}
+                            type="password"
+                            placeholder="Password"
+                            value={password}
+                            onChange={e => setPassword(e.target.value)}
+                        />
+
+                        <Button type="submit" variant="accent" fullWidth disabled={loading}>
+                            {loading && <Loader2 className="animate-spin" size={16} />}
+                            {mode === 'login' ? 'ENTER THE FORGE' : 'INITIATE REGISTRATION'}
                         </Button>
-                    )}
 
-                    {(mode === 'login' || mode === 'register') && (
-                        <>
-                            {mode === 'register' && (
+                        {mode === 'login' && (
+                            <div
+                                onClick={() => setMode('magic-link')}
+                                style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', marginTop: '8px' }}
+                            >
+                                Forgot Password? Use <span style={{ color: 'var(--accent-orange)' }}>Magic Link</span>
+                            </div>
+                        )}
+                    </form>
+                )}
+
+                {mode === 'magic-link' && (
+                    <form onSubmit={(e) => { e.preventDefault(); handleMagicLink(); }} style={{ display: 'grid', gap: '16px' }}>
+                        <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
+                            We will send a secure entry link to your inbox.
+                        </p>
+                        <Input
+                            icon={Mail}
+                            placeholder="Email Address"
+                            value={email}
+                            onChange={e => setEmail(e.target.value)}
+                        />
+                        <Button type="submit" variant="accent" fullWidth disabled={loading}>
+                            {loading ? 'SENDING...' : 'SEND LINK'}
+                        </Button>
+                        <Button variant="ghost" fullWidth onClick={() => setMode('login')}>Return</Button>
+                    </form>
+                )}
+
+                {mode === 'phone' && (
+                    <form onSubmit={(e) => { e.preventDefault(); !verificationId ? handlePhoneRequest() : handleVerifyOtp(); }} style={{ display: 'grid', gap: '16px' }}>
+                        {!verificationId ? (
+                            <>
                                 <Input
-                                    icon={Check}
-                                    placeholder="Display Name"
-                                    value={name}
-                                    onChange={e => setName(e.target.value)}
+                                    icon={Smartphone}
+                                    placeholder="+1 555-0123"
+                                    value={phone}
+                                    onChange={e => setPhone(e.target.value)}
                                 />
-                            )}
-                            <Input
-                                icon={Mail}
-                                placeholder="Email Address"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                            />
-                            <Input
-                                icon={Lock}
-                                type="password"
-                                placeholder="Password"
-                                value={password}
-                                onChange={e => setPassword(e.target.value)}
-                            />
+                                <div id="recaptcha-container"></div>
+                                <Button type="submit" variant="accent" fullWidth disabled={loading}>
+                                    {loading ? 'SENDING...' : 'SEND CODE'}
+                                </Button>
+                            </>
+                        ) : (
+                            <>
+                                <Input
+                                    icon={Lock}
+                                    placeholder="123456"
+                                    value={otp}
+                                    onChange={e => setOtp(e.target.value)}
+                                />
+                                <Button type="submit" variant="accent" fullWidth disabled={loading}>
+                                    {loading ? 'VERIFYING...' : 'VERIFY & ENTER'}
+                                </Button>
+                            </>
+                        )}
+                    </form>
+                )}
 
-                            <Button variant="accent" fullWidth onClick={mode === 'login' ? handleEmailLogin : handleRegister} disabled={loading}>
-                                {loading && <Loader2 className="animate-spin" size={16} />}
-                                {mode === 'login' ? 'ENTER THE FORGE' : 'INITIATE REGISTRATION'}
-                            </Button>
-
-                            {mode === 'login' && (
-                                <div
-                                    onClick={() => setMode('magic-link')}
-                                    style={{ textAlign: 'center', fontSize: '0.8rem', color: 'var(--text-secondary)', cursor: 'pointer', marginTop: '8px' }}
-                                >
-                                    Forgot Password? Use <span style={{ color: 'var(--accent-orange)' }}>Magic Link</span>
-                                </div>
-                            )}
-                        </>
-                    )}
-
-                    {mode === 'magic-link' && (
-                        <>
-                            <p style={{ textAlign: 'center', fontSize: '0.9rem', color: 'var(--text-secondary)' }}>
-                                We will send a secure entry link to your inbox.
-                            </p>
-                            <Input
-                                icon={Mail}
-                                placeholder="Email Address"
-                                value={email}
-                                onChange={e => setEmail(e.target.value)}
-                            />
-                            <Button variant="accent" fullWidth onClick={handleMagicLink} disabled={loading}>
-                                {loading ? 'SENDING...' : 'SEND LINK'}
-                            </Button>
-                            <Button variant="ghost" fullWidth onClick={() => setMode('login')}>Return</Button>
-                        </>
-                    )}
-
-                    {mode === 'phone' && (
-                        <>
-                            {!verificationId ? (
-                                <>
-                                    <Input
-                                        icon={Smartphone}
-                                        placeholder="+1 555-0123"
-                                        value={phone}
-                                        onChange={e => setPhone(e.target.value)}
-                                    />
-                                    <div id="recaptcha-container"></div>
-                                    <Button variant="accent" fullWidth onClick={handlePhoneRequest} disabled={loading}>
-                                        {loading ? 'SENDING...' : 'SEND CODE'}
-                                    </Button>
-                                </>
-                            ) : (
-                                <>
-                                    <Input
-                                        icon={Lock}
-                                        placeholder="123456"
-                                        value={otp}
-                                        onChange={e => setOtp(e.target.value)}
-                                    />
-                                    <Button variant="accent" fullWidth onClick={handleVerifyOtp} disabled={loading}>
-                                        {loading ? 'VERIFYING...' : 'VERIFY & ENTER'}
-                                    </Button>
-                                </>
-                            )}
-                        </>
-                    )}
-                </div>
-            </Card>
-        </div>
+            </Card >
+        </div >
     );
 };
 

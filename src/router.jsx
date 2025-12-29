@@ -12,6 +12,7 @@ import Profile from './pages/Profile';
 import PartnerDashboard from './pages/PartnerDashboard';
 import GymDirectory from './pages/GymDirectory';
 import AuthPage from './pages/AuthPage';
+import AdminDashboard from './pages/AdminDashboard';
 
 const router = createBrowserRouter([
     {
@@ -36,6 +37,7 @@ const router = createBrowserRouter([
             { path: 'profile', element: <Profile /> },
             { path: 'partner', element: <PartnerDashboard /> },
             { path: 'gyms', element: <GymDirectory /> },
+            { path: 'admin', element: <AdminDashboard /> },
         ],
     },
 ]);

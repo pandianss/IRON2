@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
-import { TrendingUp, Clapperboard, ArrowLeft, ChevronLeft, Share2 } from 'lucide-react';
+import { TrendingUp, Clapperboard, ArrowLeft, ChevronLeft, Share2, Shield } from 'lucide-react';
 import BottomNav from './BottomNav';
 import { useAppContext } from '../../context/AppContext';
 import Notifications from '../UI/Notifications';
@@ -15,10 +15,14 @@ const AppShell = () => {
 
         if (!currentUser) {
             navigate('/auth');
-        } else if (!onboardingCompleted) {
+        } else if (!onboardingCompleted && userType !== 'super_admin') {
             navigate('/onboarding');
-        } else if (userType === 'gym' && (location.pathname === '/' || location.pathname === '/home')) {
+        } else if (userType !== 'gym' && userType !== 'gym_owner' && location.pathname.startsWith('/partner') && userType !== 'super_admin') {
+            navigate('/');
+        } else if ((userType === 'gym' || userType === 'gym_owner') && (location.pathname === '/' || location.pathname === '/home')) {
             navigate('/partner');
+        } else if (location.pathname === '/admin' && userType !== 'super_admin') {
+            navigate('/');
         }
     }, [currentUser, onboardingCompleted, userType, navigate, location.pathname, isLoading]);
 
@@ -138,8 +142,17 @@ const AppShell = () => {
                                 cursor: 'pointer',
                                 boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
                             }}>
-                            MV
+                            {userType === 'super_admin' ? 'CMD' : 'MV'}
                         </div>
+                        {userType === 'super_admin' && (
+                            <div
+                                onClick={() => navigate('/admin')}
+                                className="icon-box icon-box-muted"
+                                style={{ width: '40px', height: '40px', padding: 0, cursor: 'pointer', marginLeft: '6px' }}
+                            >
+                                <Shield size={18} color="var(--accent-orange)" />
+                            </div>
+                        )}
                     </div>
                 </header>
 

@@ -8,7 +8,11 @@ const ActivityCard = ({
     location,
     timeAgo,
     stats,
-    isPR = false
+    isPR = false,
+    mediaUrl,
+    mediaType = 'image', // 'image' | 'video'
+    isLive = false,
+    distance = null
 }) => {
     return (
         <div className={`glass-panel ${isPR ? 'pr-glow heat-streak-pulse' : ''}`} style={{
@@ -42,6 +46,30 @@ const ActivityCard = ({
                 </>
             )}
 
+            {isLive && (
+                <div style={{
+                    position: 'absolute',
+                    top: '12px',
+                    right: '12px',
+                    background: '#ff0000',
+                    color: '#fff',
+                    fontSize: '0.65rem',
+                    fontWeight: '900',
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    textTransform: 'uppercase',
+                    fontFamily: 'var(--font-display)',
+                    zIndex: 3,
+                    boxShadow: '0 0 10px rgba(255, 0, 0, 0.5)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '4px'
+                }}>
+                    <span className="live-dot" style={{ width: '6px', height: '6px', background: '#fff', borderRadius: '50%' }}></span>
+                    LIVE
+                </div>
+            )}
+
             <div style={{ display: 'flex', gap: '14px', alignItems: 'center', marginBottom: '16px', position: 'relative', zIndex: 1 }}>
                 <div style={{
                     width: '44px',
@@ -57,40 +85,71 @@ const ActivityCard = ({
                 </div>
                 <div>
                     <h4 style={{ fontSize: '1rem', fontWeight: '700', marginBottom: '2px' }}>{userName}</h4>
-                    <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                        {distance && (
+                            <span style={{ color: 'var(--accent-green)', marginRight: '6px', fontWeight: 'bold' }}>
+                                📍 {distance} •
+                            </span>
+                        )}
                         {activityType} <span style={{ color: 'var(--text-muted)' }}>at</span> {location}
-                    </p>
+                    </div>
                 </div>
                 <div style={{ marginLeft: 'auto', fontSize: '0.75rem', color: 'var(--text-muted)' }}>
                     {timeAgo}
                 </div>
             </div>
 
-            <div style={{
-                display: 'flex',
-                gap: '24px',
-                paddingTop: '16px',
-                borderTop: '1px solid rgba(255,255,255,0.05)',
-                position: 'relative',
-                zIndex: 1
-            }}>
-                {stats.map((stat, idx) => (
-                    <div key={idx} style={{ display: 'flex', flexDirection: 'column' }}>
-                        <span className="stat-label" style={{ marginBottom: '4px' }}>
-                            {stat.label}
-                        </span>
-                        <span style={{
-                            fontSize: '1.2rem',
-                            fontWeight: '800',
-                            fontFamily: 'var(--font-display)',
-                            color: stat.accent ? 'var(--accent-orange)' : 'var(--text-primary)',
-                            textShadow: stat.accent ? '0 0 10px rgba(255, 77, 0, 0.4)' : 'none'
-                        }}>
-                            {stat.value}
-                        </span>
-                    </div>
-                ))}
-            </div>
+            {mediaUrl && (
+                <div style={{
+                    marginBottom: '16px',
+                    borderRadius: '12px',
+                    overflow: 'hidden',
+                    border: '1px solid var(--border-glass)',
+                    position: 'relative',
+                    zIndex: 1
+                }}>
+                    {mediaType === 'video' ? (
+                        <div style={{ position: 'relative', background: '#000', aspectRatio: '16/9', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            {/* Placeholder for video player or thumbnail */}
+                            <img src={mediaUrl} alt="Video thumbnail" style={{ width: '100%', height: '100%', objectFit: 'cover', opacity: 0.7 }} />
+                            <div style={{ position: 'absolute', width: '40px', height: '40px', borderRadius: '50%', background: 'rgba(255,255,255,0.2)', backdropFilter: 'blur(4px)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                <div style={{ width: 0, height: 0, borderTop: '8px solid transparent', borderBottom: '8px solid transparent', borderLeft: '12px solid #fff', marginLeft: '4px' }}></div>
+                            </div>
+                        </div>
+                    ) : (
+                        <img src={mediaUrl} alt="Activity" style={{ width: '100%', height: 'auto', display: 'block' }} />
+                    )}
+                </div>
+            )}
+
+            {stats && stats.length > 0 && (
+                <div style={{
+                    display: 'flex',
+                    gap: '24px',
+                    paddingTop: mediaUrl ? '0' : '16px', // Remove padding if media separates top from bottom
+                    marginTop: mediaUrl ? '0' : '0',
+                    borderTop: mediaUrl ? 'none' : '1px solid rgba(255,255,255,0.05)',
+                    position: 'relative',
+                    zIndex: 1
+                }}>
+                    {stats.map((stat, idx) => (
+                        <div key={idx} style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span className="stat-label" style={{ marginBottom: '4px' }}>
+                                {stat.label}
+                            </span>
+                            <span style={{
+                                fontSize: '1.2rem',
+                                fontWeight: '800',
+                                fontFamily: 'var(--font-display)',
+                                color: stat.accent ? 'var(--accent-orange)' : 'var(--text-primary)',
+                                textShadow: stat.accent ? '0 0 10px rgba(255, 77, 0, 0.4)' : 'none'
+                            }}>
+                                {stat.value}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            )}
 
             {isPR && (
                 <div style={{ marginTop: '16px', display: 'flex', gap: '12px', position: 'relative', zIndex: 1 }}>
@@ -122,8 +181,11 @@ ActivityCard.propTypes = {
         label: PropTypes.string.isRequired,
         value: PropTypes.string.isRequired,
         accent: PropTypes.bool
-    })).isRequired,
-    isPR: PropTypes.bool
+    })), // Stats can be optional if media is present
+    isPR: PropTypes.bool,
+    mediaUrl: PropTypes.string,
+    mediaType: PropTypes.oneOf(['image', 'video']),
+    isLive: PropTypes.bool
 };
 
 export default ActivityCard;
