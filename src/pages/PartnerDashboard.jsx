@@ -58,7 +58,7 @@ const PartnerDashboard = () => {
                         value={newGymData.name}
                         onChange={e => setNewGymData({ ...newGymData, name: e.target.value })}
                         className="iron-input-border"
-                        style={{ width: '100%', padding: '16px', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
+                        style={{ width: '100%', padding: '16px', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
                     />
                     <div style={{ display: 'flex', gap: '8px' }}>
                         <input
@@ -67,7 +67,7 @@ const PartnerDashboard = () => {
                             value={newGymData.location}
                             onChange={e => setNewGymData({ ...newGymData, location: e.target.value })}
                             className="iron-input-border"
-                            style={{ width: '100%', padding: '16px', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
+                            style={{ width: '100%', padding: '16px', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
                         />
                         <Button
                             variant="secondary"
@@ -315,7 +315,7 @@ const PartnerDashboard = () => {
                                     </div>
                                     <div>
                                         <h4 style={{ fontWeight: '700', fontSize: '0.95rem' }}>{enquiry.userName}</h4>
-                                        <p style={{ fontSize: '0.9rem', color: '#fff', marginTop: '4px' }}>"{enquiry.message}"</p>
+                                        <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: '4px' }}>"{enquiry.message}"</p>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{enquiry.date}</span>
                                     </div>
                                 </div>

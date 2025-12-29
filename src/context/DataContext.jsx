@@ -1,9 +1,11 @@
+```
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { DbService, AuthService } from '../services/firebase';
 import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
 import { orderBy } from 'firebase/firestore';
+import { mockProducts } from '../services/mockData';
 
 export const DataContext = createContext();
 
@@ -25,6 +27,7 @@ export const DataProvider = ({ children }) => {
 
     const [liveSessions, setLiveSessions] = useState([]);
     const [transactions, setTransactions] = useState([]);
+    const [challenges, setChallenges] = useState([]);
 
     // Derived States
     const [selectedGymId, setSelectedGymId] = useState(null);
@@ -45,7 +48,7 @@ export const DataProvider = ({ children }) => {
                 const [
                     gymsData, usersData, plansData,
                     notifsData, enqData, achData,
-                    productsData, liveData, transData
+                    productsData, liveData, transData, challengesData
                 ] = await Promise.all([
                     DbService.getDocs('gyms'),
                     DbService.getDocs('users'),
@@ -56,7 +59,8 @@ export const DataProvider = ({ children }) => {
                     DbService.getDocs('products'),
                     // DbService.getDocs('feed_activities'), // Removed full fetch
                     DbService.getDocs('live_sessions'),
-                    DbService.getDocs('transactions')
+                    DbService.getDocs('transactions'),
+                    DbService.getDocs('challenges')
                 ]);
 
                 // Separate Pagination Fetch for Feed
@@ -68,7 +72,7 @@ export const DataProvider = ({ children }) => {
                 setPartnerPlans(plansData);
 
                 setAchievements(achData);
-                setStoreProducts(productsData.length ? productsData : getMockProducts());
+                setStoreProducts(productsData.length ? productsData : mockProducts);
 
                 setFeedActivities(paginatedFeed);
                 setLastFeedDoc(lastVisible);
@@ -76,6 +80,7 @@ export const DataProvider = ({ children }) => {
 
                 setLiveSessions(liveData);
                 setTransactions(transData);
+                setChallenges(challengesData);
 
                 calculateRevenue(transData);
 
@@ -199,7 +204,7 @@ export const DataProvider = ({ children }) => {
 
         const notification = {
             type: 'alert',
-            message: `New Request: ${memberData.name}`,
+            message: `New Request: ${ memberData.name } `,
             time: 'Just now',
             read: false,
             gymId: memberData.gymId,
@@ -246,7 +251,7 @@ export const DataProvider = ({ children }) => {
         const newStatus = member.status === 'Banned' ? 'Active' : 'Banned';
         await DbService.updateDoc('users', memberId, { status: newStatus });
         setUsers(prev => prev.map(u => u.id === memberId ? { ...u, status: newStatus } : u));
-        showToast(`Member ${newStatus}`);
+        showToast(`Member ${ newStatus } `);
     };
 
     const logActivity = async (activityData) => {
@@ -308,12 +313,7 @@ export const DataProvider = ({ children }) => {
         }
     };
 
-    const getMockProducts = () => [
-        { title: "Pre-Forge X1", price: "3999", levelRequired: 1, isLocked: false, tag: "BESTSELLER" },
-        { title: "Iron Core Belt", price: "7450", levelRequired: 10, isLocked: true },
-        { title: "Molten Recovery", price: "2499", levelRequired: 5, isLocked: true },
-        { title: "Carbon Goggles", price: "10999", levelRequired: 50, isLocked: true, tag: "ELITE" }
-    ];
+
 
     // Sub-State Setters
     const addMedicalRecord = async (record) => {
@@ -336,6 +336,26 @@ export const DataProvider = ({ children }) => {
         localStorage.setItem('iron_studio_routine_name', name);
     };
 
+    const createChallenge = async (challengeData) => {
+        const newChallenge = await DbService.addDoc('challenges', {
+            ...challengeData,
+            status: 'pending',
+            timestamp: new Date().toISOString()
+        });
+        setChallenges(prev => [newChallenge, ...prev]);
+        showToast("Challenge Issued!");
+        
+        // Notify Target
+        const notification = {
+            type: 'alert',
+            message: `${ challengeData.challenger.name } challenged you: ${ challengeData.title } `,
+            time: 'Just now',
+            read: false,
+            userId: challengeData.target.id
+        };
+        await DbService.addDoc('notifications', notification);
+    };
+
     return (
         <DataContext.Provider value={{
             gyms, selectedGymId, setSelectedGymId, switchGym: setSelectedGymId,
@@ -351,7 +371,8 @@ export const DataProvider = ({ children }) => {
             biometricHistory, medicalRecords, addMedicalRecord,
             studioContent, addStudioContent,
             studioExercises, addStudioExercise,
-            studioRoutineName, setStudioRoutineName
+            studioRoutineName, setStudioRoutineName,
+            challenges, createChallenge
         }}>
             {children}
         </DataContext.Provider>

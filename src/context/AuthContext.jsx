@@ -1,6 +1,7 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { AuthService, DbService } from '../services/firebase';
+import { AuditService } from '../services/audit';
 import { useUI } from './UIContext';
 
 export const AuthContext = createContext();
@@ -53,6 +54,7 @@ export const AuthProvider = ({ children }) => {
             await DbService.setDoc('users', authUser.uid, newUser);
             setCurrentUser(newUser);
             setUserType(role);
+            AuditService.log('USER_SYNC_CREATE', newUser, { id: newUser.uid }, { method: 'provider_sync' });
         }
     };
 
@@ -67,6 +69,7 @@ export const AuthProvider = ({ children }) => {
             setCurrentUser(dbUser || user);
             setUserType(dbUser?.role || 'enthusiast');
             showToast(`Welcome back, ${dbUser?.displayName || 'User'}`);
+            AuditService.log('USER_LOGIN', dbUser || user, {}, { method: 'password' });
             return true;
         } catch (error) {
             let msg = "Login failed.";
@@ -138,6 +141,7 @@ export const AuthProvider = ({ children }) => {
             setCurrentUser(newUser);
             setUserType(role);
 
+            AuditService.log('USER_REGISTER', newUser, { id: newUser.uid }, { role });
             showToast("Welcome to IRON.");
             return { success: true };
         } catch (error) {
@@ -151,6 +155,7 @@ export const AuthProvider = ({ children }) => {
             await DbService.updateDoc('users', uid, data);
             setCurrentUser(prev => ({ ...prev, ...data }));
             if (data.role) setUserType(data.role);
+            AuditService.log('USER_UPDATE', { uid, ...currentUser }, { id: uid }, { updates: data });
             return { success: true };
         } catch (error) {
             console.error("Update User Failed", error);

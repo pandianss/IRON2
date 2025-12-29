@@ -136,14 +136,30 @@ const AppShell = () => {
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                fontSize: '0.8rem',
-                                fontWeight: '900',
-                                color: 'var(--accent-orange)',
-                                cursor: 'pointer',
                                 boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
                             }}>
                             {userType === 'super_admin' ? 'CMD' : 'MV'}
                         </div>
+                        {(userType === 'gym' || userType === 'gym_owner') && location.pathname !== '/partner' && (
+                            <div
+                                onClick={() => navigate('/partner')}
+                                style={{
+                                    height: '40px',
+                                    padding: '0 12px',
+                                    borderRadius: '12px',
+                                    border: '1px solid var(--accent-orange)',
+                                    color: 'var(--accent-orange)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    fontSize: '0.75rem',
+                                    fontWeight: '900',
+                                    cursor: 'pointer',
+                                    marginLeft: '6px'
+                                }}>
+                                BACK
+                            </div>
+                        )}
                         {userType === 'super_admin' && (
                             <div
                                 onClick={() => navigate('/admin')}

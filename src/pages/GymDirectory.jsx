@@ -12,8 +12,15 @@ const GymDirectory = () => {
     const handleSend = () => {
         if (!message.trim()) return;
         sendEnquiry('currentUser', selectedGym.id, message);
+        showToast("Request Sent!");
         setMessage('');
         setSelectedGym(null);
+    };
+
+    const handleAction = (gym, type) => {
+        setSelectedGym(gym);
+        if (type === 'join') setMessage("I'm interested in a membership. Please share details.");
+        if (type === 'visit') setMessage("I'd like to book a visit/trial.");
     };
 
     return (
@@ -60,9 +67,14 @@ const GymDirectory = () => {
                                 </div>
                             </div>
                         ) : (
-                            <Button variant="secondary" fullWidth icon={MessageSquare} onClick={() => setSelectedGym(gym)}>
-                                Enquiry
-                            </Button>
+                            <div style={{ display: 'flex', gap: '8px' }}>
+                                <Button variant="accent" style={{ flex: 1 }} onClick={() => handleAction(gym, 'join')}>
+                                    JOIN NOW
+                                </Button>
+                                <Button variant="secondary" style={{ flex: 1 }} onClick={() => handleAction(gym, 'visit')}>
+                                    BOOK VISIT
+                                </Button>
+                            </div>
                         )}
                     </Card>
                 ))}

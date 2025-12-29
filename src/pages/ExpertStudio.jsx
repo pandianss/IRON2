@@ -248,8 +248,26 @@ const LiveStudio = ({ onEndSession }) => {
 };
 
 const ExpertStudio = () => {
-    const { showToast, studioContent, addStudioContent, studioExercises, addStudioExercise, studioRoutineName, setStudioRoutineName } = useAppContext();
+    const { showToast, studioContent, addStudioContent, studioExercises, addStudioExercise, studioRoutineName, setStudioRoutineName, currentUser } = useAppContext();
     const [activeTab, setActiveTab] = useState('overview');
+
+    // Access Control
+    if (currentUser?.role !== 'expert' && currentUser?.role !== 'gym_owner' && currentUser?.role !== 'super_admin') {
+        return (
+            <div className="page-container fade-in" style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                <div className="icon-box icon-box-muted" style={{ width: '80px', height: '80px', marginBottom: '24px' }}>
+                    <BarChart3 size={40} color="var(--accent-orange)" />
+                </div>
+                <h1 className="title-display" style={{ fontSize: '2rem', marginBottom: '16px' }}>IRON STUDIO</h1>
+                <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', maxWidth: '300px' }}>
+                    Unlock creator tools, track analytics, and monetize your expertise.
+                </p>
+                <Button variant="accent" onClick={() => showToast("Request sent to Admin")}>
+                    BECOME A CREATOR
+                </Button>
+            </div>
+        );
+    }
 
     const addExercise = () => {
         const id = studioExercises.length + 1;

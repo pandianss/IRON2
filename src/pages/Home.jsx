@@ -5,6 +5,7 @@ import Button from '../components/UI/Button';
 import ActivityCard from '../components/UI/ActivityCard';
 import { Trophy, TrendingUp, Search, AlertTriangle, Activity, Heart } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
+import { mockFeedActivities } from '../services/mockData';
 
 const Home = () => {
     const { isRusting, bpm, showToast, feedActivities, isLoading, currentUser, loadMoreFeed, hasMoreFeed, logActivity } = useAppContext();
@@ -56,52 +57,9 @@ const Home = () => {
     };
 
     // Use real feed or empty array (MOCKING DATA FOR DEMO)
-    const mockActivities = [
-        {
-            userName: "Sarah C.",
-            activityType: "Live Class",
-            location: "Iron Studio",
-            timeAgo: "NOW",
-            isLive: true,
-            mediaUrl: "https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?auto=format&fit=crop&q=80&w=800",
-            mediaType: 'video',
-            stats: []
-        },
-        {
-            userName: "Marcus V.",
-            activityType: "Deadlift PR",
-            location: "Metro Flex",
-            timeAgo: "2h ago",
-            isPR: true,
-            stats: [
-                { label: "WEIGHT", value: "405 LBS", accent: true },
-                { label: "RPE", value: "9.5" }
-            ]
-        },
-        {
-            userName: "Elena R.",
-            activityType: "Post-Run Check",
-            location: "Central Park",
-            timeAgo: "4h ago",
-            mediaUrl: "https://images.unsplash.com/photo-1483721310020-03333e577078?auto=format&fit=crop&q=80&w=800",
-            mediaType: 'image',
-            stats: [
-                { label: "DIST", value: "10K" },
-                { label: "PACE", value: "4:30" }
-            ]
-        },
-        {
-            userName: "Iron System",
-            activityType: "Achievement Unlocked",
-            location: "The Forge",
-            timeAgo: "6h ago",
-            stats: [
-                { label: "RANK", value: "IRON III", accent: true }
-            ]
-        }
-    ];
+    // mockActivities removed, using imported mockFeedActivities
 
-    const activities = feedActivities && feedActivities.length > 0 ? feedActivities : mockActivities;
+    const activities = feedActivities && feedActivities.length > 0 ? feedActivities : mockFeedActivities;
 
     return (
         <div className="page-container">

@@ -27,23 +27,24 @@ import {
     limit,
     startAfter,
     orderBy,
-    onSnapshot // Import onSnapshot
+    onSnapshot
 } from "firebase/firestore";
 import {
     ref,
     uploadBytes,
     getDownloadURL
 } from "firebase/storage";
+import { DemoAuthService, DemoDbService, DemoStorageService } from './demoService';
 
-// --- AUTH SERVICE ---
-export const AuthService = {
+const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
+
+// --- REAL AUTH SERVICE ---
+const RealAuthService = {
     checkEmailExists: async (email) => {
         try {
             const methods = await fetchSignInMethodsForEmail(auth, email);
             return methods.length > 0;
         } catch (error) {
-            // If enumeration protection is on, we can't truly know without trying to login/register.
-            // But we can catch specific errors if needed.
             console.warn("Email check skipped:", error.code);
             return false;
         }
@@ -73,7 +74,7 @@ export const AuthService = {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName,
-                role: 'user' // Default, will be merged with DB
+                role: 'user'
             };
         } catch (error) {
             throw error;
@@ -95,7 +96,7 @@ export const AuthService = {
     loginWithPhone: async (phoneNumber, appVerifier) => {
         try {
             const confirmationResult = await signInWithPhoneNumber(auth, phoneNumber, appVerifier);
-            return confirmationResult; // Return this to UI to call .confirm(otp)
+            return confirmationResult;
         } catch (error) {
             throw error;
         }
@@ -103,7 +104,7 @@ export const AuthService = {
 
     sendLoginLink: async (email) => {
         const actionCodeSettings = {
-            url: window.location.origin + '/auth?finish=true', // Redirect back to finish
+            url: window.location.origin + '/auth?finish=true',
             handleCodeInApp: true
         };
         try {
@@ -119,7 +120,6 @@ export const AuthService = {
             if (isSignInWithEmailLink(auth, url)) {
                 let email = window.localStorage.getItem('emailForSignIn');
                 if (!email) {
-                    // User opened link on different device, verify email if needs be
                     return { error: 'Please provide email again' };
                 }
                 const result = await signInWithEmailLink(auth, email, url);
@@ -140,13 +140,12 @@ export const AuthService = {
     login: async (email, password) => {
         try {
             const userCredential = await signInWithEmailAndPassword(auth, email, password);
-            // Basic transformation to match previous structure if needed, or just return user
             const user = userCredential.user;
             return {
                 uid: user.uid,
                 email: user.email,
                 displayName: user.displayName || 'User',
-                role: 'user' // You might want to fetch this from Firestore 'users' collection
+                role: 'user'
             };
         } catch (error) {
             throw error;
@@ -176,8 +175,8 @@ export const AuthService = {
     }
 };
 
-// --- STORAGE SERVICE ---
-export const StorageService = {
+// --- REAL STORAGE SERVICE ---
+const RealStorageService = {
     uploadFile: async (file) => {
         try {
             const storageRef = ref(storage, `uploads/${Date.now()}_${file.name}`);
@@ -191,8 +190,8 @@ export const StorageService = {
     }
 };
 
-// --- DATABASE SERVICE (Firestore) ---
-export const DbService = {
+// --- REAL DATABASE SERVICE (Firestore) ---
+const RealDbService = {
     // Get Collection
     getDocs: async (collectionName) => {
         try {
@@ -279,7 +278,7 @@ export const DbService = {
             await setDoc(docRef, {
                 ...data,
                 updatedAt: new Date().toISOString()
-            }, { merge: true }); // Merge by default to prevent data loss
+            }, { merge: true });
             return { id: docId, ...data };
         } catch (error) {
             console.error(`Error setting doc ${docId} in ${collectionName}:`, error);
@@ -319,3 +318,12 @@ export const DbService = {
         }
     }
 };
+
+// Export based on flag
+if (IS_DEMO) {
+    console.warn("RUNNING IN DEMO MODE (MOCKED DATA)");
+}
+
+export const AuthService = IS_DEMO ? DemoAuthService : RealAuthService;
+export const DbService = IS_DEMO ? DemoDbService : RealDbService;
+export const StorageService = IS_DEMO ? DemoStorageService : RealStorageService;

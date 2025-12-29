@@ -71,7 +71,7 @@ const Profile = () => {
                                 <span>SIGNAL STRENGTH</span>
                                 <span>EXCELLENT</span>
                             </div>
-                            <div style={{ height: '4px', background: '#333', borderRadius: '2px', overflow: 'hidden' }}>
+                            <div style={{ height: '4px', background: 'var(--surface-card)', borderRadius: '2px', overflow: 'hidden' }}>
                                 <div style={{ width: '92%', height: '100%', background: 'var(--accent-blue)' }}></div>
                             </div>
                         </div>
@@ -91,7 +91,7 @@ const Profile = () => {
                     <h2 className="title-display" style={{ fontSize: '1.5rem', margin: 0 }}>IDENTITY</h2>
                 </header>
                 <Card className="glass-panel" style={{ padding: '24px', textAlign: 'center' }}>
-                    <div style={{ width: '80px', height: '80px', background: '#222', borderRadius: '50%', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--accent-orange)' }}>
+                    <div style={{ width: '80px', height: '80px', background: 'var(--surface-dark)', borderRadius: '50%', margin: '0 auto 16px', display: 'flex', alignItems: 'center', justifyContent: 'center', border: '1px solid var(--accent-orange)' }}>
                         <User size={40} color="var(--accent-orange)" />
                     </div>
                     <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold' }}>Marcus V.</h3>
@@ -167,7 +167,7 @@ const Profile = () => {
                                         <Shield size={18} />
                                     </div>
                                     <div>
-                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '600', color: '#fff' }}>{doc.title}</h4>
+                                        <h4 style={{ fontSize: '0.9rem', fontWeight: '600', color: 'var(--text-primary)' }}>{doc.title}</h4>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{doc.date} • {doc.size}</span>
                                     </div>
                                 </div>
@@ -241,7 +241,7 @@ const Profile = () => {
                     <div style={{ padding: '20px', background: 'linear-gradient(135deg, rgba(56, 189, 248, 0.1), rgba(0,0,0,0))', borderRadius: '16px', border: '1px solid rgba(56, 189, 248, 0.2)' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '8px' }}>
                             <span style={{ color: 'var(--accent-blue)', fontSize: '0.8rem', letterSpacing: '1px' }}>CLOUD STORAGE</span>
-                            <span style={{ color: '#fff', fontSize: '0.8rem' }}>24MB / 1GB</span>
+                            <span style={{ color: 'var(--text-primary)', fontSize: '0.8rem' }}>24MB / 1GB</span>
                         </div>
                         <div style={{ height: '6px', background: 'rgba(255,255,255,0.1)', borderRadius: '3px', overflow: 'hidden' }}>
                             <div style={{ width: '2.4%', height: '100%', background: 'var(--accent-blue)', transition: 'width 1s ease' }}></div>
@@ -270,7 +270,7 @@ const Profile = () => {
                                         <HardDrive size={20} />
                                     </div>
                                     <div>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#fff' }}>Biometric History</h4>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)' }}>Biometric History</h4>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>CSV • 24MB</span>
                                     </div>
                                 </div>
@@ -308,7 +308,7 @@ const Profile = () => {
                                         <Shield size={20} />
                                     </div>
                                     <div>
-                                        <h4 style={{ fontSize: '0.95rem', fontWeight: '600', color: '#fff' }}>Medical Records</h4>
+                                        <h4 style={{ fontSize: '0.95rem', fontWeight: '600', color: 'var(--text-primary)' }}>Medical Records</h4>
                                         <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>PDF • Secure Vault</span>
                                     </div>
                                 </div>
@@ -331,7 +331,7 @@ const Profile = () => {
                         </div>
                     </Card>
 
-                    <p style={{ textAlign: 'center', color: '#666', fontSize: '0.75rem', marginTop: '12px' }}>
+                    <p style={{ textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.75rem', marginTop: '12px' }}>
                         All data is locally encrypted. Use your Iron Key to decrypt on other devices.
                     </p>
                 </div>
@@ -441,7 +441,7 @@ const Profile = () => {
                                 <div className="icon-box icon-box-muted" style={{ width: '40px', height: '40px' }}>
                                     <item.icon size={18} />
                                 </div>
-                                <span style={{ fontWeight: '600', color: '#fff' }}>
+                                <span style={{ fontWeight: '600', color: 'var(--text-primary)' }}>
                                     {item.label}
                                 </span>
                             </div>

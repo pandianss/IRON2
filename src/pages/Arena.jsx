@@ -6,11 +6,25 @@ import { Sword, Zap, Filter, Trophy } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 
 const Arena = () => {
-    const { showToast } = useAppContext();
-    const [activeTab, setActiveTab] = useState('GLOBAL'); // This state is added but not used in the provided snippet, keeping it as per diff.
+    const { showToast, challenges, createChallenge, currentUser, users } = useAppContext();
+    const [activeTab, setActiveTab] = useState('GLOBAL');
+    const [showChallengeModal, setShowChallengeModal] = useState(false);
+    const [challengeForm, setChallengeForm] = useState({ title: '', targetId: '', stake: 50 });
 
-    const handleInitiateDuel = () => {
-        showToast("Matchmaking initiated...");
+    const handleCreateChallenge = () => {
+        if (!challengeForm.title || !challengeForm.targetId) {
+            showToast("Fill all fields");
+            return;
+        }
+        const targetUser = users.find(u => u.id === challengeForm.targetId);
+        createChallenge({
+            challenger: { id: currentUser?.id || 'demo_user', name: currentUser?.displayName || 'User' },
+            target: { id: targetUser.id, name: targetUser.displayName },
+            title: challengeForm.title,
+            stake: challengeForm.stake
+        });
+        setShowChallengeModal(false);
+        setChallengeForm({ title: '', targetId: '', stake: 50 });
     };
 
     // Assuming handleAction is a placeholder for actions related to the new buttons
@@ -51,10 +65,29 @@ const Arena = () => {
                             <Sword color="var(--accent-orange)" size={24} />
                             <h3 className="title-display" style={{ fontSize: '1.25rem' }}>ACTIVE DUELS</h3>
                         </div>
-                        <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>
-                            No active challenges. Nudge a friend to start a 24-hour calorie battle.
-                        </p>
-                        <Button fullWidth variant="accent" icon={Zap} onClick={handleInitiateDuel}>
+
+                        {challenges.length > 0 ? (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+                                {challenges.map(c => (
+                                    <div key={c.id} style={{ background: 'rgba(0,0,0,0.4)', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                                            <span style={{ fontWeight: 'bold', color: 'var(--text-primary)' }}>{c.title}</span>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--accent-orange)' }}>{c.stake} XP</span>
+                                        </div>
+                                        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                                            <span>vs {c.target.name}</span>
+                                            <span style={{ textTransform: 'uppercase', color: c.status === 'active' ? 'var(--accent-green)' : 'var(--text-muted)' }}>{c.status}</span>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        ) : (
+                            <p style={{ color: 'var(--text-secondary)', marginBottom: '24px', fontSize: '0.9rem' }}>
+                                No active challenges. Nudge a friend to start a 24-hour calorie battle.
+                            </p>
+                        )}
+
+                        <Button fullWidth variant="accent" icon={Zap} onClick={() => setShowChallengeModal(true)}>
                             Initiate Duel
                         </Button>
                     </div>
@@ -74,6 +107,48 @@ const Arena = () => {
                     View Full Leaderboard
                 </Button>
             </div>
+            {showChallengeModal && (
+                <div style={{
+                    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000,
+                    display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                    <Card className="glass-panel" style={{ width: '90%', maxWidth: '400px', padding: '24px', border: '1px solid var(--accent-orange)' }}>
+                        <h3 className="title-display" style={{ marginBottom: '16px' }}>NEW CHALLENGE</h3>
+
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '8px' }}>CHALLENGE</label>
+                            <input
+                                type="text"
+                                className="iron-input-border"
+                                style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: '#fff' }}
+                                placeholder="e.g. 50 Burpees"
+                                value={challengeForm.title}
+                                onChange={e => setChallengeForm({ ...challengeForm, title: e.target.value })}
+                            />
+                        </div>
+
+                        <div style={{ marginBottom: '16px' }}>
+                            <label style={{ display: 'block', color: 'var(--text-secondary)', fontSize: '0.8rem', marginBottom: '8px' }}>OPPONENT</label>
+                            <select
+                                className="iron-input-border"
+                                style={{ width: '100%', padding: '12px', background: 'var(--bg-dark)', color: '#fff' }}
+                                value={challengeForm.targetId}
+                                onChange={e => setChallengeForm({ ...challengeForm, targetId: e.target.value })}
+                            >
+                                <option value="">Select Rival</option>
+                                {users.filter(u => u.id !== currentUser?.id).map(u => (
+                                    <option key={u.id} value={u.id}>{u.displayName}</option>
+                                ))}
+                            </select>
+                        </div>
+
+                        <div style={{ display: 'flex', gap: '12px' }}>
+                            <Button fullWidth variant="ghost" onClick={() => setShowChallengeModal(false)}>CANCEL</Button>
+                            <Button fullWidth variant="accent" onClick={handleCreateChallenge}>SEND</Button>
+                        </div>
+                    </Card>
+                </div>
+            )}
         </div>
     );
 };

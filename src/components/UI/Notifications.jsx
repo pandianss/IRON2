@@ -111,7 +111,7 @@ const Notifications = () => {
                                 </>
                             )}
                             {selectedNotification.type === 'message' && (
-                                <p style={{ fontSize: '0.95rem', lineHeight: '1.5', color: '#fff', fontStyle: 'italic' }}>
+                                <p style={{ fontSize: '0.95rem', lineHeight: '1.5', color: 'var(--text-primary)', fontStyle: 'italic' }}>
                                     "{selectedNotification.payload.message}"
                                 </p>
                             )}
@@ -131,7 +131,7 @@ const Notifications = () => {
                                     <button
                                         onClick={() => handleAction('approve')}
                                         className="btn-glass"
-                                        style={{ width: '100%', height: '48px', background: 'var(--accent-green)', color: '#000', border: 'none' }}
+                                        style={{ width: '100%', height: '48px', background: 'var(--accent-green)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
                                     >
                                         Approve
                                     </button>
@@ -148,7 +148,7 @@ const Notifications = () => {
                                     <button
                                         onClick={() => handleAction('reply')}
                                         className="btn-glass"
-                                        style={{ width: '100%', height: '48px', background: '#38bdf8', color: '#000', border: 'none' }}
+                                        style={{ width: '100%', height: '48px', background: 'var(--accent-blue)', color: '#000', border: 'none', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer' }}
                                     >
                                         Reply
                                     </button>
@@ -243,7 +243,7 @@ const Notifications = () => {
                                             {notification.type === 'system' && <Bell size={14} color="var(--text-muted)" style={{ marginTop: '2px' }} />}
 
                                             <div>
-                                                <p style={{ fontSize: '0.85rem', color: '#fff', marginBottom: '4px', lineHeight: '1.3' }}>{notification.message}</p>
+                                                <p style={{ fontSize: '0.85rem', color: 'var(--text-primary)', marginBottom: '4px', lineHeight: '1.3' }}>{notification.message}</p>
                                                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{notification.time}</span>
                                             </div>
                                         </div>

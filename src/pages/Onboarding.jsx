@@ -268,7 +268,7 @@ const Onboarding = () => {
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                             className="iron-input-border"
-                            style={{ width: '100%', padding: '16px', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
+                            style={{ width: '100%', padding: '16px', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
                         />
                         <input
                             type="email"
@@ -276,7 +276,7 @@ const Onboarding = () => {
                             value={formData.email}
                             onChange={e => setFormData({ ...formData, email: e.target.value })}
                             className="iron-input-border"
-                            style={{ width: '100%', padding: '16px', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
+                            style={{ width: '100%', padding: '16px', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
                         />
                         <input
                             type="password"
@@ -284,7 +284,7 @@ const Onboarding = () => {
                             value={formData.password}
                             onChange={e => setFormData({ ...formData, password: e.target.value })}
                             className="iron-input-border"
-                            style={{ width: '100%', padding: '16px', background: 'rgba(0,0,0,0.3)', color: '#fff' }}
+                            style={{ width: '100%', padding: '16px', background: 'var(--surface-card)', color: 'var(--text-primary)' }}
                         />
                     </div>
 
