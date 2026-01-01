@@ -8,14 +8,19 @@ import Notifications from '../UI/Notifications';
 const AppShell = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { onboardingCompleted, toast, userType, currentUser, isLoading } = useAppContext();
+    const { onboardingCompleted, toast, userType, currentUser, isLoading, appMode } = useAppContext();
 
     useEffect(() => {
+        if (!appMode) {
+            navigate('/welcome');
+            return;
+        }
+
         if (isLoading) return; // Wait for auth check
 
-        if (!currentUser) {
+        if (!currentUser && appMode === 'live') {
             navigate('/auth');
-        } else if (!onboardingCompleted && userType !== 'super_admin') {
+        } else if (!onboardingCompleted && userType !== 'super_admin' && appMode === 'live') {
             navigate('/onboarding');
         } else if (userType !== 'gym' && userType !== 'gym_owner' && location.pathname.startsWith('/partner') && userType !== 'super_admin') {
             navigate('/');
@@ -24,7 +29,7 @@ const AppShell = () => {
         } else if (location.pathname === '/admin' && userType !== 'super_admin') {
             navigate('/');
         }
-    }, [currentUser, onboardingCompleted, userType, navigate, location.pathname, isLoading]);
+    }, [currentUser, onboardingCompleted, userType, navigate, location.pathname, isLoading, appMode]);
 
     if (isLoading) {
         return (

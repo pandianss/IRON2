@@ -1,17 +1,28 @@
-```
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import { DbService, AuthService } from '../services/firebase';
 import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
 import { orderBy } from 'firebase/firestore';
-import { mockProducts } from '../services/mockData';
+import {
+    mockProducts, mockGyms, mockUsers, mockPlans,
+    mockNotifications, mockFeedActivities
+} from '../services/mockData';
+import { useAppContext } from './AppContext'; // Import AppContext specifically for appMode to avoid circular dependency loop if possible, but useAppContext is fine if AppProvider is separate. 
+// Actually useAppContext is defined in AppContext.jsx which imports DataContext. 
+// Circular dependency risk: DataContext -> useAuth -> AppContext -> DataContext. 
+// Better to consume AppContext in DataContext via useContext(AppContext) if exported.
+// But we can just use the hook if it's safe. 
+// However, DataProvider IS inside AppProvider. So we can use useContext(AppContext).
+
+import { AppContext } from './AppContext';
 
 export const DataContext = createContext();
 
 export const DataProvider = ({ children }) => {
     const { showToast, setIsLoading } = useUI();
-    const { currentUser, setCurrentUser, setUserType, syncUserFromAuth } = useAuth(); // Auth integration
+    const { currentUser, setCurrentUser, setUserType, syncUserFromAuth } = useAuth();
+    const { appMode } = useContext(AppContext);
 
     // Data States
     const [gyms, setGyms] = useState([]);
@@ -45,55 +56,77 @@ export const DataProvider = ({ children }) => {
         const fetchAllData = async () => {
             setIsLoading(true);
             try {
-                const [
-                    gymsData, usersData, plansData,
-                    notifsData, enqData, achData,
-                    productsData, liveData, transData, challengesData
-                ] = await Promise.all([
-                    DbService.getDocs('gyms'),
-                    DbService.getDocs('users'),
-                    DbService.getDocs('partner_plans'),
-                    DbService.getDocs('notifications'),
-                    DbService.getDocs('enquiries'),
-                    DbService.getDocs('achievements'),
-                    DbService.getDocs('products'),
-                    // DbService.getDocs('feed_activities'), // Removed full fetch
-                    DbService.getDocs('live_sessions'),
-                    DbService.getDocs('transactions'),
-                    DbService.getDocs('challenges')
-                ]);
+                if (appMode === 'demo') {
+                    // Load Mock Data
+                    setGyms(mockGyms);
+                    setUsers(mockUsers);
+                    setPartnerPlans(mockPlans);
+                    setNotifications(mockNotifications);
+                    setEnquiries([]); // Mock empty
+                    setAchievements([]); // Mock empty 
+                    setStoreProducts(mockProducts);
+                    setFeedActivities(mockFeedActivities);
+                    setHasMoreFeed(false);
+                    setLiveSessions([]); // Mock empty
+                    setTransactions([]); // Mock empty
+                    setChallenges([]); // Mock empty
 
-                // Separate Pagination Fetch for Feed
-                const { data: paginatedFeed, lastVisible } = await DbService.getPaginatedDocs('feed_activities', 5); // Start small
+                    if (mockGyms.length > 0) setSelectedGymId(mockGyms[0].id);
 
+                    // Set Mock Current User
+                    // We need to simulate a logged in user for Demo
+                    const demoUser = mockUsers[0];
+                    setCurrentUser(demoUser);
+                    setUserType('user'); // Or demoUser.role
 
-                setGyms(gymsData);
-                setUsers(usersData);
-                setPartnerPlans(plansData);
+                } else {
+                    // LIVE MODE - Fetch from Firebase
+                    const [
+                        gymsData, usersData, plansData,
+                        notifsData, enqData, achData,
+                        productsData, liveData, transData, challengesData
+                    ] = await Promise.all([
+                        DbService.getDocs('gyms'),
+                        DbService.getDocs('users'),
+                        DbService.getDocs('partner_plans'),
+                        DbService.getDocs('notifications'),
+                        DbService.getDocs('enquiries'),
+                        DbService.getDocs('achievements'),
+                        DbService.getDocs('products'),
+                        DbService.getDocs('live_sessions'),
+                        DbService.getDocs('transactions'),
+                        DbService.getDocs('challenges')
+                    ]);
 
-                setAchievements(achData);
-                setStoreProducts(productsData.length ? productsData : mockProducts);
+                    // Separate Pagination Fetch for Feed
+                    const { data: paginatedFeed, lastVisible } = await DbService.getPaginatedDocs('feed_activities', 5);
 
-                setFeedActivities(paginatedFeed);
-                setLastFeedDoc(lastVisible);
-                setHasMoreFeed(!!lastVisible);
+                    setGyms(gymsData);
+                    setUsers(usersData);
+                    setPartnerPlans(plansData);
 
-                setLiveSessions(liveData);
-                setTransactions(transData);
-                setChallenges(challengesData);
+                    setAchievements(achData);
+                    setStoreProducts(productsData.length ? productsData : mockProducts);
 
-                calculateRevenue(transData);
+                    setFeedActivities(paginatedFeed);
+                    setLastFeedDoc(lastVisible);
+                    setHasMoreFeed(!!lastVisible);
 
-                if (gymsData.length > 0 && !selectedGymId) {
-                    setSelectedGymId(gymsData[0].id);
-                }
+                    setLiveSessions(liveData);
+                    setTransactions(transData);
+                    setChallenges(challengesData);
 
-                // Check Auth Persistence
-                const authUser = await AuthService.getCurrentUser();
-                if (authUser) {
-                    await syncUserFromAuth(authUser); // Delegate to AuthContext but need updated users list?
-                    // actually syncUserFromAuth does a getDoc inside it, so it's safe.
-                    // But we might want to update our local users list if it's new.
+                    calculateRevenue(transData);
+
+                    if (gymsData.length > 0 && !selectedGymId) {
+                        setSelectedGymId(gymsData[0].id);
+                    }
+
+                    // Check Auth Persistence
+                    const authUser = await AuthService.getCurrentUser();
+                    if (authUser) {
+                        await syncUserFromAuth(authUser);
+                    }
                 }
 
             } catch (error) {
@@ -132,7 +165,7 @@ export const DataProvider = ({ children }) => {
         return () => {
             if (unsubscribeNotifs) unsubscribeNotifs();
         };
-    }, []);
+    }, [appMode]);
 
     // Actions
     const calculateRevenue = (currentTransactions) => {
@@ -204,7 +237,7 @@ export const DataProvider = ({ children }) => {
 
         const notification = {
             type: 'alert',
-            message: `New Request: ${ memberData.name } `,
+            message: 'New Request: ' + memberData.name,
             time: 'Just now',
             read: false,
             gymId: memberData.gymId,
@@ -251,7 +284,7 @@ export const DataProvider = ({ children }) => {
         const newStatus = member.status === 'Banned' ? 'Active' : 'Banned';
         await DbService.updateDoc('users', memberId, { status: newStatus });
         setUsers(prev => prev.map(u => u.id === memberId ? { ...u, status: newStatus } : u));
-        showToast(`Member ${ newStatus } `);
+        showToast('Member ' + newStatus);
     };
 
     const logActivity = async (activityData) => {
@@ -344,11 +377,11 @@ export const DataProvider = ({ children }) => {
         });
         setChallenges(prev => [newChallenge, ...prev]);
         showToast("Challenge Issued!");
-        
+
         // Notify Target
         const notification = {
             type: 'alert',
-            message: `${ challengeData.challenger.name } challenged you: ${ challengeData.title } `,
+            message: challengeData.challenger.name + ' challenged you: ' + challengeData.title,
             time: 'Just now',
             read: false,
             userId: challengeData.target.id

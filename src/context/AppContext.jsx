@@ -1,4 +1,4 @@
-import React, { useContext } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import PropTypes from 'prop-types';
 
 // Import sub-providers
@@ -13,17 +13,30 @@ export { AuthContext } from './AuthContext';
 export { BluetoothContext } from './BluetoothContext';
 export { DataContext } from './DataContext';
 
+export const AppContext = createContext();
+
 export const AppProvider = ({ children }) => {
+    const [appMode, setAppMode] = useState(() => {
+        return localStorage.getItem('iron_app_mode') || null;
+    });
+
+    const setMode = (mode) => {
+        setAppMode(mode);
+        localStorage.setItem('iron_app_mode', mode);
+    };
+
     return (
-        <UIProvider>
-            <BluetoothProvider>
-                <AuthProvider>
-                    <DataProvider>
-                        {children}
-                    </DataProvider>
-                </AuthProvider>
-            </BluetoothProvider>
-        </UIProvider>
+        <AppContext.Provider value={{ appMode, setAppMode: setMode }}>
+            <UIProvider>
+                <BluetoothProvider>
+                    <AuthProvider>
+                        <DataProvider>
+                            {children}
+                        </DataProvider>
+                    </AuthProvider>
+                </BluetoothProvider>
+            </UIProvider>
+        </AppContext.Provider>
     );
 };
 
@@ -38,12 +51,14 @@ export const useAppContext = () => {
     const auth = useAuth();
     const bluetooth = useBluetooth();
     const data = useData();
+    const appState = useContext(AppContext);
 
     return {
         ...ui,
         ...auth,
         ...bluetooth,
         ...data,
+        ...appState
         // Manual override if any name collisions (none expected based on my review)
     };
 };

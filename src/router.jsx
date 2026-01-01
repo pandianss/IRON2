@@ -13,8 +13,13 @@ import PartnerDashboard from './pages/PartnerDashboard';
 import GymDirectory from './pages/GymDirectory';
 import AuthPage from './pages/AuthPage';
 import AdminDashboard from './pages/AdminDashboard';
+import SplashScreen from './pages/SplashScreen';
 
 const router = createBrowserRouter([
+    {
+        path: '/welcome',
+        element: <SplashScreen />,
+    },
     {
         path: '/auth',
         element: <AuthPage />,

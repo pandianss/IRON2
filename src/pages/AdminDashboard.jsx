@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { Shield, Check, X, Building, Users, Activity, FileText } from 'lucide-react';
@@ -31,6 +31,7 @@ const AdminDashboard = () => {
         AuditService.log('GYM_REJECTED', { role: 'admin' }, { id: gym.id, name: gym.name }, { status: 'Rejected' });
     };
 
+    const pendingGyms = gyms.filter(g => g.status === 'Pending');
     const activeGyms = gyms.filter(g => g.status === 'Active');
 
     return (

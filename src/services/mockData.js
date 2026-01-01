@@ -103,9 +103,7 @@ export const mockPlans = [
     { id: 'p1', name: 'Standard Access', price: 5000, duration: 30, description: 'Full gym access' }
 ];
 
-export const mockPlans = [
-    { id: 'p1', name: 'Standard Access', price: 5000, duration: 30, description: 'Full gym access' }
-];
+
 
 export const mockChallenges = [
     {
