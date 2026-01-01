@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import { useAppContext } from '../context/AppContext';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
-import { MapPin, MessageSquare, Star, ArrowRight } from 'lucide-react';
+import { MapPin, MessageSquare, Star, ArrowRight, PenTool } from 'lucide-react';
+import StarRating from '../components/UI/StarRating';
+import ReviewModal from '../components/UI/ReviewModal';
+
 
 const GymDirectory = () => {
-    const { gyms, sendEnquiry, showToast } = useAppContext();
+    const { gyms, sendEnquiry, showToast, getRatingStats, addRating } = useAppContext();
     const [message, setMessage] = useState('');
     const [selectedGym, setSelectedGym] = useState(null);
+    const [reviewTarget, setReviewTarget] = useState(null);
+
 
     const handleSend = () => {
         if (!message.trim()) return;
@@ -21,6 +26,13 @@ const GymDirectory = () => {
         setSelectedGym(gym);
         if (type === 'join') setMessage("I'm interested in a membership. Please share details.");
         if (type === 'visit') setMessage("I'd like to book a visit/trial.");
+    };
+
+    const handleSubmitReview = async (rating, comment) => {
+        if (reviewTarget) {
+            await addRating(reviewTarget.id, rating, comment);
+            setReviewTarget(null);
+        }
     };
 
     return (
@@ -41,9 +53,16 @@ const GymDirectory = () => {
                                     {gym.location}
                                 </div>
                             </div>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px' }}>
-                                <Star size={12} fill="var(--accent-orange)" color="var(--accent-orange)" />
-                                <span style={{ fontSize: '0.8rem', fontWeight: '700' }}>4.9</span>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(255,255,255,0.1)', padding: '4px 8px', borderRadius: '4px' }}>
+                                    <StarRating rating={getRatingStats(gym.id).average} size={12} />
+                                    <span style={{ fontSize: '0.8rem', fontWeight: '700', marginLeft: '4px' }}>
+                                        {getRatingStats(gym.id).average || 'New'}
+                                    </span>
+                                </div>
+                                <Button variant="ghost" size="sm" onClick={() => setReviewTarget(gym)} style={{ padding: '4px' }}>
+                                    <PenTool size={14} />
+                                </Button>
                             </div>
                         </div>
 
@@ -79,7 +98,14 @@ const GymDirectory = () => {
                     </Card>
                 ))}
             </div>
-        </div>
+
+            <ReviewModal
+                isOpen={!!reviewTarget}
+                onClose={() => setReviewTarget(null)}
+                targetName={reviewTarget?.name}
+                onSubmit={handleSubmitReview}
+            />
+        </div >
     );
 };
 

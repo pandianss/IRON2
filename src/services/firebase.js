@@ -320,10 +320,16 @@ const RealDbService = {
 };
 
 // Export based on flag
+// Export based on flag
 if (IS_DEMO) {
-    console.warn("RUNNING IN DEMO MODE (MOCKED DATA)");
+    // console.warn("RUNNING IN DEMO MODE (MOCKED DATA)");
 }
 
 export const AuthService = IS_DEMO ? DemoAuthService : RealAuthService;
 export const DbService = IS_DEMO ? DemoDbService : RealDbService;
 export const StorageService = IS_DEMO ? DemoStorageService : RealStorageService;
+
+export {
+    RealAuthService, RealDbService, RealStorageService,
+    DemoAuthService, DemoDbService, DemoStorageService
+};

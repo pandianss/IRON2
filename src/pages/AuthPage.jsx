@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import {
     Mail, Lock, Smartphone, Globe, ArrowRight, Github,
-    Check, Loader2, AlertCircle
+    Check, Loader2, AlertCircle, Dumbbell
 } from 'lucide-react';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
@@ -13,7 +13,7 @@ const AuthPage = () => {
     const [searchParams] = useSearchParams();
     const {
         login, loginWithGoogle, registerUser, checkEmail,
-        AuthService, syncUserFromAuth, showToast
+        AuthService, syncUserFromAuth, showToast, appMode
     } = useAppContext();
 
     const location = useLocation(); // Add useLocation import hook
@@ -154,6 +154,99 @@ const AuthPage = () => {
         }
     };
 
+    // Demo Login Handler
+    const handleDemoLogin = async (persona) => {
+        setLoading(true);
+        // Map persona to mock credentials
+        const credentials = {
+            enthusiast: { email: 'demo@iron.com', password: 'password' },
+            partner: { email: 'owner@iron.com', password: 'password' },
+            trainer: { email: 'trainer@iron.com', password: 'password' },
+            admin: { email: 'admin@iron.com', password: 'password' }
+        };
+        const { email, password } = credentials[persona];
+        const success = await login(email, password);
+        setLoading(false);
+        if (success) navigate('/');
+    };
+
+    // --- DEMO MODE UI ---
+    if (appMode === 'demo') {
+        const personas = [
+            { id: 'enthusiast', label: 'ENTHUSIAST', icon: Smartphone, desc: 'Standard User Experience' },
+            { id: 'partner', label: 'GYM PARTNER', icon: Globe, desc: 'Manage Gym & Content' },
+            { id: 'trainer', label: 'EXPERT TRAINER', icon: Dumbbell, desc: 'Coaching & Routines' },
+            { id: 'admin', label: 'COMMANDER', icon: Lock, desc: 'System Administration' }
+        ];
+
+        return (
+            <div className="page-container" style={{
+                minHeight: '100vh',
+                display: 'flex',
+                flexDirection: 'column',
+                justifyContent: 'center',
+                padding: '24px'
+            }}>
+                <div style={{ textAlign: 'center', marginBottom: '40px' }}>
+                    <div style={{
+                        display: 'inline-flex', alignItems: 'center', gap: '8px',
+                        background: 'rgba(255, 77, 0, 0.15)', color: 'var(--accent-orange)',
+                        padding: '6px 16px', borderRadius: '20px', marginBottom: '16px',
+                        fontSize: '0.75rem', fontWeight: '900', letterSpacing: '1px'
+                    }}>
+                        <Lock size={12} />
+                        DEMO SIMULATION ACTIVE
+                    </div>
+                    <h1 className="title-display" style={{ fontSize: '2.5rem', fontStyle: 'italic', marginBottom: '8px' }}>
+                        SELECT PERSONA
+                    </h1>
+                    <p style={{ color: 'var(--text-secondary)' }}>Identify yourself to access the simulation.</p>
+                </div>
+
+                <div style={{ maxWidth: '400px', width: '100%', margin: '0 auto', display: 'grid', gap: '16px' }}>
+                    {personas.map(p => (
+                        <Card
+                            key={p.id}
+                            onClick={() => handleDemoLogin(p.id)}
+                            className="glass-panel"
+                            style={{
+                                padding: '20px',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '20px',
+                                cursor: 'pointer',
+                                transition: 'all 0.2s',
+                                border: '1px solid rgba(255,255,255,0.1)'
+                            }}
+                        >
+                            <div style={{
+                                width: '48px', height: '48px',
+                                borderRadius: '12px',
+                                background: 'rgba(255,255,255,0.05)',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                color: 'var(--accent-orange)'
+                            }}>
+                                <p.icon size={24} />
+                            </div>
+                            <div style={{ flex: 1 }}>
+                                <h3 style={{ fontSize: '1rem', fontWeight: '900', marginBottom: '4px' }}>{p.label}</h3>
+                                <p style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>{p.desc}</p>
+                            </div>
+                            {loading ? <Loader2 className="animate-spin" size={20} /> : <ArrowRight size={20} color="var(--text-muted)" />}
+                        </Card>
+                    ))}
+                </div>
+
+                <div style={{ textAlign: 'center', marginTop: '40px' }}>
+                    <Button variant="ghost" onClick={() => navigate('/welcome')}>
+                        EXIT SIMULATION
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // --- LIVE MODE UI ---
     return (
         <div className="page-container" style={{
             minHeight: '100vh',

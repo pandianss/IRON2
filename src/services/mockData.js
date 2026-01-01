@@ -91,6 +91,7 @@ export const mockGyms = [
 export const mockUsers = [
     { id: 'user1', uid: 'demo_user', email: 'demo@iron.com', displayName: 'Demo User', role: 'user', xp: 1200, level: 5, rank: 'IRON II' },
     { id: 'owner1', uid: 'demo_owner', email: 'owner@iron.com', displayName: 'Gym Owner', role: 'gym_owner', gymId: 'gym1', xp: 5000, level: 12, rank: 'TITAN' },
+    { id: 'trainer1', uid: 'demo_trainer', email: 'trainer@iron.com', displayName: 'Apex Trainer', role: 'expert', xp: 3500, level: 8, rank: 'ELITE' },
     { id: 'admin1', uid: 'demo_admin', email: 'admin@iron.com', displayName: 'Commander', role: 'super_admin' }
 ];
 
@@ -126,6 +127,13 @@ export const mockChallenges = [
         videoUrl: null,
         timestamp: 'Just now'
     }
+];
+
+
+export const mockRatings = [
+    { id: 'r1', targetId: 'gym1', raterId: 'user1', rating: 5, comment: "Incredible equipment, pure iron heaven.", timestamp: new Date(Date.now() - 86400000).toISOString() },
+    { id: 'r2', targetId: 'gym1', raterId: 'user2', rating: 4, comment: "Great vibe, but AC was down.", timestamp: new Date(Date.now() - 172800000).toISOString() },
+    { id: 'r3', targetId: 'trainer1', raterId: 'user1', rating: 5, comment: "Best lifting coach in the city.", timestamp: new Date(Date.now() - 43200000).toISOString() }
 ];
 
 export const mockBpm = 72;

@@ -1,12 +1,19 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
-import { AuthService, DbService } from '../services/firebase';
+import {
+    RealAuthService, DemoAuthService,
+    RealDbService, DemoDbService
+} from '../services/firebase';
 import { AuditService } from '../services/audit';
 import { useUI } from './UIContext';
 
 export const AuthContext = createContext();
 
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children, appMode }) => {
+    // Dynamic Service Selection
+    const AuthService = appMode === 'demo' ? DemoAuthService : RealAuthService;
+    const DbService = appMode === 'demo' ? DemoDbService : RealDbService;
+
     const { showToast } = useUI(); // Consume UI Context
     const [currentUser, setCurrentUser] = useState(null);
     const [userType, setUserType] = useState('enthusiast');

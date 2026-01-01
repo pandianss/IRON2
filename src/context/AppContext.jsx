@@ -29,8 +29,8 @@ export const AppProvider = ({ children }) => {
         <AppContext.Provider value={{ appMode, setAppMode: setMode }}>
             <UIProvider>
                 <BluetoothProvider>
-                    <AuthProvider>
-                        <DataProvider>
+                    <AuthProvider appMode={appMode}>
+                        <DataProvider appMode={appMode}>
                             {children}
                         </DataProvider>
                     </AuthProvider>
