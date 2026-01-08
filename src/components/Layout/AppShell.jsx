@@ -4,11 +4,33 @@ import { TrendingUp, Clapperboard, ArrowLeft, ChevronLeft, Share2, Shield } from
 import BottomNav from './BottomNav';
 import { useAppContext } from '../../context/AppContext';
 import Notifications from '../UI/Notifications';
+import { useStreaks, CheckInModal } from '../../features/retention';
 
 const AppShell = () => {
     const navigate = useNavigate();
     const location = useLocation();
-    const { onboardingCompleted, toast, userType, currentUser, isLoading, appMode } = useAppContext();
+    const { onboardingCompleted, toast, userType, currentUser, isLoading, appMode, logActivity, showToast } = useAppContext();
+
+    // Daily Check-In Logic
+    const { shouldShowCheckIn, performCheckIn, dismissCheckIn, streak } = useStreaks();
+
+    const handleCheckIn = (status) => {
+        const { streak: newStreak } = performCheckIn(status);
+
+        // Log to Feed
+        logActivity({
+            type: 'check_in',
+            status: status,
+            streak: newStreak,
+            message: status === 'trained' ? `checked in on day ${newStreak}.` : `is resting consciously (Day ${newStreak}).`
+        });
+
+        const msg = status === 'trained'
+            ? `TRAINED. STREAK: ${newStreak}`
+            : `RECOVERING. STREAK ALIVE: ${newStreak}`;
+
+        showToast(msg);
+    };
 
     useEffect(() => {
         if (!appMode) {
@@ -219,6 +241,14 @@ const AppShell = () => {
 
             {/* Only show navigation for standard users, not partners */}
             {userType !== 'gym' && <BottomNav />}
+
+            {/* Daily Check-In Modal */}
+            <CheckInModal
+                isOpen={shouldShowCheckIn && !isLoading && !!currentUser}
+                onCheckIn={handleCheckIn}
+                onDismiss={dismissCheckIn}
+                currentStreak={streak}
+            />
         </div>
     );
 };
