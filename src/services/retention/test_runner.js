@@ -54,12 +54,43 @@ const runTests = () => {
     console.log("\nTest 5: Longest Streak Persistence");
     assert(res4.newData.longestStreak === 2, `Longest streak should persist as 2 (Actual: ${res4.newData.longestStreak})`);
 
-    // TEST 6: Missed Day Resolution
-    console.log("\nTest 6: Missed Day Resolution");
-    // res4 reset the streak on 2024-01-04.
-    // That means 2024-01-03 (yesterday relative to T4) should be marked 'missed'.
-    const historyEntry = res4.newData.history['2024-01-03'];
-    assert(historyEntry === 'missed', `Yesterday (gap day) should be marked 'missed'. Actual: ${historyEntry}`);
+    // TEST 6: Missed Day Resolution (Multi-Day)
+    console.log("\nTest 6: Missed Day Resolution (Multi-Day)");
+    const t6Dates = { today: '2024-01-08', yesterday: '2024-01-07' };
+    const res6 = retentionService.calculateCheckIn(res2.newData, 'trained', t6Dates);
+    // res2 was Jan 2. Streak 2.
+    // Gap: Jan 3, Jan 4, Jan 5, Jan 6, Jan 7.
+    // Check-in Jan 8.
+    // New Streak should be 1.
+    // History should track missed days.
+
+    assert(res6.newData.history['2024-01-03'] === 'missed', "Jan 3 should be missed");
+    assert(res6.result.streak === 1, `Streak should be 1 after gap (Actual: ${res6.result.streak})`);
+
+    // TEST 7: Self-Repair (Deterministic Integrity)
+    console.log("\nTest 7: Self-Repair (Corruption Proof)");
+    const corruptData = {
+        ...res6.newData,
+        currentStreak: 999, // FAKE HIGH NUMBER
+        // But history says: Jan 8 (Trained), Gap, Jan 2 (Trained)...
+        // Actually res6 history: Jan 8 is trained.
+    };
+    // Let's create a clean scenario for clarity.
+    // History: Today (Trained), Yesterday (Trained). Streak should be 2.
+    // Corrupt State: Streak 50.
+    const repairDates = { today: '2025-01-02', yesterday: '2025-01-01' };
+    const repairData = {
+        currentStreak: 50, // LIES
+        lastCheckInDate: '2025-01-01',
+        history: {
+            '2025-01-01': 'trained'
+        }
+    };
+
+    // Check-in for today (Jan 2). Should result in Streak 2.
+    const resRepair = retentionService.calculateCheckIn(repairData, 'trained', repairDates);
+
+    assert(resRepair.result.streak === 2, `Streak should be 2 (Derived), ignoring corrupt 50. (Actual: ${resRepair.result.streak})`);
 
     console.log("\n🎉 ALL TESTS PASSED");
 };

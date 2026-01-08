@@ -1,4 +1,4 @@
-import { getLocalToday, getLocalYesterday } from '../../utils/dateHelpers.js';
+import { getLocalToday, getLocalYesterday, getDaysArray, subtractDays } from '../../utils/dateHelpers.js';
 
 const STORAGE_KEY = 'iron_streak_data_v2';
 
@@ -60,14 +60,17 @@ class RetentionService {
         }
 
         // GAP DETECTED: We have missed days.
-        // Simple logic: If last check-in was before yesterday, yesterday was MISSED.
+        // Logic: Iterate from lastCheckInDate + 1 up to yesterday.
+        // Mark all as 'missed'.
 
         const newHistory = { ...history };
+        const missingDays = getDaysArray(lastCheckInDate, yesterday);
 
-        // Mark yesterday as missed if it wasn't recorded (and last checkin wasn't yesterday)
-        if (!newHistory[yesterday]) {
-            newHistory[yesterday] = 'missed';
-        }
+        missingDays.forEach(day => {
+            if (!newHistory[day]) {
+                newHistory[day] = 'missed';
+            }
+        });
 
         return {
             ...currentData,
@@ -83,33 +86,30 @@ class RetentionService {
      * @returns {Object} { newData, result: { streak, isNewRecord } }
      */
     calculateCheckIn(currentData, status, dateOverride = null) {
-        // 1. Resolve pending state first
+        // 1. Resolve pending state first (fill gaps with MISSED)
         const resolvedData = this.resolveDay(currentData, dateOverride);
 
         const today = dateOverride?.today || getLocalToday();
-        const yesterday = dateOverride?.yesterday || getLocalYesterday();
 
-        const { lastCheckInDate, currentStreak, longestStreak, history } = resolvedData;
+        const { lastCheckInDate, longestStreak, history } = resolvedData;
 
-        // Idempotency Check
+        // Idempotency Check (if already done today)
         if (lastCheckInDate === today) {
             return {
                 newData: resolvedData,
-                result: { streak: currentStreak, isNewRecord: false, alreadyCheckedIn: true }
+                result: { streak: resolvedData.currentStreak, isNewRecord: false, alreadyCheckedIn: true }
             };
         }
 
-        let newStreak = 1;
+        // 2. Update History (The Truth)
+        const newHistory = {
+            ...history,
+            [today]: status
+        };
 
-        // Continuity Check
-        if (lastCheckInDate === yesterday) {
-            newStreak = currentStreak + 1;
-        } else if (lastCheckInDate === today) {
-            newStreak = currentStreak;
-        } else {
-            // Broken Streak
-            newStreak = 1;
-        }
+        // 3. DERIVE STREAK (Deterministic)
+        // We do not mutate streak. We calculate it from history.
+        const newStreak = this.recalculateStreak(newHistory, today);
 
         const newLongest = Math.max(longestStreak, newStreak);
 
@@ -119,10 +119,7 @@ class RetentionService {
             longestStreak: newLongest,
             lastCheckInDate: today,
             lastCheckInTime: new Date().toISOString(),
-            history: {
-                ...history,
-                [today]: status
-            }
+            history: newHistory
         };
 
         return {
@@ -136,11 +133,42 @@ class RetentionService {
     }
 
     /**
+     * Derives streak count from history ledger.
+     * @param {Object} history 
+     * @param {string} anchorDate - Start counting backwards from here (inclusive)
+     * @returns {number}
+     */
+    recalculateStreak(history, anchorDate) {
+        let count = 0;
+        let currentDate = anchorDate;
+
+        while (true) {
+            const status = history[currentDate];
+            if (status === 'trained' || status === 'rest') {
+                count++;
+                currentDate = subtractDays(currentDate, 1);
+            } else {
+                // 'missed' or undefined breaks the streak
+                break;
+            }
+
+            // Safety break (e.g. 10 years)
+            if (count > 3650) break;
+        }
+        return count;
+    }
+
+    /**
      * Checks if the current day has been resolved (action taken).
      * @param {Object} currentData 
      * @param {Object} [dateOverride] 
      * @returns {boolean}
      */
+    isDayResolved(currentData, dateOverride = null) {
+        const today = dateOverride?.today || getLocalToday();
+        return currentData.history[today] !== undefined;
+    }
+
     /**
      * Determines if a nudge is needed based on retention state.
      * Decoupled from UI lifecycle.

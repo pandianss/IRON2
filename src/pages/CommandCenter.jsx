@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useRetention, useActivity } from '../app/context';
 import { useNavigate } from 'react-router-dom';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
@@ -19,7 +20,7 @@ import { mockFeedActivities } from '../services/mockData';
 
 const CommandCenter = () => {
     const { isLoading, currentUser } = useSession();
-    const { isRusting } = useRetention();
+    const { isRusting, streak } = useRetention();
     const { bpm } = useBluetooth();
     const { showToast } = useUIFeedback();
     const { feedActivities, loadMoreFeed, hasMoreFeed, logActivity } = useActivity();
@@ -112,9 +113,25 @@ const CommandCenter = () => {
             {/* Retention Engine: Daily Check-in */}
             <div className="mb-6 px-1">
                 <StreakCard />
-                <SquadCard />
-                <ChallengeCard />
-                <InsightCard />
+
+                {/* PROGRESSIVE UNLOCKS */}
+
+                {/* Day 7+: Squads */}
+                {streak >= 7 && <SquadCard />}
+
+                {/* Day 14+: Challenges */}
+                {streak >= 14 && <ChallengeCard />}
+
+                {/* Day 3+: Insights (Guardian) */}
+                {streak >= 3 && <InsightCard />}
+
+                {/* LOCKED STATE TEASERS (Optional, keeps them hungry) */}
+                {streak < 7 && (
+                    <div className="p-4 mb-4 rounded-xl border border-glass bg-glass-deep text-center opacity-50">
+                        <div className="text-sm font-bold text-gray-400">CLASSFIED INTEL</div>
+                        <div className="text-xs text-gray-500 mt-1">REACH STREAK 7 TO DECRYPT</div>
+                    </div>
+                )}
             </div>
 
             {/* Quick Stats Banner */}

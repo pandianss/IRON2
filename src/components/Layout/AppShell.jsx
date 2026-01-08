@@ -125,20 +125,27 @@ return (
 
                     {!showBack && (
                         <>
-                            <div
-                                onClick={() => navigate('/viral')}
-                                className="icon-box icon-box-muted"
-                                style={{ width: '40px', height: '40px', padding: 0, cursor: 'pointer' }}
-                            >
-                                <TrendingUp size={18} />
-                            </div>
-                            <div
-                                onClick={() => navigate('/studio')}
-                                className="icon-box icon-box-muted"
-                                style={{ width: '40px', height: '40px', padding: 0, cursor: 'pointer' }}
-                            >
-                                <Clapperboard size={18} />
-                            </div>
+                            {/* PROGRESSIVE DISCLOSURE: Unlocks */}
+                            {/* Day 14+: Pulse/Challenges */}
+                            {streak >= 14 && (
+                                <div
+                                    onClick={() => navigate('/viral')}
+                                    className="icon-box icon-box-muted"
+                                    style={{ width: '40px', height: '40px', padding: 0, cursor: 'pointer' }}
+                                >
+                                    <TrendingUp size={18} />
+                                </div>
+                            )}
+                            {/* Day 7+: Studio/Squads */}
+                            {streak >= 7 && (
+                                <div
+                                    onClick={() => navigate('/studio')}
+                                    className="icon-box icon-box-muted"
+                                    style={{ width: '40px', height: '40px', padding: 0, cursor: 'pointer' }}
+                                >
+                                    <Clapperboard size={18} />
+                                </div>
+                            )}
                         </>
                     )}
                     <div
