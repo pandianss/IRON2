@@ -54,6 +54,13 @@ const runTests = () => {
     console.log("\nTest 5: Longest Streak Persistence");
     assert(res4.newData.longestStreak === 2, `Longest streak should persist as 2 (Actual: ${res4.newData.longestStreak})`);
 
+    // TEST 6: Missed Day Resolution
+    console.log("\nTest 6: Missed Day Resolution");
+    // res4 reset the streak on 2024-01-04.
+    // That means 2024-01-03 (yesterday relative to T4) should be marked 'missed'.
+    const historyEntry = res4.newData.history['2024-01-03'];
+    assert(historyEntry === 'missed', `Yesterday (gap day) should be marked 'missed'. Actual: ${historyEntry}`);
+
     console.log("\n🎉 ALL TESTS PASSED");
 };
 

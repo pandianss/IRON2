@@ -35,6 +35,7 @@ export const useStreaks = () => {
     // ---- STATUS CHECKS ----
     const isCheckedInToday = streakData.lastCheckInDate === getLocalToday();
     const shouldShowCheckIn = !isCheckedInToday && !sessionDismissed;
+    const isDayResolved = retentionService.isDayResolved(streakData);
 
     return {
         streak: streakData.currentStreak,
@@ -42,6 +43,7 @@ export const useStreaks = () => {
         lastCheckInDate: streakData.lastCheckInDate,
         isCheckedInToday,
         shouldShowCheckIn,
+        isDayResolved,
         performCheckIn,
         dismissCheckIn
     };

@@ -40,6 +40,42 @@ class RetentionService {
     }
 
     /**
+     * Resolves the status of past days (handling missed days).
+     * Fills history for any days between last check-in and "yesterday".
+     * @param {Object} currentData 
+     * @param {Object} [dateOverride] 
+     * @returns {Object} Updated data with resolved history
+     */
+    resolveDay(currentData, dateOverride = null) {
+        const today = dateOverride?.today || getLocalToday();
+        const yesterday = dateOverride?.yesterday || getLocalYesterday();
+        const { lastCheckInDate, history } = currentData;
+
+        // If no history, nothing to resolve (first run)
+        if (!lastCheckInDate) return currentData;
+
+        // If up to date, return as is
+        if (lastCheckInDate === today || lastCheckInDate === yesterday) {
+            return currentData;
+        }
+
+        // GAP DETECTED: We have missed days.
+        // Simple logic: If last check-in was before yesterday, yesterday was MISSED.
+
+        const newHistory = { ...history };
+
+        // Mark yesterday as missed if it wasn't recorded (and last checkin wasn't yesterday)
+        if (!newHistory[yesterday]) {
+            newHistory[yesterday] = 'missed';
+        }
+
+        return {
+            ...currentData,
+            history: newHistory
+        };
+    }
+
+    /**
      * Pure function to calculate new streak state.
      * @param {Object} currentData 
      * @param {'trained' | 'rest'} status 
@@ -47,15 +83,18 @@ class RetentionService {
      * @returns {Object} { newData, result: { streak, isNewRecord } }
      */
     calculateCheckIn(currentData, status, dateOverride = null) {
+        // 1. Resolve pending state first
+        const resolvedData = this.resolveDay(currentData, dateOverride);
+
         const today = dateOverride?.today || getLocalToday();
         const yesterday = dateOverride?.yesterday || getLocalYesterday();
 
-        const { lastCheckInDate, currentStreak, longestStreak, history } = currentData;
+        const { lastCheckInDate, currentStreak, longestStreak, history } = resolvedData;
 
         // Idempotency Check
         if (lastCheckInDate === today) {
             return {
-                newData: currentData,
+                newData: resolvedData,
                 result: { streak: currentStreak, isNewRecord: false, alreadyCheckedIn: true }
             };
         }
@@ -66,19 +105,16 @@ class RetentionService {
         if (lastCheckInDate === yesterday) {
             newStreak = currentStreak + 1;
         } else if (lastCheckInDate === today) {
-            // Should be caught by idempotency, but safe fallback
             newStreak = currentStreak;
         } else {
-            // Broken Streak (unless first time, which is handled by init 0)
-            // Logic: if lastCheckInDate is null, newStreak is 1.
-            // If lastCheckInDate is older than yesterday, newStreak is 1.
+            // Broken Streak
             newStreak = 1;
         }
 
         const newLongest = Math.max(longestStreak, newStreak);
 
         const newData = {
-            ...currentData,
+            ...resolvedData,
             currentStreak: newStreak,
             longestStreak: newLongest,
             lastCheckInDate: today,
@@ -97,6 +133,42 @@ class RetentionService {
                 status
             }
         };
+    }
+
+    /**
+     * Checks if the current day has been resolved (action taken).
+     * @param {Object} currentData 
+     * @param {Object} [dateOverride] 
+     * @returns {boolean}
+     */
+    /**
+     * Determines if a nudge is needed based on retention state.
+     * Decoupled from UI lifecycle.
+     * @param {Object} currentData 
+     * @param {Object} [dateOverride]
+     * @returns {Object} { shouldNudge: boolean, type: string }
+     */
+    checkNudgeEligibility(currentData, dateOverride = null) {
+        const isResolved = this.isDayResolved(currentData, dateOverride);
+        const { currentStreak, lastCheckInDate } = currentData;
+        const today = dateOverride?.today || getLocalToday();
+
+        // Already done today? Silence.
+        if (isResolved) return { shouldNudge: false };
+
+        // Already checked in today (redundant check but safe)? Silence.
+        if (lastCheckInDate === today) return { shouldNudge: false };
+
+        // Nudge Policy:
+        // 1. High Streak Protection (Streak >= 3)
+        if (currentStreak >= 3) {
+            return { shouldNudge: true, type: 'risk_alert' };
+        }
+
+        // 2. Habit Formation (Streak 1-2) - gentle reminder?
+        // For now, only high stakes.
+
+        return { shouldNudge: false };
     }
 }
 
