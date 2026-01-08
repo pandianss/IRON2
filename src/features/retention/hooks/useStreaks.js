@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
+import { getLocalToday, getLocalYesterday } from '../../../utils/dateHelpers';
 
 const STORAGE_KEY = 'iron_streak_data_v2';
 
@@ -26,30 +27,13 @@ export const useStreaks = () => {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(streakData));
     }, [streakData]);
 
-    // ---- HELPERS ----
-    const getTodayDate = () => {
-        // Use local calendar date
-        const now = new Date();
-        return now.getFullYear() + '-' +
-            String(now.getMonth() + 1).padStart(2, '0') + '-' +
-            String(now.getDate()).padStart(2, '0');
-    };
-
-    const getYesterdayDate = () => {
-        const d = new Date();
-        d.setDate(d.getDate() - 1);
-        return d.getFullYear() + '-' +
-            String(d.getMonth() + 1).padStart(2, '0') + '-' +
-            String(d.getDate()).padStart(2, '0');
-    };
-
     // ---- ACTIONS ----
     /**
      * @param {'trained' | 'rest'} status 
      */
     const performCheckIn = useCallback((status) => {
-        const today = getTodayDate();
-        const yesterday = getYesterdayDate();
+        const today = getLocalToday();
+        const yesterday = getLocalYesterday();
         const { lastCheckInDate, currentStreak } = streakData;
 
         // Prevent double
@@ -89,7 +73,7 @@ export const useStreaks = () => {
     }, []);
 
     // ---- STATUS CHECKS ----
-    const isCheckedInToday = streakData.lastCheckInDate === getTodayDate();
+    const isCheckedInToday = streakData.lastCheckInDate === getLocalToday();
     const shouldShowCheckIn = !isCheckedInToday && !sessionDismissed;
 
     return {

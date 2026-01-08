@@ -8,7 +8,7 @@ import { Trophy, TrendingUp, Search, AlertTriangle, Activity, Heart } from 'luci
 import { useAppContext } from '../context/AppContext';
 import { mockFeedActivities } from '../services/mockData';
 
-const Home = () => {
+const CommandCenter = () => {
     const { isRusting, bpm, showToast, feedActivities, isLoading, currentUser, loadMoreFeed, hasMoreFeed, logActivity } = useAppContext();
     const navigate = useNavigate();
     const [userLocation, setUserLocation] = useState(null);
@@ -66,9 +66,7 @@ const Home = () => {
         <div className="page-container">
             <header className="page-header">
                 <div className="header-title-group">
-                    <h1 className="title-display" style={{ fontSize: '2.5rem', lineHeight: '1', marginBottom: '8px' }}>
-                        The Pulse
-                    </h1>
+                    COMMAND
                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
                         LIVE FROM THE FORGE.
                     </p>
@@ -211,4 +209,4 @@ const Home = () => {
     );
 };
 
-export default Home;
+export default CommandCenter;

@@ -1,6 +1,6 @@
 import { createBrowserRouter } from 'react-router-dom';
 import AppShell from './components/Layout/AppShell';
-import Home from './pages/Home';
+import CommandCenter from './pages/CommandCenter';
 import Lab from './pages/Lab';
 import Arena from './pages/Arena';
 import Bazaar from './pages/Bazaar';
@@ -33,7 +33,7 @@ const router = createBrowserRouter([
         path: '/',
         element: <AppShell />,
         children: [
-            { index: true, element: <Home /> },
+            { index: true, element: <CommandCenter /> },
             { path: 'lab', element: <Lab /> },
             { path: 'arena', element: <Arena /> },
             { path: 'bazaar', element: <Bazaar /> },
