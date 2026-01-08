@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import {
     RealAuthService, DemoAuthService,
     RealDbService, DemoDbService
-} from '../services/firebase';
-import { AuditService } from '../services/audit';
+} from '../../infrastructure/firebase';
+import { AuditService } from '../../services/audit';
 import { useUI } from './UIContext';
 
 export const AuthContext = createContext();

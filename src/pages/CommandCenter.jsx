@@ -3,9 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import ActivityCard from '../components/UI/ActivityCard';
-import { StreakCard } from '../features/retention';
+import { StreakCard } from '../features/streak';
+import { SquadCard } from '../social/squads';
+import { ChallengeCard } from '../social/challenges';
+import { InsightCard } from '../features/insights';
 import { Trophy, TrendingUp, Search, AlertTriangle, Activity, Heart } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../app/context/AppContext';
 import { mockFeedActivities } from '../services/mockData';
 
 const CommandCenter = () => {
@@ -60,7 +63,9 @@ const CommandCenter = () => {
     // Use real feed or empty array (MOCKING DATA FOR DEMO)
     // mockActivities removed, using imported mockFeedActivities
 
-    const activities = feedActivities && feedActivities.length > 0 ? feedActivities : mockFeedActivities;
+    // Locked Down Feed: Check-ins Only (Retention Contract)
+    const allActivities = feedActivities && feedActivities.length > 0 ? feedActivities : mockFeedActivities;
+    const activities = allActivities.filter(a => a.type === 'check_in' || a.title?.includes('Check-in') || a.activityType === 'Check In');
 
     return (
         <div className="page-container">
@@ -94,8 +99,12 @@ const CommandCenter = () => {
             )}
 
             {/* Retention Engine: Daily Check-in */}
+            {/* Retention Engine: Daily Check-in */}
             <div className="mb-6 px-1">
                 <StreakCard />
+                <SquadCard />
+                <ChallengeCard />
+                <InsightCard />
             </div>
 
             {/* Quick Stats Banner */}

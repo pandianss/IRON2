@@ -40,7 +40,13 @@ IRON is built around:
 - Community > Isolation  
 - Engagement > Tracking  
 - Motivation > Guilt  
-- Consistency > Intensity  
+- Consistency > Intensity
+
+## 🏗 Structural Philosophy
+This repository is organized around **retention and consistency**.
+Daily behavior (check-ins, streaks) and user identity are treated as **first-class domains**, not just features.
+New code should land in `src/features/streak` or `src/identity` if it reinforces habit formation.
+Generic code belongs in `src/infrastructure` or `src/app`.  
 
 ---
 
@@ -65,13 +71,11 @@ IRON is built around:
 
 ## ✨ Key Features (Planned)
 
-- 🔗 **Social Profiles** – Fitness-focused identity and goals  
-- 🏋️ **Workout & Progress Sharing** – Posts, stories, streaks  
-- 🤝 **Gym Partner Matching** – Based on location, goals, timing  
-- 🧑‍🏫 **Trainer Discovery** – Verified trainers & programs  
-- 🔔 **Accountability Nudges** – Smart reminders & streaks  
-- 🏆 **Challenges & Leaderboards** – Community-driven motivation  
-- 💬 **Groups & Communities** – Local gyms, interests, goals  
+- 🔗 **Identity** – Consistency-first profiles & stats
+- 🤝 **Accountability Partner** – One-on-one pacts for daily return
+- 🏋️ **Check-in Feed** – Proof of work, not just content
+- 🔥 **Streaks** – Loss aversion mechanics
+- 🏆 **Group Challenges** – Collective consistency goals  
 
 ---
 
@@ -86,13 +90,24 @@ IRON is built around:
 
 ## 🧭 Roadmap
 
-- [ ] Core social feed
-- [ ] User authentication & profiles
-- [ ] Gym partner matching
-- [ ] Trainer onboarding
-- [ ] Community challenges
-- [ ] Mobile-first experience
-- [ ] Notifications & streak logic
+### Phase 1 — Habit Spine 🦴
+- [x] Daily check-in
+- [x] Streaks
+- [ ] Profiles (consistency-first)
+- [ ] Accountability partner (Single)
+- [ ] Check-in activity feed
+
+### Phase 2 — Social Pressure 🔥
+- [ ] Small groups (3-6 people)
+- [ ] Consistency challenges
+
+### Phase 3 — Reinforcement 🧠
+- [ ] Smart reminders
+- [ ] Behavior insights
+
+### Phase 4 — Scale 🚀
+- [ ] Mobile apps
+- [ ] Monetization tied to consistency
 
 ---
 

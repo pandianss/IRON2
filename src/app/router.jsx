@@ -1,20 +1,20 @@
 import { createBrowserRouter } from 'react-router-dom';
-import AppShell from './components/Layout/AppShell';
-import CommandCenter from './pages/CommandCenter';
-import Lab from './pages/Lab';
-import Arena from './pages/Arena';
-import Bazaar from './pages/Bazaar';
-import Hub from './pages/Hub';
-import Onboarding from './pages/Onboarding';
-import Viral from './pages/Viral';
-import { StudioPage } from './features/studio';
-import { ProfilePage } from './features/profile';
-import { KnowledgePage } from './features/knowledge';
-import PartnerDashboard from './pages/PartnerDashboard';
-import GymDirectory from './pages/GymDirectory';
-import AuthPage from './pages/AuthPage';
-import AdminDashboard from './pages/AdminDashboard';
-import SplashScreen from './pages/SplashScreen';
+import AppShell from '../components/Layout/AppShell';
+import CommandCenter from '../pages/CommandCenter';
+import Lab from '../pages/Lab';
+import Arena from '../pages/Arena';
+import Bazaar from '../pages/Bazaar';
+import Hub from '../pages/Hub';
+import Onboarding from '../pages/Onboarding';
+import Viral from '../pages/Viral';
+import { StudioPage } from '../features/studio'; // Not moved? Yes, only retention/feed moved. Wait. Feed moved to social/feed. Profile moved. Studio stayed? Plan said "Identity, Social, Checkin, Streak". Studio stays in features? Yes.
+import { ProfilePage } from '../identity/profile';
+import { KnowledgePage } from '../features/knowledge';
+import PartnerDashboard from '../pages/PartnerDashboard';
+import GymDirectory from '../pages/GymDirectory';
+import AuthPage from '../pages/AuthPage';
+import AdminDashboard from '../pages/AdminDashboard';
+import SplashScreen from '../pages/SplashScreen';
 
 const router = createBrowserRouter([
     {

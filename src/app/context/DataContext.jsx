@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import {
     RealDbService, DemoDbService,
     RealAuthService, DemoAuthService
-} from '../services/firebase';
+} from '../../infrastructure/firebase';
 import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
 import { orderBy } from 'firebase/firestore';
@@ -11,7 +11,7 @@ import {
     mockProducts, mockGyms, mockUsers, mockPlans,
     mockNotifications, mockFeedActivities,
     mockRatings
-} from '../services/mockData';
+} from '../../services/mockData';
 
 export const DataContext = createContext();
 

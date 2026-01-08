@@ -2,11 +2,16 @@ import React, { useEffect } from 'react';
 import { Outlet, useNavigate, useLocation } from 'react-router-dom';
 import { TrendingUp, Clapperboard, ArrowLeft, ChevronLeft, Share2, Shield } from 'lucide-react';
 import BottomNav from './BottomNav';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../app/context/AppContext';
 import Notifications from '../UI/Notifications';
-import { useStreaks, CheckInModal } from '../../features/retention';
+import { useStreaks } from '../../features/streak';
+import { CheckInModal } from '../../features/checkin';
+
+import { useSmartNudges } from '../../features/insights';
 
 const AppShell = () => {
+    useSmartNudges(); // Activates retention guardian
+
     const navigate = useNavigate();
     const location = useLocation();
     const { onboardingCompleted, toast, userType, currentUser, isLoading, appMode, logActivity, showToast } = useAppContext();

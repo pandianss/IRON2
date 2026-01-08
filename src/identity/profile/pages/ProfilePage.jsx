@@ -8,8 +8,18 @@ import DataLockerView from '../components/DataLockerView';
 import SettingsView from '../components/SettingsView';
 import CertificationsView from '../components/CertificationsView';
 
+import { useStreaks } from '../../../features/streak';
+import { useAppContext } from '../../../app/context/AppContext';
+
 const ProfilePage = () => {
     const [activeView, setActiveView] = useState('main');
+
+    const { currentUser } = useAppContext();
+    const { streak, lastCheckInDate } = useStreaks();
+
+    const name = currentUser?.displayName || "Marcus V.";
+    const rank = currentUser?.rank || "IRON IV";
+    const uid = currentUser?.uid?.substring(0, 8).toUpperCase() || "IRN-7742";
 
     const handleAction = (label) => {
         if (label === 'Biometric Security') setActiveView('biometric');
@@ -48,11 +58,17 @@ const ProfilePage = () => {
                     color: 'var(--accent-orange)',
                     boxShadow: '0 10px 30px rgba(0,0,0,0.5)'
                 }}>
-                    MV
+                    {name.charAt(0)}
                 </div>
-                <h2 className="title-display" style={{ fontSize: '1.5rem', marginBottom: '4px' }}>MARCUS V.</h2>
+                <h2 className="title-display" style={{ fontSize: '1.5rem', marginBottom: '4px' }}>{name.toUpperCase()}</h2>
                 <div style={{ transform: 'scale(0.85)', transformOrigin: 'top center', marginTop: '16px' }}>
-                    <PassportCard userName="Marcus V." rank="IRON IV" userId="IRN-7742" />
+                    <PassportCard
+                        userName={name}
+                        rank={rank}
+                        userId={uid}
+                        streak={streak}
+                        lastCheckIn={lastCheckInDate}
+                    />
                 </div>
             </div>
 

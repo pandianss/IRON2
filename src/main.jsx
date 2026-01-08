@@ -1,10 +1,10 @@
 import React from 'react'
 import ReactDOM from 'react-dom/client'
 import { RouterProvider } from 'react-router-dom'
-import router from './router'
+import router from './app/router'
 import './index.css'
 
-import { AppProvider } from './context/AppContext'
+import { AppProvider } from './app/context/AppContext'
 
 console.log("Main.jsx starting execution");
 

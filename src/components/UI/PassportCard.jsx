@@ -3,12 +3,13 @@ import PropTypes from 'prop-types';
 import { ShieldCheck, Map } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
-const PassportCard = ({ userName, rank, userId }) => {
+const PassportCard = ({ userName, rank, userId, streak = 0, lastCheckIn = 'NEVER' }) => {
     // Generate QR Data securely
     const qrData = JSON.stringify({
         id: userId,
         name: userName,
         rank: rank,
+        streak: streak,
         valid: true,
         issuer: 'IRON_FORGE_SYSTEM'
     });
@@ -76,12 +77,14 @@ const PassportCard = ({ userName, rank, userId }) => {
                         <span style={{ fontSize: '1.2rem', fontWeight: '700', fontFamily: 'var(--font-display)' }}>{userName}</span>
                     </div>
                     <div style={{ marginBottom: '12px' }}>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block' }}>CLEARANCE LEVEL</span>
-                        <span style={{ fontSize: '1.25rem', fontWeight: '800', color: 'var(--accent-orange)' }}>{rank}</span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block' }}>RANK</span>
+                        <span style={{ fontSize: '1.25rem', fontWeight: '800', color: '#fff' }}>{rank}</span>
                     </div>
                     <div>
-                        <span style={{ fontSize: '0.65rem', color: 'var(--text-muted)', display: 'block' }}>CHIP ID</span>
-                        <span style={{ fontSize: '0.8rem', color: 'var(--text-primary)', fontFamily: 'monospace' }}>{userId}</span>
+                        <span style={{ fontSize: '0.65rem', color: 'var(--accent-orange)', display: 'block', fontWeight: 'bold' }}>CURRENT STREAK</span>
+                        <span style={{ fontSize: '1.1rem', color: 'var(--accent-orange)', fontFamily: 'monospace', fontWeight: 'bold' }}>
+                            {streak} <span style={{ fontSize: '0.8rem' }}>DAYS</span>
+                        </span>
                     </div>
                 </div>
             </div>
