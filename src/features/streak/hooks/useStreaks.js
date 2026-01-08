@@ -4,7 +4,8 @@ import { retentionService } from '../../../services/retention';
 
 export const useStreaks = () => {
     // ---- STATE ----
-    const [streakData, setStreakData] = useState(() => retentionService.loadData());
+    // SYNC ON MOUNT: Auto-resolve missed days and fix timezone gaps
+    const [streakData, setStreakData] = useState(() => retentionService.syncHistory());
     const [sessionDismissed, setSessionDismissed] = useState(false);
 
     // ---- PERSISTENCE ----
@@ -32,8 +33,13 @@ export const useStreaks = () => {
         setSessionDismissed(true);
     }, []);
 
+    const dismissBreakAlert = useCallback(() => {
+        const newData = { ...streakData, streakBreakReason: null };
+        setStreakData(newData);
+    }, [streakData]);
+
     // ---- STATUS CHECKS ----
-    const isCheckedInToday = streakData.lastCheckInDate === getLocalToday();
+    const isCheckedInToday = streakData.lastCheckInDate === getLocalToday(streakData.anchorTimezone);
     const shouldShowCheckIn = !isCheckedInToday && !sessionDismissed;
     const isDayResolved = retentionService.isDayResolved(streakData);
 
@@ -41,10 +47,12 @@ export const useStreaks = () => {
         streak: streakData.currentStreak,
         longestStreak: streakData.longestStreak,
         lastCheckInDate: streakData.lastCheckInDate,
+        streakBreakReason: streakData.streakBreakReason,
         isCheckedInToday,
         shouldShowCheckIn,
         isDayResolved,
         performCheckIn,
-        dismissCheckIn
+        dismissCheckIn,
+        dismissBreakAlert
     };
 };

@@ -7,7 +7,7 @@
  */
 
 // FUTURE: Load this from user settings for Home-Anchoring
-const getUserTimezone = () => {
+export const getSystemTimezone = () => {
     try {
         return Intl.DateTimeFormat().resolvedOptions().timeZone;
     } catch (e) {
@@ -15,21 +15,21 @@ const getUserTimezone = () => {
     }
 };
 
-export const getLocalToday = () => {
+export const getLocalToday = (timezone = null) => {
     // Canonical Fitness Day: Uses User's Timezone
     return new Intl.DateTimeFormat('en-CA', { // YYYY-MM-DD format
-        timeZone: getUserTimezone(),
+        timeZone: timezone || getSystemTimezone(),
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'
     }).format(new Date());
 };
 
-export const getLocalYesterday = () => {
+export const getLocalYesterday = (timezone = null) => {
     const d = new Date();
     d.setDate(d.getDate() - 1);
     return new Intl.DateTimeFormat('en-CA', {
-        timeZone: getUserTimezone(),
+        timeZone: timezone || getSystemTimezone(),
         year: 'numeric',
         month: '2-digit',
         day: '2-digit'

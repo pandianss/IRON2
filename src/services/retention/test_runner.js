@@ -92,6 +92,60 @@ const runTests = () => {
 
     assert(resRepair.result.streak === 2, `Streak should be 2 (Derived), ignoring corrupt 50. (Actual: ${resRepair.result.streak})`);
 
+    // TEST 8: Sync History (Day Close)
+    console.log("\nTest 8: Sync History (Day Close)");
+    const syncStartData = {
+        ...resRepair.newData,
+        lastCheckInDate: '2025-01-02',
+        anchorTimezone: 'UTC'
+    };
+    // Jump forward to Jan 5.
+    const syncDates = { today: '2025-01-05', yesterday: '2025-01-04' };
+
+    // Calling resolveDay directly (imitating syncHistory behavior with override)
+    const synced = retentionService.resolveDay(syncStartData, syncDates);
+
+    assert(synced.history['2025-01-03'] === 'missed', "Sync should mark Jan 3 missed");
+    assert(synced.history['2025-01-04'] === 'missed', "Sync should mark Jan 4 missed");
+    assert(!synced.history['2025-01-05'], "Sync should NOT touch Today (Jan 5)");
+
+    // TEST 9: Sync History / Timezone Migration
+    console.log("\nTest 9: Sync History / Timezone Migration");
+    const mockData9 = {
+        currentStreak: 5,
+        longestStreak: 10,
+        lastCheckInDate: '2023-12-31',
+        lastCheckInTime: '2023-12-31T10:00:00.000Z',
+        anchorTimezone: 'UTC', // Explicit Timezone for tests
+        history: {
+            '2023-12-31': 'trained',
+            '2023-12-30': 'trained',
+            '2023-12-29': 'trained',
+            '2023-12-28': 'trained',
+            '2023-12-27': 'trained'
+        }
+    };
+
+    // Test 9.1: loadData adds timezone if missing
+    const dataWithoutTimezone = { ...mockData9 };
+    delete dataWithoutTimezone.anchorTimezone;
+    const loadedData = retentionService.loadData(dataWithoutTimezone);
+    assert(loadedData.anchorTimezone === 'UTC', "loadData should add default timezone if missing");
+
+    // Test 9.2: syncHistory resolves gaps without check-in
+    // Scenario: Data ends Dec 31. Today is Jan 5. No check-in today.
+    // We expect Jan 1, 2, 3, 4 to be marked as 'missed'.
+    const syncDates9 = { today: '2024-01-05', yesterday: '2024-01-04' };
+    const syncedData = retentionService.syncHistory(mockData9, syncDates9);
+
+    assert(syncedData.history['2024-01-01'] === 'missed', "Jan 1 should be marked missed by syncHistory");
+    assert(syncedData.history['2024-01-02'] === 'missed', "Jan 2 should be marked missed by syncHistory");
+    assert(syncedData.history['2024-01-03'] === 'missed', "Jan 3 should be marked missed by syncHistory");
+    assert(syncedData.history['2024-01-04'] === 'missed', "Jan 4 should be marked missed by syncHistory");
+    assert(syncedData.currentStreak === 0, "Streak should be 0 after syncHistory resolves a gap");
+    assert(syncedData.lastCheckInDate === '2023-12-31', "Last check-in date should remain Dec 31");
+
+
     console.log("\n🎉 ALL TESTS PASSED");
 };
 

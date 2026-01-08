@@ -1,4 +1,4 @@
-import { getLocalToday, getLocalYesterday, getDaysArray, subtractDays } from '../../utils/dateHelpers.js';
+import { getLocalToday, getLocalYesterday, getDaysArray, subtractDays, getSystemTimezone } from '../../utils/dateHelpers.js';
 
 const STORAGE_KEY = 'iron_streak_data_v2';
 
@@ -14,7 +14,16 @@ class RetentionService {
     loadData() {
         try {
             const saved = localStorage.getItem(this.storageKey);
-            return saved ? JSON.parse(saved) : this.getDefaultData();
+            let data = saved ? JSON.parse(saved) : this.getDefaultData();
+
+            // Migration: Ensure anchorTimezone exists
+            if (!data.anchorTimezone) {
+                console.log("Iron Retention: Migrating Timezone Anchor");
+                data.anchorTimezone = getSystemTimezone();
+                this.saveData(data);
+            }
+
+            return data;
         } catch (e) {
             console.error("Failed to load streak data", e);
             return this.getDefaultData();
@@ -27,6 +36,7 @@ class RetentionService {
             longestStreak: 0,
             lastCheckInDate: null,
             lastCheckInTime: null,
+            anchorTimezone: getSystemTimezone(), // Set once, never changes automatically
             history: {}
         };
     }
@@ -40,6 +50,37 @@ class RetentionService {
     }
 
     /**
+     * Public method to force resolution of past days ("Day Close").
+     * Should be called on App Open.
+     */
+    syncHistory() {
+        const currentData = this.loadData();
+        const resolvedData = this.resolveDay(currentData);
+
+        // RECALCULATE STREAK after gap resolution
+        const timezone = currentData.anchorTimezone || getSystemTimezone();
+        const today = getLocalToday(timezone);
+        const yesterday = getLocalYesterday(timezone);
+
+        // If today is done, anchor today. Else anchor yesterday (safeguard streak until missed).
+        const anchor = resolvedData.history[today] ? today : yesterday;
+        const newStreak = this.recalculateStreak(resolvedData.history, anchor);
+
+        const finalData = {
+            ...resolvedData,
+            currentStreak: newStreak
+        };
+
+        // Save if changed
+        if (JSON.stringify(currentData) !== JSON.stringify(finalData)) {
+            console.log("Iron Retention: Synced History & Streak");
+            this.saveData(finalData);
+        }
+
+        return finalData;
+    }
+
+    /**
      * Resolves the status of past days (handling missed days).
      * Fills history for any days between last check-in and "yesterday".
      * @param {Object} currentData 
@@ -47,8 +88,9 @@ class RetentionService {
      * @returns {Object} Updated data with resolved history
      */
     resolveDay(currentData, dateOverride = null) {
-        const today = dateOverride?.today || getLocalToday();
-        const yesterday = dateOverride?.yesterday || getLocalYesterday();
+        const timezone = currentData.anchorTimezone || getSystemTimezone();
+        const today = dateOverride?.today || getLocalToday(timezone);
+        const yesterday = dateOverride?.yesterday || getLocalYesterday(timezone);
         const { lastCheckInDate, history } = currentData;
 
         // If no history, nothing to resolve (first run)
@@ -72,9 +114,17 @@ class RetentionService {
             }
         });
 
+        // Break Detection
+        let breakReason = currentData.streakBreakReason; // Preserve existing if not cleared
+        if (missingDays.length > 0 && currentData.currentStreak > 0) {
+            // Streak just broke.
+            breakReason = `Missed ${missingDays.length} day${missingDays.length > 1 ? 's' : ''}`;
+        }
+
         return {
             ...currentData,
-            history: newHistory
+            history: newHistory,
+            streakBreakReason: breakReason
         };
     }
 
@@ -88,8 +138,9 @@ class RetentionService {
     calculateCheckIn(currentData, status, dateOverride = null) {
         // 1. Resolve pending state first (fill gaps with MISSED)
         const resolvedData = this.resolveDay(currentData, dateOverride);
+        const timezone = currentData.anchorTimezone || getSystemTimezone();
 
-        const today = dateOverride?.today || getLocalToday();
+        const today = dateOverride?.today || getLocalToday(timezone);
 
         const { lastCheckInDate, longestStreak, history } = resolvedData;
 
@@ -165,7 +216,8 @@ class RetentionService {
      * @returns {boolean}
      */
     isDayResolved(currentData, dateOverride = null) {
-        const today = dateOverride?.today || getLocalToday();
+        const timezone = currentData.anchorTimezone || getSystemTimezone();
+        const today = dateOverride?.today || getLocalToday(timezone);
         return currentData.history[today] !== undefined;
     }
 
@@ -179,7 +231,8 @@ class RetentionService {
     checkNudgeEligibility(currentData, dateOverride = null) {
         const isResolved = this.isDayResolved(currentData, dateOverride);
         const { currentStreak, lastCheckInDate } = currentData;
-        const today = dateOverride?.today || getLocalToday();
+        const timezone = currentData.anchorTimezone || getSystemTimezone();
+        const today = dateOverride?.today || getLocalToday(timezone);
 
         // Already done today? Silence.
         if (isResolved) return { shouldNudge: false };

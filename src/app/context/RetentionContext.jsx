@@ -12,14 +12,7 @@ export const RetentionProvider = ({ children }) => {
     );
 };
 
-export const useRetention = () => {
-    // PROXY: In Phase 1, we just unite the separate retention hooks
-
-    // 1. Streak Data
-    const streakData = useStreaks();
-
-    return {
-        ...streakData
-        // Future: Nudges, CheckIn State
-    };
+// PROXY: Phase 1
+const streakData = useStreaks();
+return { ...streakData };
 };
