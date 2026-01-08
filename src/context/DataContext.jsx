@@ -52,6 +52,9 @@ export const DataProvider = ({ children, appMode }) => {
     const [studioExercises, setStudioExercises] = useState([]);
     const [studioRoutineName, setStudioRoutineNameState] = useState("SQUAT PROTOCOL X");
 
+    // Certifications State
+    const [certifications, setCertifications] = useState([]);
+
     // Fetch Data on Mount
     useEffect(() => {
         const fetchAllData = async () => {
@@ -388,6 +391,13 @@ export const DataProvider = ({ children, appMode }) => {
         localStorage.setItem('iron_studio_routine_name', name);
     };
 
+    const addCertification = async (cert) => {
+        const newCert = { ...cert, id: Date.now(), verified: false, dateAdded: new Date().toISOString() };
+        setCertifications(prev => [newCert, ...prev]);
+        await DbService.addDoc('certifications', newCert);
+        showToast("Credential Uploaded.");
+    };
+
     const createChallenge = async (challengeData) => {
         const newChallenge = await DbService.addDoc('challenges', {
             ...challengeData,
@@ -451,7 +461,8 @@ export const DataProvider = ({ children, appMode }) => {
             studioRoutineName, setStudioRoutineName,
             studioRoutineName, setStudioRoutineName,
             challenges, createChallenge,
-            ratings, addRating, getRatingStats
+            ratings, addRating, getRatingStats,
+            certifications, addCertification
         }}>
             {children}
         </DataContext.Provider>

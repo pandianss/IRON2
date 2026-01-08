@@ -7,8 +7,9 @@ import Bazaar from './pages/Bazaar';
 import Hub from './pages/Hub';
 import Onboarding from './pages/Onboarding';
 import Viral from './pages/Viral';
-import ExpertStudio from './pages/ExpertStudio';
-import Profile from './pages/Profile';
+import { StudioPage } from './features/studio';
+import { ProfilePage } from './features/profile';
+import { KnowledgePage } from './features/knowledge';
 import PartnerDashboard from './pages/PartnerDashboard';
 import GymDirectory from './pages/GymDirectory';
 import AuthPage from './pages/AuthPage';
@@ -38,8 +39,9 @@ const router = createBrowserRouter([
             { path: 'bazaar', element: <Bazaar /> },
             { path: 'hub', element: <Hub /> },
             { path: 'viral', element: <Viral /> },
-            { path: 'studio', element: <ExpertStudio /> },
-            { path: 'profile', element: <Profile /> },
+            { path: 'studio', element: <StudioPage /> },
+            { path: 'profile', element: <ProfilePage /> },
+            { path: 'knowledge', element: <KnowledgePage /> },
             { path: 'partner', element: <PartnerDashboard /> },
             { path: 'gyms', element: <GymDirectory /> },
             { path: 'admin', element: <AdminDashboard /> },

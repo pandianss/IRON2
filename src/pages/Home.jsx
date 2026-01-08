@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import ActivityCard from '../components/UI/ActivityCard';
+import { StreakCard } from '../features/retention';
 import { Trophy, TrendingUp, Search, AlertTriangle, Activity, Heart } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import { mockFeedActivities } from '../services/mockData';
@@ -93,6 +94,11 @@ const Home = () => {
                     </div>
                 </Card>
             )}
+
+            {/* Retention Engine: Daily Check-in */}
+            <div className="mb-6 px-1">
+                <StreakCard />
+            </div>
 
             {/* Quick Stats Banner */}
             <div className="stat-grid">

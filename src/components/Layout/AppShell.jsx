@@ -41,10 +41,19 @@ const AppShell = () => {
                 background: '#000',
                 color: 'var(--accent-orange)'
             }}>
-                <div className="animate-spin">
+                <div className="animate-spin" style={{ marginBottom: '16px' }}>
                     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                         <path d="M21 12a9 9 0 1 1-6.219-8.56" />
                     </svg>
+                </div>
+                <div style={{
+                    fontFamily: 'var(--font-display)',
+                    fontWeight: 900,
+                    letterSpacing: '2px',
+                    fontSize: '0.9rem',
+                    animation: 'pulse 2s infinite'
+                }}>
+                    CALIBRATING...
                 </div>
             </div>
         );
@@ -55,7 +64,7 @@ const AppShell = () => {
 
     const getPageTitle = (path) => {
         switch (path) {
-            case '/viral': return 'THE CIRCUIT';
+            case '/viral': return 'PULSE';
             case '/studio': return 'STUDIO';
             case '/settings': return 'SETTINGS';
             case '/profile': return 'IDENTITY';

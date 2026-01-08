@@ -1,14 +1,14 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
-import { Home, Activity, Trophy, ShoppingBag, MapPin } from 'lucide-react';
+import { Home, Activity, Trophy, MapPin, User } from 'lucide-react';
 
 const BottomNav = () => {
     const navItems = [
-        { icon: Home, label: 'Home', path: '/' },
-        { icon: Activity, label: 'Lab', path: '/lab' },
+        { icon: Home, label: 'Command', path: '/' },
+        { icon: Activity, label: 'Pulse', path: '/viral' },
         { icon: Trophy, label: 'Arena', path: '/arena' },
-        { icon: ShoppingBag, label: 'Bazaar', path: '/bazaar' },
-        { icon: MapPin, label: 'Hub', path: '/hub' },
+        { icon: MapPin, label: 'Nexus', path: '/hub' },
+        { icon: User, label: 'Identity', path: '/profile' },
     ];
 
     return (

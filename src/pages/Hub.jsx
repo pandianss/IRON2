@@ -1,12 +1,15 @@
 import React from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
-import { MapPin, Star, ShieldAlert, Users, ArrowRight, PenTool } from 'lucide-react';
+import { MapPin, Star, ShieldAlert, Users, ArrowRight, PenTool, BookOpen } from 'lucide-react';
 import { useAppContext } from '../context/AppContext';
 import StarRating from '../components/UI/StarRating';
 import ReviewModal from '../components/UI/ReviewModal';
 
+import { useNavigate } from 'react-router-dom';
+
 const Hub = () => {
+    const navigate = useNavigate();
     const { isRusting, toggleRust, showToast, users, getRatingStats, addRating } = useAppContext();
     const [reviewTarget, setReviewTarget] = React.useState(null);
 
@@ -78,6 +81,41 @@ const Hub = () => {
                     <Button onClick={toggleRust} variant={isRusting ? 'accent' : 'secondary'} fullWidth>
                         {isRusting ? 'Polish the Iron' : 'Simulate Inactivity'}
                     </Button>
+                </Card>
+            </section>
+
+            <section style={{ marginBottom: '40px' }}>
+                <h3 className="section-label">KNOWLEDGE BASE</h3>
+                <Card
+                    className="glass-panel"
+                    onClick={() => window.location.hash = '#/knowledge'} // Using hash router? Or Link. Let's assume standard nav if possible, but window.location is safe for now in this context or better yet use useNavigate if available.
+                    // Wait, I can't use useNavigate in the replace without hooks. Hub has useNavigate if I check.
+                    // Ah, Hub doesn't import useNavigate. I should probably use a simple <a href> or add useNavigate.
+                    // Let's stick to the existing pattern or use a Link. 
+                    // Actually, Hub.jsx uses `useAppContext` and `useState`.
+                    // Safest quick win: Just add a clickable Card that uses window.location or I can modify the file to import useNavigate.
+                    // I will modify Hub to import useNavigate first? No, replace_file_content is single block.
+                    // Let's check imports in Hub.
+                    // It imports React, Card, Button, Icons... 
+                    // I'll add a card that calls a function.
+                    style={{
+                        padding: '24px',
+                        cursor: 'pointer',
+                        background: 'linear-gradient(135deg, rgba(255,255,255,0.05) 0%, rgba(255,255,255,0.01) 100%)',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between'
+                    }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                        <div className="icon-box icon-box-accent">
+                            <BookOpen size={24} color="var(--accent-orange)" />
+                        </div>
+                        <div>
+                            <h4 style={{ fontSize: '1.1rem', fontWeight: '800' }}>IRON LIBRARY</h4>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Official workouts & nutrition protocols.</p>
+                        </div>
+                    </div>
+                    <ArrowRight size={20} color="var(--text-muted)" />
                 </Card>
             </section>
 
