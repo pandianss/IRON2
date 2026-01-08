@@ -2,13 +2,27 @@ import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { Users, Activity, IndianRupee, Scan, TrendingUp, Plus, ChevronDown, UserPlus, CheckCircle, MessageSquare, MapPin } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useSession, useUIFeedback, useData } from '../context/index'; // Using index explicit or imply? ../context resolves to src/context? No PartnerDashboard is in src/pages. ../context is src/context?
+// Wait, PartnerDashboard is in src/pages. ../context matches the old path.
+// But I want ../app/context.
+import { useSession, useUIFeedback, useData } from '../app/context';
 import PlanCreator from '../components/Partner/PlanCreator';
 import MemberProfileModal from '../components/Partner/MemberProfileModal';
 import AddMemberModal from '../components/Partner/AddMemberModal';
 
 const PartnerDashboard = () => {
-    const { showToast, gyms, selectedGymId, switchGym, members, approveMember, toggleBanMember, enquiries, registerGym, currentUser } = useAppContext();
+    const { currentUser } = useSession();
+    const { showToast } = useUIFeedback();
+    const {
+        gyms,
+        selectedGymId,
+        switchGym,
+        members,
+        approveMember,
+        toggleBanMember,
+        enquiries,
+        registerGym
+    } = useData();
     const [showPlanCreator, setShowPlanCreator] = useState(false);
     const [showAddMember, setShowAddMember] = useState(false);
     const [selectedMember, setSelectedMember] = useState(null);

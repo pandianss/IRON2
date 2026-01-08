@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { BarChart3 } from 'lucide-react';
 import Button from '../../../components/UI/Button';
-import { useAppContext } from '../../../context/AppContext';
+import { useSession, useUIFeedback, useData } from '../../../app/context';
 
 import OverviewView from '../components/OverviewView';
 import ContentLibrary from '../components/ContentLibrary';
@@ -9,7 +9,16 @@ import RoutineArchitect from '../components/RoutineArchitect';
 import LiveStudio from '../components/LiveStudio';
 
 const StudioPage = () => {
-    const { showToast, studioContent, addStudioContent, studioExercises, addStudioExercise, studioRoutineName, setStudioRoutineName, currentUser } = useAppContext();
+    const { currentUser } = useSession();
+    const { showToast } = useUIFeedback();
+    const {
+        studioContent,
+        addStudioContent,
+        studioExercises,
+        addStudioExercise,
+        studioRoutineName,
+        setStudioRoutineName
+    } = useData();
     const [activeTab, setActiveTab] = useState('overview');
 
     // Access Control

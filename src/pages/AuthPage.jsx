@@ -6,15 +6,20 @@ import {
 } from 'lucide-react';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
-import { useAppContext } from '../context/AppContext';
+import { useSession, useUIFeedback } from '../app/context';
 
 const AuthPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+
+    // Session Context (Auth & Mode)
     const {
         login, loginWithGoogle, registerUser, checkEmail,
-        AuthService, syncUserFromAuth, showToast, appMode
-    } = useAppContext();
+        AuthService, syncUserFromAuth, appMode
+    } = useSession();
+
+    // UI Feedback Context
+    const { showToast } = useUIFeedback();
 
     const location = useLocation(); // Add useLocation import hook
 

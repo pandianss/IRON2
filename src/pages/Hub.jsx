@@ -2,7 +2,7 @@ import React from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { MapPin, Star, ShieldAlert, Users, ArrowRight, PenTool, BookOpen } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useRetention, useUIFeedback, useData } from '../app/context';
 import StarRating from '../components/UI/StarRating';
 import ReviewModal from '../components/UI/ReviewModal';
 
@@ -10,7 +10,9 @@ import { useNavigate } from 'react-router-dom';
 
 const Hub = () => {
     const navigate = useNavigate();
-    const { isRusting, toggleRust, showToast, users, getRatingStats, addRating } = useAppContext();
+    const { isRusting, toggleRust } = useRetention();
+    const { showToast } = useUIFeedback();
+    const { users, getRatingStats, addRating } = useData();
     const [reviewTarget, setReviewTarget] = React.useState(null);
 
     const experts = users.filter(u => u.role === 'expert');

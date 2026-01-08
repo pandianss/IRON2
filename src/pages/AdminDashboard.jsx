@@ -2,11 +2,12 @@ import React, { useState, useEffect } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { Shield, Check, X, Building, Users, Activity, FileText } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useData, useUIFeedback } from '../app/context';
 import { AuditService } from '../services/audit';
 
 const AdminDashboard = () => {
-    const { gyms, users, approveGym, rejectGym } = useAppContext();
+    const { gyms, users, approveGym, rejectGym } = useData();
+    const { showToast } = useUIFeedback();
     const [activeTab, setActiveTab] = useState('gyms');
     const [auditLogs, setAuditLogs] = useState([]);
 

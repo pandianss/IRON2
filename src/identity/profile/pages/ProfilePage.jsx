@@ -8,14 +8,13 @@ import DataLockerView from '../components/DataLockerView';
 import SettingsView from '../components/SettingsView';
 import CertificationsView from '../components/CertificationsView';
 
-import { useStreaks } from '../../../features/streak';
-import { useAppContext } from '../../../app/context/AppContext';
+import { useRetention, useSession } from '../../../app/context';
 
 const ProfilePage = () => {
     const [activeView, setActiveView] = useState('main');
 
-    const { currentUser } = useAppContext();
-    const { streak, lastCheckInDate } = useStreaks();
+    const { currentUser } = useSession();
+    const { streak, lastCheckInDate } = useRetention();
 
     const name = currentUser?.displayName || "Marcus V.";
     const rank = currentUser?.rank || "IRON IV";

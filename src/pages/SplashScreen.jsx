@@ -2,11 +2,11 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Zap, Lock, Globe } from 'lucide-react';
 import Button from '../components/UI/Button';
-import { useAppContext } from '../context/AppContext';
+import { useSession } from '../app/context';
 
 const SplashScreen = () => {
     const navigate = useNavigate();
-    const { setAppMode } = useAppContext();
+    const { setAppMode } = useSession();
     const [animate, setAnimate] = useState(false);
 
     useEffect(() => {

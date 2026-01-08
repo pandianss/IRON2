@@ -3,10 +3,12 @@ import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import RankingItem from '../components/UI/RankingItem';
 import { Sword, Zap, Filter, Trophy } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useData, useUIFeedback, useSession } from '../app/context';
 
 const Arena = () => {
-    const { showToast, challenges, createChallenge, currentUser, users } = useAppContext();
+    const { showToast } = useUIFeedback();
+    const { challenges, createChallenge, users } = useData();
+    const { currentUser } = useSession();
     const [activeTab, setActiveTab] = useState('GLOBAL');
     const [showChallengeModal, setShowChallengeModal] = useState(false);
     const [challengeForm, setChallengeForm] = useState({ title: '', targetId: '', stake: 50 });

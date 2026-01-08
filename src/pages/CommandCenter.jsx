@@ -8,11 +8,21 @@ import { SquadCard } from '../social/squads';
 import { ChallengeCard } from '../social/challenges';
 import { InsightCard } from '../features/insights';
 import { Trophy, TrendingUp, Search, AlertTriangle, Activity, Heart } from 'lucide-react';
-import { useAppContext } from '../app/context/AppContext';
+import {
+    useSession,
+    useRetention,
+    useActivity,
+    useUIFeedback,
+    useBluetooth
+} from '../app/context';
 import { mockFeedActivities } from '../services/mockData';
 
 const CommandCenter = () => {
-    const { isRusting, bpm, showToast, feedActivities, isLoading, currentUser, loadMoreFeed, hasMoreFeed, logActivity } = useAppContext();
+    const { isLoading, currentUser } = useSession();
+    const { isRusting } = useRetention();
+    const { bpm } = useBluetooth();
+    const { showToast } = useUIFeedback();
+    const { feedActivities, loadMoreFeed, hasMoreFeed, logActivity } = useActivity();
     const navigate = useNavigate();
     const [userLocation, setUserLocation] = useState(null);
 

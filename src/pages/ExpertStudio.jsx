@@ -2,7 +2,11 @@ import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { Plus, Save, Play, Users, BarChart3, ChevronRight, Video, FileText, Radio, Mic, Eye, ThumbsUp, TrendingUp } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import {
+    useSession,
+    useUIFeedback,
+    useData
+} from '../app/context';
 
 const OverviewTab = ({ handleAction }) => (
     <div className="fade-in">
@@ -248,7 +252,16 @@ const LiveStudio = ({ onEndSession }) => {
 };
 
 const ExpertStudio = () => {
-    const { showToast, studioContent, addStudioContent, studioExercises, addStudioExercise, studioRoutineName, setStudioRoutineName, currentUser } = useAppContext();
+    const { currentUser } = useSession();
+    const { showToast } = useUIFeedback();
+    const {
+        studioContent,
+        addStudioContent,
+        studioExercises,
+        addStudioExercise,
+        studioRoutineName,
+        setStudioRoutineName
+    } = useData();
     const [activeTab, setActiveTab] = useState('overview');
 
     // Access Control
