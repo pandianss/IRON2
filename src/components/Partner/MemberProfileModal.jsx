@@ -1,5 +1,5 @@
 import React from 'react';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../app/context/AppContext';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
 import { X, User, Activity, AlertCircle, Calendar, Ban, History as HistoryIcon, CheckCircle } from 'lucide-react';

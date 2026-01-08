@@ -1,5 +1,5 @@
 import React from 'react';
-import { FeedList } from '../features/feed';
+import { FeedList } from '../social/feed';
 
 const Viral = () => {
     return (

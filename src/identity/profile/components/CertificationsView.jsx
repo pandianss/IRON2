@@ -3,7 +3,7 @@ import { ArrowLeft, Plus, Award, Upload } from 'lucide-react';
 import Button from '../../../components/UI/Button';
 import Card from '../../../components/UI/Card';
 import CertificateCard from '../../../components/UI/CertificateCard';
-import { useAppContext } from '../../../context/AppContext';
+import { useAppContext } from '../../../app/context/AppContext';
 
 const CertificationsView = ({ onBack }) => {
     const { certifications, addCertification } = useAppContext();

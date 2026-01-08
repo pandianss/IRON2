@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../app/context/AppContext';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { MapPin, MessageSquare, Star, ArrowRight, PenTool } from 'lucide-react';

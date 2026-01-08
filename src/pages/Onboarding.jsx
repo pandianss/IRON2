@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Dumbbell, Shield, MapPin, ChevronRight, Loader2, ChefHat, Rocket, Trophy } from 'lucide-react';
 import Button from '../components/UI/Button';
 import SelectionCard from '../components/UI/SelectionCard';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../app/context/AppContext';
 
 const Onboarding = () => {
     const navigate = useNavigate();

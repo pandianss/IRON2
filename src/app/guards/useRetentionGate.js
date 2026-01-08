@@ -1,4 +1,4 @@
-import { useRetention } from '../context';
+import { useStreaks } from '../../features/streak';
 import { eventBus, EVENTS } from '../../services/events';
 
 export const useRetentionGate = () => {
@@ -7,7 +7,7 @@ export const useRetentionGate = () => {
         performCheckIn,
         dismissCheckIn,
         streak
-    } = useRetention();
+    } = useStreaks();
 
     const handleCheckIn = (status) => {
         const { streak: newStreak } = performCheckIn(status);

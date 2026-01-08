@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 const isDemo = import.meta.env.VITE_DEMO_MODE === 'true';
@@ -22,6 +22,17 @@ if (!isDemo) {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
+
+    // Enable Offline Persistence
+    enableIndexedDbPersistence(db).catch((err) => {
+        if (err.code == 'failed-precondition') {
+            // Multiple tabs open, persistence can only be enabled in one tab at a a time.
+            console.warn("Persistence failed: Multiple tabs open");
+        } else if (err.code == 'unimplemented') {
+            // The current browser does not support all of the features required to enable persistence
+            console.warn("Persistence not supported");
+        }
+    });
 } else {
     console.log("Mock Mode Active: Firebase initialization skipped.");
     app = null;

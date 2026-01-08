@@ -2,7 +2,7 @@ import React from 'react';
 import PropTypes from 'prop-types';
 import { Lock, ShoppingCart, Info } from 'lucide-react';
 
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../app/context/AppContext';
 
 const ProductCard = ({
     title,

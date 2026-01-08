@@ -1,4 +1,4 @@
-import { auth, db, storage } from '../firebase.config';
+import { auth, db, storage } from './firebase.config';
 import {
     signInWithEmailAndPassword,
     createUserWithEmailAndPassword,
@@ -34,7 +34,7 @@ import {
     uploadBytes,
     getDownloadURL
 } from "firebase/storage";
-import { DemoAuthService, DemoDbService, DemoStorageService } from './demoService';
+import { DemoAuthService, DemoDbService, DemoStorageService } from '../services/demoService';
 
 const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
 

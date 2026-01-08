@@ -6,12 +6,14 @@ import { UIProvider, useUI } from './UIContext';
 import { AuthProvider, useAuth } from './AuthContext';
 import { BluetoothProvider, useBluetooth } from './BluetoothContext';
 import { DataProvider, useData } from './DataContext';
+import { RetentionProvider, useRetention } from './RetentionContext';
 
 // Re-export specific contexts if needed directly
 export { UIContext } from './UIContext';
 export { AuthContext } from './AuthContext';
 export { BluetoothContext } from './BluetoothContext';
 export { DataContext } from './DataContext';
+export { RetentionContext } from './RetentionContext';
 
 export const AppContext = createContext();
 
@@ -30,9 +32,11 @@ export const AppProvider = ({ children }) => {
             <UIProvider>
                 <BluetoothProvider>
                     <AuthProvider appMode={appMode}>
-                        <DataProvider appMode={appMode}>
-                            {children}
-                        </DataProvider>
+                        <RetentionProvider>
+                            <DataProvider appMode={appMode}>
+                                {children}
+                            </DataProvider>
+                        </RetentionProvider>
                     </AuthProvider>
                 </BluetoothProvider>
             </UIProvider>
@@ -51,6 +55,7 @@ export const useAppContext = () => {
     const auth = useAuth();
     const bluetooth = useBluetooth();
     const data = useData();
+    const retention = useRetention();
     const appState = useContext(AppContext);
 
     return {
@@ -58,6 +63,7 @@ export const useAppContext = () => {
         ...auth,
         ...bluetooth,
         ...data,
+        ...retention,
         ...appState
         // Manual override if any name collisions (none expected based on my review)
     };

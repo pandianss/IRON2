@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
 import { Plus, Check, IndianRupee, Calendar } from 'lucide-react';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../app/context/AppContext';
 
 const PlanCreator = ({ onClose }) => {
     const { addPlan, showToast } = useAppContext();

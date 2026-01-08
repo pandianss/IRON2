@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Bell, Check, X, MessageSquare, AlertCircle } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../app/context/AppContext';
 
 const Notifications = () => {
     const { notifications, markNotificationRead, userType, selectedGymId, approveMember, showToast, toggleBanMember } = useAppContext();

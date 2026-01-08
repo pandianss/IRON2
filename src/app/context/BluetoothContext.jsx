@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState } from 'react';
 import PropTypes from 'prop-types';
-import useHeartRateMonitor from '../hooks/useHeartRateMonitor';
+import useHeartRateMonitor from '../../hooks/useHeartRateMonitor';
 
 export const BluetoothContext = createContext();
 

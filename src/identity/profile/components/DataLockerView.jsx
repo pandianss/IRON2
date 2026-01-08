@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { ArrowLeft, HardDrive, Shield } from 'lucide-react';
 import Button from '../../../components/UI/Button';
 import Card from '../../../components/UI/Card';
-import { useAppContext } from '../../../context/AppContext';
+import { useAppContext } from '../../../app/context/AppContext';
 
 const DataLockerView = ({ onBack }) => {
     const { showToast, biometricHistory, medicalRecords, addMedicalRecord } = useAppContext();

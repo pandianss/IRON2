@@ -1,58 +1,60 @@
-import { useState, useEffect, useCallback } from 'react';
-import { getLocalToday } from '../../../utils/dateHelpers';
-import { retentionService } from '../../../services/retention';
+import { useState, useCallback } from 'react';
+import { getLocalToday, getSystemTimezone } from '../../../utils/dateHelpers';
+import { useRetention } from '../../../app/context/RetentionContext';
 
 export const useStreaks = () => {
-    // ---- STATE ----
-    // SYNC ON MOUNT: Auto-resolve missed days and fix timezone gaps
-    const [streakData, setStreakData] = useState(() => retentionService.syncHistory());
-    const [sessionDismissed, setSessionDismissed] = useState(false);
+    // Consume Global Retention State
+    const {
+        currentStreak,
+        longestStreak,
+        lastCheckInDate,
+        checkIn,
+        loading
+    } = useRetention();
 
-    // ---- PERSISTENCE ----
-    useEffect(() => {
-        retentionService.saveData(streakData);
-    }, [streakData]);
+    const [sessionDismissed, setSessionDismissed] = useState(false);
+    const [streakBreakReason, setStreakBreakReason] = useState(null); // Managed locally for now or needs to be in context
 
     // ---- ACTIONS ----
     /**
      * @param {'trained' | 'rest'} status 
      */
-    // CRITICAL: STREAK CALCULATION DELEGATED TO SERVICE
-    const performCheckIn = useCallback((status) => {
-        const { newData, result } = retentionService.calculateCheckIn(streakData, status);
-
-        if (result.alreadyCheckedIn) {
-            return { streak: streakData.currentStreak, isNewRecord: false };
+    const performCheckIn = useCallback(async (status) => {
+        try {
+            await checkIn(status);
+            return { streak: currentStreak + 1, isNewRecord: (currentStreak + 1) > longestStreak };
+            // Note: Optimistic result return, though Context will update shortly
+        } catch (e) {
+            console.error("CheckIn Error", e);
+            throw e;
         }
-
-        setStreakData(newData);
-        return result;
-    }, [streakData]);
+    }, [checkIn, currentStreak, longestStreak]);
 
     const dismissCheckIn = useCallback(() => {
         setSessionDismissed(true);
     }, []);
 
     const dismissBreakAlert = useCallback(() => {
-        const newData = { ...streakData, streakBreakReason: null };
-        setStreakData(newData);
-    }, [streakData]);
+        setStreakBreakReason(null);
+    }, []);
 
     // ---- STATUS CHECKS ----
-    const isCheckedInToday = streakData.lastCheckInDate === getLocalToday(streakData.anchorTimezone);
-    const shouldShowCheckIn = !isCheckedInToday && !sessionDismissed;
-    const isDayResolved = retentionService.isDayResolved(streakData);
+    const timezone = getSystemTimezone();
+    const isCheckedInToday = lastCheckInDate === getLocalToday(timezone);
+    const shouldShowCheckIn = !isCheckedInToday && !sessionDismissed && !loading;
+    const isDayResolved = isCheckedInToday; // Simplified for now
 
     return {
-        streak: streakData.currentStreak,
-        longestStreak: streakData.longestStreak,
-        lastCheckInDate: streakData.lastCheckInDate,
-        streakBreakReason: streakData.streakBreakReason,
+        streak: currentStreak,
+        longestStreak,
+        lastCheckInDate,
+        streakBreakReason,
         isCheckedInToday,
         shouldShowCheckIn,
         isDayResolved,
         performCheckIn,
         dismissCheckIn,
-        dismissBreakAlert
+        dismissBreakAlert,
+        loading
     };
 };

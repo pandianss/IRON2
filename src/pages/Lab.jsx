@@ -3,7 +3,7 @@ import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import PassportCard from '../components/UI/PassportCard';
 import { Settings, Save, Activity, Zap, Heart, ShieldCheck, Calendar, History, ArrowLeft } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../app/context/AppContext';
 
 const Lab = () => {
     const { bpm, showToast } = useAppContext();

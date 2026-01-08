@@ -3,7 +3,7 @@ import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import ProductCard from '../components/UI/ProductCard';
 import { ShoppingCart, ShoppingBag, Tag, Star, ChevronRight, Search, Filter } from 'lucide-react';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../app/context/AppContext';
 
 const Bazaar = () => {
     const { showToast, userType, storeProducts, isLoading } = useAppContext();

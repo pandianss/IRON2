@@ -4,7 +4,7 @@ import { User, Settings, Shield, HardDrive, LogOut, ChevronRight, Bluetooth, Act
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import PassportCard from '../components/UI/PassportCard';
-import { useAppContext } from '../context/AppContext';
+import { useAppContext } from '../app/context/AppContext';
 
 const Profile = () => {
     const navigate = useNavigate();

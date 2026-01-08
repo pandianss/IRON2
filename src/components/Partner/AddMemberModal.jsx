@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from '../UI/Card';
 import Button from '../UI/Button';
 import { X, User, Check, Wallet } from 'lucide-react';
-import { useAppContext } from '../../context/AppContext';
+import { useAppContext } from '../../app/context/AppContext';
 
 const AddMemberModal = ({ onClose }) => {
     const { addMember, showToast, selectedGymId } = useAppContext();

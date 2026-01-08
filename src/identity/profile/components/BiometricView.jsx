@@ -1,7 +1,7 @@
 import React from 'react';
 import { ArrowLeft, Activity, Bluetooth } from 'lucide-react';
 import Button from '../../../components/UI/Button';
-import { useAppContext } from '../../../context/AppContext';
+import { useAppContext } from '../../../app/context/AppContext';
 
 const BiometricView = ({ onBack }) => {
     const { showToast, connectDevice, disconnectDevice, isDeviceConnected, deviceName } = useAppContext();

@@ -459,7 +459,7 @@ export const DataProvider = ({ children, appMode }) => {
             studioContent, addStudioContent,
             studioExercises, addStudioExercise,
             studioRoutineName, setStudioRoutineName,
-            studioRoutineName, setStudioRoutineName,
+
             challenges, createChallenge,
             ratings, addRating, getRatingStats,
             certifications, addCertification
