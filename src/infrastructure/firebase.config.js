@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
+import { getAnalytics } from "firebase/analytics";
 
 const firebaseConfig = {
     apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -22,6 +23,7 @@ let app = null;
 let auth = null;
 let db = null;
 let storage = null;
+let analytics = null;
 
 try {
     console.log("Attempting Firebase Initialization...");
@@ -29,6 +31,7 @@ try {
     auth = getAuth(app);
     db = getFirestore(app);
     storage = getStorage(app);
+    analytics = getAnalytics(app);
     console.log("Firebase Initialized Successfully");
 } catch (error) {
     console.error("FATAL: Firebase Initialization Failed", error);
@@ -43,5 +46,5 @@ enableIndexedDbPersistence(db).catch((err) => {
     }
 });
 
-export { auth, db, storage };
+export { auth, db, storage, analytics };
 export default app;

@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { firebaseRetentionService } from '../../services/retention/FirebaseRetentionService';
+import { getLocalToday, getLocalYesterday, getSystemTimezone } from '../../utils/dateHelpers';
 import { useAuth } from './AuthContext';
 
 const RetentionContext = createContext(null);
@@ -11,8 +12,34 @@ export const RetentionProvider = ({ children }) => {
         longestStreak: 0,
         lastCheckInDate: null,
         history: {},
-        loading: true
+        loading: true,
+        // Day Contract State
+        streakState: 'pending', // 'completed' | 'pending' | 'broken'
+        missedDays: 0
     });
+
+    // Helper: Calculate Day Contract
+    const resolveDayContract = (lastDate, currentStreak) => {
+        const today = getLocalToday();
+        const yesterday = getLocalYesterday();
+
+        if (lastDate === today) {
+            return { streakState: 'completed', missedDays: 0 };
+        }
+
+        if (lastDate === yesterday) {
+            return { streakState: 'pending', missedDays: 0 };
+        }
+
+        // If no last date (new user) -> Pending (0 missed)
+        if (!lastDate) {
+            return { streakState: 'pending', missedDays: 0 };
+        }
+
+        // Otherwise: Broken
+        // TODO: precise day diff for recovery price
+        return { streakState: 'broken', missedDays: 1 };
+    };
 
     // Initial Load
     useEffect(() => {
@@ -26,13 +53,19 @@ export const RetentionProvider = ({ children }) => {
                 // Sync first to resolve any time-based logic (if we moved logic to backend, this might just be a fetch)
                 const data = await firebaseRetentionService.syncHistory(user.uid);
                 if (data) {
+                    // Apply Contract Logic derived from fetched data
+                    const { currentStreak, lastCheckInDate } = data;
+                    const contract = resolveDayContract(lastCheckInDate, currentStreak);
+
                     setRetentionState(prev => ({
                         ...prev,
                         currentStreak: data.currentStreak || 0,
                         longestStreak: data.longestStreak || 0,
                         lastCheckInDate: data.lastCheckInDate || null,
+                        ...contract,
                         loading: false
                     }));
+
                 } else {
                     setRetentionState(prev => ({ ...prev, loading: false }));
                 }
@@ -58,7 +91,9 @@ export const RetentionProvider = ({ children }) => {
                     ...prev,
                     currentStreak: data.currentStreak || 0,
                     longestStreak: data.longestStreak || 0,
-                    lastCheckInDate: data.lastCheckInDate || null
+                    lastCheckInDate: data.lastCheckInDate || null,
+                    streakState: 'completed', // Immediate optimistic update
+                    missedDays: 0
                 }));
 
                 // Fire Event for UI Effects (Toast, Feed)
@@ -75,8 +110,13 @@ export const RetentionProvider = ({ children }) => {
         }
     };
 
+    const recoverSession = async () => {
+        console.warn("Recovery Mode Implementation Pending");
+        // Future: specific service call to pay 'freeze' and repair streak
+    };
+
     return (
-        <RetentionContext.Provider value={{ ...retentionState, checkIn }}>
+        <RetentionContext.Provider value={{ ...retentionState, checkIn, recoverSession }}>
             {children}
         </RetentionContext.Provider>
     );

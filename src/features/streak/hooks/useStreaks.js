@@ -8,8 +8,12 @@ export const useStreaks = () => {
         currentStreak,
         longestStreak,
         lastCheckInDate,
+        lastCheckInDate,
         checkIn,
-        loading
+        recoverSession,
+        loading,
+        streakState,
+        missedDays
     } = useRetention();
 
     const [sessionDismissed, setSessionDismissed] = useState(false);
@@ -55,6 +59,10 @@ export const useStreaks = () => {
         performCheckIn,
         dismissCheckIn,
         dismissBreakAlert,
-        loading
+        dismissBreakAlert,
+        loading,
+        streakState,
+        missedDays,
+        recoverSession
     };
 };
