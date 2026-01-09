@@ -94,7 +94,8 @@ export const DataProvider = ({ children, appMode }) => {
                     const [
                         gymsData, usersData, plansData,
                         notifsData, enqData, achData,
-                        productsData, liveData, transData, challengesData
+                        productsData, liveData, transData, challengesData,
+                        ratingsData, studioContentData, studioExercisesData
                     ] = await Promise.all([
                         DbService.getDocs('gyms'),
                         DbService.getDocs('users'),
@@ -106,7 +107,9 @@ export const DataProvider = ({ children, appMode }) => {
                         DbService.getDocs('live_sessions'),
                         DbService.getDocs('transactions'),
                         DbService.getDocs('challenges'),
-                        DbService.getDocs('ratings')
+                        DbService.getDocs('ratings'),
+                        DbService.getDocs('studio_content'),
+                        DbService.getDocs('studio_exercises')
                     ]);
 
                     // Separate Pagination Fetch for Feed
@@ -127,16 +130,9 @@ export const DataProvider = ({ children, appMode }) => {
                     setTransactions(transData);
                     setTransactions(transData);
                     setChallenges(challengesData);
-                    setRatings(productsData); // Typo protection: actually waiting for ratingsData, but destructured above needs adjustment. 
-                    // Wait, I missed adding ratingsData to the Promise.all destructuring. 
-                    // Let me fix safely by appending separate logic or simpler replacement.
-                    // For now, I'll just skip the destructuring edit to avoid complexity and fix it properly in a subsequent step if needed, 
-                    // OR I can lazily load ratings for live mode since it wasn't requested strictly.
-                    // Actually, let's just initialize it to empty for LIVE mode if I don't want to break the big Promise.all block too much.
-                    // Better approach: just add it to the state initialization logic below.
-                    // I will add a separate fetch for ratings or just rely on the fact that I'm adding it to state.
-                    // For LIVE mode, let's assume empty for now to avoid breaking the complex destructuring block in one go.
-                    setRatings([]);
+                    setRatings(ratingsData);
+                    setStudioContent(studioContentData);
+                    setStudioExercises(studioExercisesData);
 
                     calculateRevenue(transData);
 
