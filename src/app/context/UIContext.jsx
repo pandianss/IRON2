@@ -27,9 +27,20 @@ export const UIProvider = ({ children }) => {
         });
     };
 
-    const showToast = (msg) => {
-        setToast(msg);
-        setTimeout(() => setToast(null), 3000);
+    const timerRef = React.useRef(null);
+
+    const showToast = (msg, type = 'info') => {
+        if (timerRef.current) clearTimeout(timerRef.current);
+
+        setToast({ message: msg, type, exiting: false });
+
+        timerRef.current = setTimeout(() => {
+            setToast(prev => prev ? { ...prev, exiting: true } : null);
+            timerRef.current = setTimeout(() => {
+                setToast(null);
+                timerRef.current = null;
+            }, 300);
+        }, 3000);
     };
 
     const toggleRust = () => setIsRusting(prev => !prev);

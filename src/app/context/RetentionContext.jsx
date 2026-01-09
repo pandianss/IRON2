@@ -3,10 +3,10 @@ import { firebaseRetentionService } from '../../services/retention/FirebaseReten
 import { getLocalToday, getLocalYesterday, getSystemTimezone } from '../../utils/dateHelpers';
 import { useAuth } from './AuthContext';
 
-const RetentionContext = createContext(null);
+export const RetentionContext = createContext(null);
 
 export const RetentionProvider = ({ children }) => {
-    const { user } = useAuth();
+    const { currentUser: user } = useAuth();
     const [retentionState, setRetentionState] = useState({
         currentStreak: 0,
         longestStreak: 0,
@@ -49,6 +49,8 @@ export const RetentionProvider = ({ children }) => {
         }
 
         const loadData = async () => {
+            // Reset loading state while fetching new user data
+            setRetentionState(prev => ({ ...prev, loading: true }));
             try {
                 // Sync first to resolve any time-based logic (if we moved logic to backend, this might just be a fetch)
                 const data = await firebaseRetentionService.syncHistory(user.uid);
@@ -98,7 +100,9 @@ export const RetentionProvider = ({ children }) => {
 
                 // Fire Event for UI Effects (Toast, Feed)
                 // Import eventBus and EVENTS first (needed at top of file)
-                const { eventBus, EVENTS } = await import('../../services/events');
+                console.log("Loading EventBus...");
+                const { eventBus, EVENTS } = await import('../../services/events/index');
+                console.log("EventBus Loaded", eventBus);
                 eventBus.emit(EVENTS.RETENTION.CHECK_IN, {
                     status,
                     streak: data.currentStreak || 0

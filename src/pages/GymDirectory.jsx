@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useAppContext } from '../app/context/AppContext';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
@@ -8,6 +9,7 @@ import ReviewModal from '../components/UI/ReviewModal';
 
 
 const GymDirectory = () => {
+    const navigate = useNavigate();
     const { gyms, sendEnquiry, showToast, getRatingStats, addRating } = useAppContext();
     const [message, setMessage] = useState('');
     const [selectedGym, setSelectedGym] = useState(null);
@@ -48,7 +50,13 @@ const GymDirectory = () => {
                         <MapPin size={48} color="var(--text-muted)" style={{ margin: '0 auto 16px', opacity: 0.5 }} />
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '8px' }}>SECTOR CLEAR</h3>
                         <p style={{ color: 'var(--text-secondary)' }}>No Forges detected in range. <br />Establish your own legacy.</p>
-                        <Button variant="outline" style={{ marginTop: '24px' }}>Register New Forge</Button>
+                        <Button
+                            variant="accent"
+                            style={{ margin: '24px auto 0', minWidth: '200px' }}
+                            onClick={() => navigate('/partner')}
+                        >
+                            REGISTER A GYM
+                        </Button>
                     </div>
                 ) : (
                     gyms.map(gym => (

@@ -1,8 +1,9 @@
 import React, { useEffect } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import { Outlet, useNavigate, useLocation, Navigate } from 'react-router-dom';
 import { TrendingUp, Clapperboard, ArrowLeft, ChevronLeft, Share2, Shield } from 'lucide-react';
 import BottomNav from './BottomNav';
 import Notifications from '../UI/Notifications';
+import Toast from '../UI/Toast';
 import { CheckInModal } from '../../features/checkin'; // Component stays
 import { useSmartNudges } from '../../features/insights'; // Feature logic stays
 
@@ -20,6 +21,8 @@ import { useRetentionEffects } from '../../app/hooks';
 const AppShell = () => {
     // 1. Auth Guard (Handles Routing & Protection)
     const { isLoading } = useAuthGuard();
+    const navigate = useNavigate();
+    const location = useLocation();
 
     // 2. Retention Gate (Handles Check-in Logic)
     const {
@@ -33,7 +36,7 @@ const AppShell = () => {
     const { userType, currentUser } = useSession();
 
     // 4. UI Feedback
-    const { toast } = useUIFeedback();
+    // Toast handled by component directly
 
     if (isLoading) {
         return (
@@ -203,30 +206,8 @@ const AppShell = () => {
             </div>
 
             {/* Notification Toast */}
-            {toast && (
-                <div className="fade-in" style={{
-                    position: 'fixed',
-                    bottom: '100px',
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    background: 'var(--accent-orange)',
-                    color: '#000',
-                    padding: '12px 24px',
-                    borderRadius: '12px',
-                    fontWeight: '900',
-                    fontSize: '0.85rem',
-                    fontFamily: 'var(--font-display)',
-                    zIndex: 1000,
-                    boxShadow: '0 10px 30px rgba(255, 77, 0, 0.4)',
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '10px',
-                    whiteSpace: 'nowrap'
-                }}>
-                    <Share2 size={16} />
-                    {toast.toUpperCase()}
-                </div>
-            )}
+            {/* Global Toast */}
+            <Toast />
 
             {/* Only show navigation for standard users, not partners */}
             {userType !== 'gym' && <BottomNav />}

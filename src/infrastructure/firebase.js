@@ -170,7 +170,10 @@ const RealAuthService = {
                 }
             });
         });
-    }
+    },
+
+    // Expose raw auth for listeners
+    auth: auth
 };
 
 // --- REAL STORAGE SERVICE ---

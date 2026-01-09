@@ -3,13 +3,18 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { useStreaks } from '../../features/streak';
 import { eventBus, EVENTS } from '../../services/events';
 
+import { useSession } from '../context';
+
 export const useRetentionGate = () => {
     const {
         shouldShowCheckIn,
         performCheckIn,
         dismissCheckIn,
-        streak
+        streak,
+        loading
     } = useStreaks();
+
+    const { currentUser } = useSession();
 
     const handleCheckIn = (status) => {
         const { streak: newStreak } = performCheckIn(status);
@@ -26,15 +31,16 @@ export const useRetentionGate = () => {
 
     useEffect(() => {
         // Behavioral Refactor: Mandatory First Action
-        // If user is authenticated, has NO streak, and is NOT on the onboarding/auth/initial screen
-        // Redirect to Initial Contract
-        if (streak === 0 &&
+        // Only enforce for LOGGED IN users
+        // Wait for Loading to complete to avoid false positives (streak 0 while loading)
+        // console.log("RetentionGate Check:", { loading, hasUser: !!currentUser, streak, path: location.pathname });
+
+        if (!loading && currentUser && streak === 0 &&
             !['/auth', '/onboarding', '/checkin/initial', '/welcome'].includes(location.pathname)) {
-            // We need to ensure we don't redirect while loading, handled by AuthGuard. 
-            // But if we are here, we are likely inside AppShell.
+            console.warn("RetentionGate: Redirecting to initial check-in due to 0 streak.");
             navigate('/checkin/initial', { replace: true });
         }
-    }, [streak, location.pathname, navigate]);
+    }, [streak, location.pathname, navigate, currentUser, loading]);
 
     return {
         shouldShowCheckIn,

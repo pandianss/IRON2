@@ -18,14 +18,10 @@ export { RetentionContext } from './RetentionContext';
 export const AppContext = createContext();
 
 export const AppProvider = ({ children }) => {
-    const [appMode, setAppMode] = useState(() => {
-        return localStorage.getItem('iron_app_mode') || null;
-    });
+    const [appMode] = useState('live');
 
-    const setMode = (mode) => {
-        setAppMode(mode);
-        localStorage.setItem('iron_app_mode', mode);
-    };
+    // Legacy support if anything calls setAppMode, though it should be removed.
+    const setMode = () => console.warn("App Mode is locked to LIVE");
 
     return (
         <AppContext.Provider value={{ appMode, setAppMode: setMode }}>

@@ -6,11 +6,16 @@ import {
 } from 'lucide-react';
 import Button from '../components/UI/Button';
 import Card from '../components/UI/Card';
+import Toast from '../components/UI/Toast';
 import { useSession, useUIFeedback } from '../app/context';
 
 const AuthPage = () => {
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+
+    useEffect(() => {
+        console.log("AuthPage Mounted");
+    }, []);
 
     // Session Context (Auth & Mode)
     const {
@@ -34,8 +39,14 @@ const AuthPage = () => {
     const [otp, setOtp] = useState('');
     const [verificationId, setVerificationId] = useState(null);
 
-    // Initial Check for Magic Link Finish
+    // Initial Check for Magic Link Finish or Existing Session
     useEffect(() => {
+        // If already logged in, go home
+        if (AuthService.auth.currentUser) {
+            navigate('/', { replace: true });
+            return;
+        }
+
         const checkMagicLink = async () => {
             if (searchParams.get('finish') === 'true') {
                 setLoading(true);
@@ -159,21 +170,7 @@ const AuthPage = () => {
         }
     };
 
-    // Demo Login Handler
-    const handleDemoLogin = async (persona) => {
-        setLoading(true);
-        // Map persona to mock credentials
-        const credentials = {
-            enthusiast: { email: 'demo@iron.com', password: 'password' },
-            partner: { email: 'owner@iron.com', password: 'password' },
-            trainer: { email: 'trainer@iron.com', password: 'password' },
-            admin: { email: 'admin@iron.com', password: 'password' }
-        };
-        const { email, password } = credentials[persona];
-        const success = await login(email, password);
-        setLoading(false);
-        if (success) navigate('/');
-    };
+
 
 
 
@@ -297,7 +294,10 @@ const AuthPage = () => {
                     </form>
                 )}
 
+                )}
+
             </Card >
+            <Toast />
         </div >
     );
 };

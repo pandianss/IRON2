@@ -172,7 +172,7 @@ const Hub = () => {
 
             <div style={{ marginTop: '32px' }}>
                 <Button fullWidth variant="primary" onClick={() => handleAction("Expert certification flow loading...")}>
-                    Become an Expert
+                    Register as a Trainer
                 </Button>
             </div>
         </div>

@@ -7,7 +7,9 @@ const Button = ({
   fullWidth = false,
   onClick,
   icon: Icon,
-  disabled = false
+  style,
+  disabled = false,
+  ...props
 }) => {
   const getVariantStyle = (v) => {
     switch (v) {
@@ -54,11 +56,13 @@ const Button = ({
     fontSize: '1rem',
     transition: 'all 0.2s ease',
     userSelect: 'none',
-    border: variant === 'secondary' ? '1px solid var(--border-glass)' : 'none'
+    border: variant === 'secondary' ? '1px solid var(--border-glass)' : 'none',
+    ...style
   };
 
   return (
     <button
+      {...props}
       style={buttonStyle}
       onClick={onClick}
       disabled={disabled}

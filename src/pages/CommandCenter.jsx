@@ -16,6 +16,7 @@ import {
     useUIFeedback,
     useBluetooth
 } from '../app/context';
+import LogWorkoutModal from '../components/Workouts/LogWorkoutModal';
 import { mockFeedActivities } from '../services/mockData';
 
 const CommandCenter = () => {
@@ -26,6 +27,7 @@ const CommandCenter = () => {
     const { feedActivities, loadMoreFeed, hasMoreFeed, logActivity } = useActivity();
     const navigate = useNavigate();
     const [userLocation, setUserLocation] = useState(null);
+    const [showLogModal, setShowLogModal] = useState(false);
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -193,10 +195,10 @@ const CommandCenter = () => {
                 <Button
                     variant="accent"
                     icon={Activity}
-                    onClick={handleLogActivity}
+                    onClick={() => setShowLogModal(true)}
                     style={{ height: '56px' }}
                 >
-                    LOG WORK
+                    LOG WORKOUT
                 </Button>
             </div>
 
@@ -240,6 +242,21 @@ const CommandCenter = () => {
                         </div>
                     )}
                 </>
+            )}
+
+            {/* Log Workout Modal */}
+            {showLogModal && (
+                <LogWorkoutModal
+                    onClose={() => setShowLogModal(false)}
+                    onLog={(data) => {
+                        logActivity({
+                            ...data,
+                            activityType: "Workout Log",
+                            location: userLocation ? "Field Ops" : "Unknown",
+                            coordinates: userLocation
+                        });
+                    }}
+                />
             )}
         </div>
     );

@@ -1,6 +1,6 @@
 import { initializeApp } from "firebase/app";
-import { getAuth } from "firebase/auth";
-import { getFirestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getAuth, connectAuthEmulator } from "firebase/auth";
+import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 import { getAnalytics } from "firebase/analytics";
 
@@ -29,22 +29,19 @@ try {
     console.log("Attempting Firebase Initialization...");
     app = initializeApp(firebaseConfig);
     auth = getAuth(app);
-    db = getFirestore(app);
+    // Modern Firestore Initialization with Persistence
+    db = initializeFirestore(app, {
+        localCache: persistentLocalCache({
+            tabManager: persistentMultipleTabManager()
+        })
+    });
     storage = getStorage(app);
     analytics = getAnalytics(app);
+
     console.log("Firebase Initialized Successfully");
 } catch (error) {
     console.error("FATAL: Firebase Initialization Failed", error);
 }
-
-// Enable Offline Persistence
-enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code == 'failed-precondition') {
-        console.warn("Persistence failed: Multiple tabs open");
-    } else if (err.code == 'unimplemented') {
-        console.warn("Persistence not supported");
-    }
-});
 
 export { auth, db, storage, analytics };
 export default app;

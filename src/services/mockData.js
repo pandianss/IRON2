@@ -136,4 +136,12 @@ export const mockRatings = [
     { id: 'r3', targetId: 'trainer1', raterId: 'user1', rating: 5, comment: "Best lifting coach in the city.", timestamp: new Date(Date.now() - 43200000).toISOString() }
 ];
 
+// Audio Assets for workout logs
+export const mockAudioTracks = [
+    { id: 't1', title: 'Epic Rise', url: 'https://assets.mixkit.co/music/preview/mixkit-uplifting-strings-inspiration-123.mp3', duration: '2:12' },
+    { id: 't2', title: 'Power Drive', url: 'https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp3', duration: '1:45' },
+    { id: 't3', title: 'Zen Focus', url: 'https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3', duration: '2:30' },
+    { id: 't4', title: 'Iron Heart', url: 'https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3', duration: '1:55' }
+];
+
 export const mockBpm = 72;

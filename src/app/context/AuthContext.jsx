@@ -20,14 +20,28 @@ export const AuthProvider = ({ children, appMode }) => {
     });
 
     // 1. Global Auth Listener (Session Persistence)
+    // 1. Global Auth Listener (Session Persistence)
     useEffect(() => {
-        // Skip if not in live mode (though good to have unify logic later)
-        if (appMode !== 'live') {
+        console.log("AuthProvider: Mounting...", { hasAuth: !!AuthService.auth });
+
+        // Safety Timeout - if Firebase hangs, unlock the app after 3s
+        const safetyTimer = setTimeout(() => {
+            if (isLoading) {
+                console.warn("AuthProvider: Auth check timed out. Forcing unlock.");
+                setIsLoading(false);
+            }
+        }, 3000);
+
+        if (!AuthService.auth) {
+            console.error("AuthProvider: AuthService.auth is missing!");
             setIsLoading(false);
             return;
         }
 
         const unsubscribe = AuthService.auth.onAuthStateChanged(async (firebaseUser) => {
+            console.log("AuthProvider: Auth State Changed", { user: firebaseUser?.email });
+            clearTimeout(safetyTimer); // Clear timeout if we get a response
+
             if (firebaseUser) {
                 try {
                     // Auth state exists, sync with DB
@@ -39,12 +53,15 @@ export const AuthProvider = ({ children, appMode }) => {
             } else {
                 // No user
                 setCurrentUser(null);
-                setUserType('enthusiast');
+                setUserType('enthusiast'); // Default to guest role equivalent
             }
             setIsLoading(false); // Done loading regardless of result
         });
 
-        return () => unsubscribe();
+        return () => {
+            unsubscribe();
+            clearTimeout(safetyTimer);
+        };
     }, [appMode]);
 
 
@@ -101,9 +118,31 @@ export const AuthProvider = ({ children, appMode }) => {
             return true;
         } catch (error) {
             setIsLoading(false);
+            console.error("Login Error Details:", error);
+
             let msg = "Login failed.";
-            if (error.code === 'auth/user-not-found') msg = "No user found.";
-            if (error.code === 'auth/wrong-password') msg = "Incorrect password.";
+
+            if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
+                // 1. Differentiate "Not Found" vs "Wrong Password"
+                try {
+                    const exists = await AuthService.checkEmailExists(email);
+                    if (!exists) {
+                        msg = "Account currently not registered. Please Join.";
+                    } else {
+                        msg = "Incorrect password.";
+                    }
+                } catch (e) {
+                    // If check fails (security rules?), fallback to generic
+                    msg = "Invalid credentials. If you are new, please Join.";
+                }
+            } else if (error.code === 'auth/wrong-password') {
+                msg = "Incorrect password.";
+            } else if (error.code === 'auth/too-many-requests') {
+                msg = "Too many attempts. Reset password?";
+            } else {
+                msg = `Login failed (${error.code || 'Unknown'}).`;
+            }
+            console.log("DEBUG TOAST MSG:", msg);
             showToast(msg);
             return false;
         }
@@ -113,7 +152,6 @@ export const AuthProvider = ({ children, appMode }) => {
         try {
             setIsLoading(true);
             await AuthService.loginWithGoogle();
-            // onAuthStateChanged will handle the rest
             return true;
         } catch (error) {
             setIsLoading(false);
@@ -156,26 +194,26 @@ export const AuthProvider = ({ children, appMode }) => {
 
             AuditService.log('USER_REGISTER', newUser, { id: newUser.uid }, { role });
             showToast("Welcome to IRON.");
-            return { success: true };
         } catch (error) {
             setIsLoading(false);
-            showToast("Registration failed: " + error.message);
+            console.error("Registration failed", error);
+            showToast("Registration failed: " + (error.message || error.code));
             return { success: false, code: error.code };
         }
-    };
+    }
 
     const logout = async () => {
         try {
             await AuthService.logout();
             setCurrentUser(null);
             setUserType('enthusiast');
-            localStorage.removeItem('iron_onboarding_done'); // Optional depending on requirement
+            localStorage.removeItem('iron_onboarding_done');
             showToast("Logged out successfully.");
         } catch (error) {
             console.error("Logout failed", error);
             showToast("Logout failed.");
         }
-    }
+    };
 
     const updateUser = async (uid, data) => {
         try {

@@ -3,11 +3,11 @@ import { Flame, CheckCircle2 } from 'lucide-react';
 import { useStreaks } from '../hooks/useStreaks';
 
 const StreakCard = () => {
-    const { streak, checkIn, isCheckedInToday } = useStreaks();
+    const { streak, performCheckIn, isCheckedInToday } = useStreaks();
 
     const handleCheckIn = () => {
         if (!isCheckedInToday) {
-            checkIn();
+            performCheckIn();
         }
     };
 
@@ -38,8 +38,8 @@ const StreakCard = () => {
                     onClick={handleCheckIn}
                     disabled={isCheckedInToday}
                     className={`px-4 py-2 rounded-full text-sm font-bold transition-all duration-300 flex items-center gap-2 ${isCheckedInToday
-                            ? 'bg-green-500/20 text-green-400 cursor-default'
-                            : 'bg-white text-orange-600 hover:bg-orange-50 active:scale-95 shadow-lg shadow-orange-900/50'
+                        ? 'bg-green-500/20 text-green-400 cursor-default'
+                        : 'bg-white text-orange-600 hover:bg-orange-50 active:scale-95 shadow-lg shadow-orange-900/50'
                         }`}
                 >
                     {isCheckedInToday ? (

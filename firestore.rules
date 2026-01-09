@@ -68,6 +68,8 @@ service cloud.firestore {
     match /challenges/{id} { allow read, write: if isAuthenticated(); }
     match /ratings/{id} { allow read, write: if isAuthenticated(); }
     match /products/{id} { allow read, write: if true; }
+    match /studio_content/{id} { allow read: if true; allow write: if isSuperAdmin(); }
+    match /studio_exercises/{id} { allow read: if true; allow write: if isSuperAdmin(); }
     match /audit_logs/{id} { allow read, write: if isAuthenticated(); }
   }
 }

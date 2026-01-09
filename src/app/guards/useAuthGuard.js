@@ -16,34 +16,48 @@ export const useAuthGuard = () => {
     } = useSession();
 
     useEffect(() => {
-        // 0. Safety Check
-        if (!appMode) {
-            navigate('/welcome');
-            return;
-        }
+        // Debug State for visibility
+        // console.log("GUARD CHECK:", { isLoading, hasUser: !!currentUser, path: location.pathname });
 
         // 1. Loading State
         if (isLoading) return;
 
-        // 2. Auth Check (Live Mode)
-        if (!currentUser && appMode === 'live') {
-            navigate('/auth');
+        // 2. Auth Check
+        if (!currentUser) {
+            console.warn("GUARD: No User -> Redirecting to /auth");
+            navigate('/auth', { replace: true });
+            return;
         }
 
         // 3. Onboarding Check
-        else if (!onboardingCompleted && userType !== 'super_admin' && appMode === 'live') {
-            navigate('/onboarding');
+        if (!onboardingCompleted && userType !== 'super_admin') {
+            navigate('/onboarding', { replace: true });
+            return;
         }
 
         // 4. Role-Based Access Control
-        else if (userType !== 'gym' && userType !== 'gym_owner' && location.pathname.startsWith('/partner') && userType !== 'super_admin') {
-            navigate('/');
-        } else if ((userType === 'gym' || userType === 'gym_owner') && (location.pathname === '/' || location.pathname === '/home')) {
-            navigate('/partner');
-        } else if (location.pathname === '/admin' && userType !== 'super_admin') {
-            navigate('/');
+        // Gym/Partner Restricted from Root
+        if ((userType === 'gym' || userType === 'gym_owner') && (location.pathname === '/' || location.pathname === '/home')) {
+            navigate('/partner', { replace: true });
+            return;
         }
-    }, [currentUser, onboardingCompleted, userType, navigate, location.pathname, isLoading, appMode]);
+
+        // Non-Partners Restricted from Partner Dashboard
+        // ALLOW ENTRY for Registration (PartnerDashboard handles 'No Gym' state)
+        /* 
+        if (userType !== 'gym' && userType !== 'gym_owner' && location.pathname.startsWith('/partner') && userType !== 'super_admin') {
+            navigate('/', { replace: true });
+            return;
+        }
+        */
+
+        // Admin Restricted
+        if (location.pathname === '/admin' && userType !== 'super_admin') {
+            navigate('/', { replace: true });
+            return;
+        }
+
+    }, [currentUser, onboardingCompleted, userType, navigate, location.pathname, isLoading]);
 
     return { isLoading };
 };

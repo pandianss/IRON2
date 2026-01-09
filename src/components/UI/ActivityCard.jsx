@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Flame } from 'lucide-react';
+import { Flame, Music } from 'lucide-react';
 
 const ActivityCard = ({
     userName,
@@ -12,7 +12,10 @@ const ActivityCard = ({
     mediaUrl,
     mediaType = 'image', // 'image' | 'video'
     isLive = false,
-    distance = null
+    distance = null,
+    description,
+    audioTrack,
+    audioMode
 }) => {
     return (
         <div className={`glass-panel ${isPR ? 'pr-glow heat-streak-pulse' : ''}`} style={{
@@ -98,6 +101,31 @@ const ActivityCard = ({
                     {timeAgo}
                 </div>
             </div>
+
+            {description && (
+                <div style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '16px', lineHeight: '1.4' }}>
+                    {description}
+                </div>
+            )}
+
+            {audioTrack && (
+                <div style={{
+                    marginBottom: '16px', padding: '12px', background: 'rgba(255,255,255,0.05)',
+                    borderRadius: '12px', display: 'flex', alignItems: 'center', gap: '12px'
+                }}>
+                    <div style={{
+                        width: '32px', height: '32px', background: 'var(--accent-orange)', borderRadius: '50%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center'
+                    }}>
+                        <Music size={16} color="#000" />
+                    </div>
+                    <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: '700' }}>{audioTrack.title}</div>
+                        <div style={{ fontSize: '0.7rem', color: 'var(--text-secondary)' }}>Workout Soundtrack</div>
+                    </div>
+                    <audio controls src={audioTrack.url} style={{ height: '30px', width: '120px', filter: 'invert(1) hue-rotate(180deg)' }} />
+                </div>
+            )}
 
             {mediaUrl && (
                 <div style={{
@@ -185,7 +213,12 @@ ActivityCard.propTypes = {
     isPR: PropTypes.bool,
     mediaUrl: PropTypes.string,
     mediaType: PropTypes.oneOf(['image', 'video']),
-    isLive: PropTypes.bool
+    isLive: PropTypes.bool,
+    description: PropTypes.string,
+    audioTrack: PropTypes.shape({
+        title: PropTypes.string,
+        url: PropTypes.string
+    })
 };
 
 export default ActivityCard;

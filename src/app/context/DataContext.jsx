@@ -8,9 +8,7 @@ import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
 import { orderBy } from 'firebase/firestore';
 import {
-    mockProducts, mockGyms, mockUsers, mockPlans,
-    mockNotifications, mockFeedActivities,
-    mockRatings
+    // mockProducts, mockGyms, etc removed
 } from '../../services/mockData';
 
 console.log("DataContext Module Loaded. DbService type:", typeof DbService);
@@ -60,50 +58,36 @@ export const DataProvider = ({ children, appMode }) => {
         const fetchAllData = async () => {
             setIsLoading(true);
             try {
-                if (!appMode) {
-                    setIsLoading(false);
-                    return;
+                // 1. Fetch Public Data (Always Allow)
+                const [gymsData, plansData, productsData] = await Promise.all([
+                    DbService.getDocs('gyms'),
+                    DbService.getDocs('partner_plans'),
+                    DbService.getDocs('products'),
+                ]);
+
+                setGyms(gymsData);
+                setPartnerPlans(plansData);
+                setStoreProducts(productsData.length ? productsData : []);
+
+                if (gymsData.length > 0 && !selectedGymId) {
+                    setSelectedGymId(gymsData[0].id);
                 }
 
-                if (appMode === 'demo') {
-                    // Load Mock Data
-                    setGyms(mockGyms);
-                    setUsers(mockUsers);
-                    setPartnerPlans(mockPlans);
-                    setNotifications(mockNotifications);
-                    setEnquiries([]); // Mock empty
-                    setAchievements([]); // Mock empty 
-                    setStoreProducts(mockProducts);
-                    setFeedActivities(mockFeedActivities);
-                    setHasMoreFeed(false);
-                    setLiveSessions([]); // Mock empty
-                    setTransactions([]); // Mock empty
-                    setChallenges([]); // Mock empty
-                    setRatings(mockRatings);
+                // 2. Fetch Protected Data (Only if Authenticated)
+                const authUser = await AuthService.getCurrentUser();
 
-                    if (mockGyms.length > 0) setSelectedGymId(mockGyms[0].id);
+                if (authUser) {
+                    await syncUserFromAuth(authUser);
 
-                    // Set Mock Current User
-                    // We need to simulate a logged in user for Demo
-                    const demoUser = mockUsers[0];
-                    setCurrentUser(demoUser);
-                    setUserType('user'); // Or demoUser.role
-
-                } else {
-                    // LIVE MODE - Fetch from Firebase
                     const [
-                        gymsData, usersData, plansData,
-                        notifsData, enqData, achData,
-                        productsData, liveData, transData, challengesData,
+                        usersData, notifsData, enqData, achData,
+                        liveData, transData, challengesData,
                         ratingsData, studioContentData, studioExercisesData
                     ] = await Promise.all([
-                        DbService.getDocs('gyms'),
                         DbService.getDocs('users'),
-                        DbService.getDocs('partner_plans'),
                         DbService.getDocs('notifications'),
                         DbService.getDocs('enquiries'),
                         DbService.getDocs('achievements'),
-                        DbService.getDocs('products'),
                         DbService.getDocs('live_sessions'),
                         DbService.getDocs('transactions'),
                         DbService.getDocs('challenges'),
@@ -115,12 +99,10 @@ export const DataProvider = ({ children, appMode }) => {
                     // Separate Pagination Fetch for Feed
                     const { data: paginatedFeed, lastVisible } = await DbService.getPaginatedDocs('feed_activities', 5);
 
-                    setGyms(gymsData);
                     setUsers(usersData);
-                    setPartnerPlans(plansData);
-
+                    setNotifications(notifsData);
+                    setEnquiries(enqData);
                     setAchievements(achData);
-                    setStoreProducts(productsData.length ? productsData : mockProducts);
 
                     setFeedActivities(paginatedFeed);
                     setLastFeedDoc(lastVisible);
@@ -128,23 +110,14 @@ export const DataProvider = ({ children, appMode }) => {
 
                     setLiveSessions(liveData);
                     setTransactions(transData);
-                    setTransactions(transData);
                     setChallenges(challengesData);
                     setRatings(ratingsData);
                     setStudioContent(studioContentData);
                     setStudioExercises(studioExercisesData);
 
                     calculateRevenue(transData);
-
-                    if (gymsData.length > 0 && !selectedGymId) {
-                        setSelectedGymId(gymsData[0].id);
-                    }
-
-                    // Check Auth Persistence
-                    const authUser = await AuthService.getCurrentUser();
-                    if (authUser) {
-                        await syncUserFromAuth(authUser);
-                    }
+                } else {
+                    console.log("Guest Mode: Skipping protected data fetch");
                 }
 
             } catch (error) {
@@ -158,32 +131,23 @@ export const DataProvider = ({ children, appMode }) => {
         fetchAllData();
 
 
-        // Real-time Notifications Listener
+        return () => {
+            // Cleanup if needed
+        };
+    }, [appMode]);
+
+    // Separate Effect for Real-time Notifications (Dependent on Auth)
+    useEffect(() => {
+        if (!currentUser || appMode === 'demo') return;
+
         const unsubscribeNotifs = DbService.subscribeToCollection('notifications', (data) => {
-            // Filter client-side or use constraints. For now, taking all, but ideally filter by user/gym
             setNotifications(data);
         }, [orderBy('time', 'desc')]);
-
-        // "RUST" Gamification Check
-        const checkRust = async () => {
-            // Mock logic: If no activity in 3 days, trigger Rust
-            // In real app, check currentUser.lastActivityDate
-            const lastActivity = localStorage.getItem('iron_last_activity');
-            if (lastActivity) {
-                const daysDiff = (new Date() - new Date(lastActivity)) / (1000 * 60 * 60 * 24);
-                if (daysDiff > 3) {
-                    // Apply Penalty
-                    showToast("RUST DETECTED. -100 XP.");
-                    // Logic to update DB would go here
-                }
-            }
-        };
-        checkRust();
 
         return () => {
             if (unsubscribeNotifs) unsubscribeNotifs();
         };
-    }, [appMode]);
+    }, [currentUser, appMode]);
 
     // Actions
     const calculateRevenue = (currentTransactions) => {
@@ -311,8 +275,40 @@ export const DataProvider = ({ children, appMode }) => {
             showToast("Error: Service unavailable");
             return;
         }
-        const feedItem = { ...activityData, date: new Date().toISOString(), likes: 0 };
+
+        // Destructure robust data
+        // Destructure robust data with absolute defaults
+        const {
+            activityType = "Log",
+            location = "Unknown",
+            coordinates = null,
+            mediaUrl = null,
+            mediaType = null,
+            description = null,
+            privacy = 'public',
+            audioMode = null
+        } = activityData;
+
+        const feedItem = {
+            activityType,
+            location,
+            coordinates,
+            mediaUrl,
+            mediaType,
+            description,
+            visibility: privacy,
+            audioMode,
+            userId: currentUser?.uid,
+            userName: currentUser?.displayName || 'Unknown',
+            userPhoto: currentUser?.photoURL || null,
+            date: new Date().toISOString(),
+            likes: 0
+        };
+
         const newFeed = await DbService.addDoc('feed_activities', feedItem);
+
+        // Only add to local feed state if public or if we implement a 'my feed' filter
+        // For now, adding it. UI should filter if needed.
         setFeedActivities(prev => [newFeed, ...prev]);
 
         if (currentUser) {
