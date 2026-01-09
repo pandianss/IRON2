@@ -17,24 +17,5 @@ export const SessionProvider = ({ children }) => {
 };
 
 export const useSession = () => {
-    // PROXY: Read from legacy AppContext
-    const {
-        currentUser,
-        userType,
-        appMode,
-        setAppMode,
-        isLoading,
-        onboardingCompleted,
-        isDemoMode
-    } = useAppContext();
-
-    return {
-        user: currentUser,
-        userType,
-        appMode,
-        setAppMode,
-        isLoading,
-        onboardingCompleted,
-        isDemoMode
-    };
+    return useAppContext();
 };

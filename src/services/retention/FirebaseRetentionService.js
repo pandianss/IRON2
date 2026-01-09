@@ -23,6 +23,7 @@ class FirebaseRetentionService {
     async checkIn(userId, status = 'trained') {
         const timezone = getSystemTimezone();
         const today = getLocalToday(timezone);
+
         const checkInRef = doc(db, COLLECTION_USERS, userId, SUBCOLLECTION_CHECKINS, today);
         const userRef = doc(db, COLLECTION_USERS, userId);
 

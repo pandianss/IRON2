@@ -1,4 +1,4 @@
-import { db } from '../infrastructure/firebase.config';
+import { db, DbService } from '../infrastructure/firebase';
 
 export const AuditService = {
     /**

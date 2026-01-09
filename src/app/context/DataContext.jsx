@@ -1,8 +1,8 @@
+
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import PropTypes from 'prop-types';
 import {
-    RealDbService, DemoDbService,
-    RealAuthService, DemoAuthService
+    DbService, AuthService
 } from '../../infrastructure/firebase';
 import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
@@ -13,13 +13,13 @@ import {
     mockRatings
 } from '../../services/mockData';
 
+console.log("DataContext Module Loaded. DbService type:", typeof DbService);
+if (typeof DbService === 'undefined') console.error("CRITICAL: DbService is undefined in DataContext!");
+
+
 export const DataContext = createContext();
 
 export const DataProvider = ({ children, appMode }) => {
-    // Dynamic Service Selection
-    const DbService = appMode === 'demo' ? DemoDbService : RealDbService;
-    const AuthService = appMode === 'demo' ? DemoAuthService : RealAuthService;
-
     const { showToast, setIsLoading } = useUI();
     const { currentUser, setCurrentUser, setUserType, syncUserFromAuth } = useAuth();
     // Removed useContext(AppContext) for appMode as it is passed as prop
@@ -310,6 +310,11 @@ export const DataProvider = ({ children, appMode }) => {
     };
 
     const logActivity = async (activityData) => {
+        if (!DbService) {
+            console.error("logActivity aborted: DbService is undefined");
+            showToast("Error: Service unavailable");
+            return;
+        }
         const feedItem = { ...activityData, date: new Date().toISOString(), likes: 0 };
         const newFeed = await DbService.addDoc('feed_activities', feedItem);
         setFeedActivities(prev => [newFeed, ...prev]);

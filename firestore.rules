@@ -88,5 +88,16 @@ service cloud.firestore {
       allow read: if isOwner(resource.data.userId) || isSuperAdmin();
       allow create: if isAuthenticated(); // Subscriptions
     }
+
+    // ACHIVEMENTS, LIVE SESSIONS, CHALLENGES, RATINGS (Added for Verification)
+    match /achievements/{docId} { allow read, write: if isAuthenticated(); }
+    match /live_sessions/{docId} { allow read, write: if isAuthenticated(); }
+    match /challenges/{docId} { allow read, write: if isAuthenticated(); }
+    match /ratings/{docId} { allow read, write: if isAuthenticated(); }
+    
+    // USERS Subcollection for Checkins
+    match /users/{userId}/checkins/{checkinId} {
+        allow read, write: if isAuthenticated();
+    }
   }
 }

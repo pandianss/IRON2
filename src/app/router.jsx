@@ -1,6 +1,7 @@
 import { createBrowserRouter } from 'react-router-dom';
 import AppShell from '../components/Layout/AppShell';
 import CommandCenter from '../pages/CommandCenter';
+import InitialCheckIn from '../pages/InitialCheckIn';
 import Lab from '../pages/Lab';
 import Arena from '../pages/Arena';
 import Bazaar from '../pages/Bazaar';
@@ -28,6 +29,10 @@ const router = createBrowserRouter([
     {
         path: '/onboarding',
         element: <Onboarding />,
+    },
+    {
+        path: '/checkin/initial',
+        element: <InitialCheckIn />,
     },
     {
         path: '/',

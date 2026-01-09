@@ -34,9 +34,7 @@ import {
     uploadBytes,
     getDownloadURL
 } from "firebase/storage";
-import { DemoAuthService, DemoDbService, DemoStorageService } from '../services/demoService';
 
-const IS_DEMO = import.meta.env.VITE_DEMO_MODE === 'true';
 
 // --- REAL AUTH SERVICE ---
 const RealAuthService = {
@@ -319,17 +317,10 @@ const RealDbService = {
     }
 };
 
-// Export based on flag
-// Export based on flag
-if (IS_DEMO) {
-    // console.warn("RUNNING IN DEMO MODE (MOCKED DATA)");
-}
-
-export const AuthService = IS_DEMO ? DemoAuthService : RealAuthService;
-export const DbService = IS_DEMO ? DemoDbService : RealDbService;
-export const StorageService = IS_DEMO ? DemoStorageService : RealStorageService;
+export const AuthService = RealAuthService;
+export const DbService = RealDbService;
+export const StorageService = RealStorageService;
 
 export {
-    RealAuthService, RealDbService, RealStorageService,
-    DemoAuthService, DemoDbService, DemoStorageService
+    RealAuthService, RealDbService, RealStorageService
 };

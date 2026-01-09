@@ -119,13 +119,9 @@ const Onboarding = () => {
 
         } else if (step === 4) {
             completeOnboarding(userType);
-            if (userType === 'gym') {
-                navigate('/partner');
-            } else if (userType === 'expert') {
-                navigate('/studio');
-            } else {
-                navigate('/');
-            }
+            // Behavioral Refactor: ALL roads lead to the First Check-in.
+            // No dashboards. No specific landing pages. Action first.
+            navigate('/checkin/initial');
         }
     };
 
