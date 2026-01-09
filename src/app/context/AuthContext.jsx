@@ -9,15 +9,44 @@ import { useUI } from './UIContext';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children, appMode }) => {
-
-
-    const { showToast } = useUI(); // Consume UI Context
+    // Session State
+    const { showToast } = useUI();
     const [currentUser, setCurrentUser] = useState(null);
     const [userType, setUserType] = useState('enthusiast');
+    const [isLoading, setIsLoading] = useState(true); // Default to loading on mount
 
     const [onboardingCompleted, setOnboardingCompleted] = useState(() => {
         return localStorage.getItem('iron_onboarding_done') === 'true';
     });
+
+    // 1. Global Auth Listener (Session Persistence)
+    useEffect(() => {
+        // Skip if not in live mode (though good to have unify logic later)
+        if (appMode !== 'live') {
+            setIsLoading(false);
+            return;
+        }
+
+        const unsubscribe = AuthService.auth.onAuthStateChanged(async (firebaseUser) => {
+            if (firebaseUser) {
+                try {
+                    // Auth state exists, sync with DB
+                    await syncUserFromAuth(firebaseUser);
+                } catch (error) {
+                    console.error("Session Sync Failed:", error);
+                    showToast("Session restored with limited connectivity.");
+                }
+            } else {
+                // No user
+                setCurrentUser(null);
+                setUserType('enthusiast');
+            }
+            setIsLoading(false); // Done loading regardless of result
+        });
+
+        return () => unsubscribe();
+    }, [appMode]);
+
 
     // Helper to sync user with DB
     const syncUserFromAuth = async (authUser) => {
@@ -27,7 +56,6 @@ export const AuthProvider = ({ children, appMode }) => {
         if (dbUser) {
             // Auto-promote Super Admin on sync
             if (authUser.email === 'sspandian.here@gmail.com' && dbUser.role !== 'super_admin') {
-                console.log("Auto-promoting user to Super Admin");
                 dbUser.role = 'super_admin';
                 await DbService.updateDoc('users', authUser.uid, { role: 'super_admin' });
             }
@@ -41,9 +69,11 @@ export const AuthProvider = ({ children, appMode }) => {
             setCurrentUser(dbUser);
             setUserType(dbUser.role);
         } else {
-            // New user from Provider
+            // Handle case where auth exists but no DB doc (rare, but possible if registration failed partial)
+            // Or just a fresh social login that hasn't registered yet? 
+            // For now, we assume if they are in Firebase Auth, we treat them as at least 'User'
+            // We will create the doc if missing, similar to loginWithGoogle logic
             const role = (authUser.email === 'sspandian.here@gmail.com') ? 'super_admin' : 'user';
-
             const newUser = {
                 uid: authUser.uid,
                 email: authUser.email || authUser.phoneNumber,
@@ -58,24 +88,19 @@ export const AuthProvider = ({ children, appMode }) => {
             await DbService.setDoc('users', authUser.uid, newUser);
             setCurrentUser(newUser);
             setUserType(role);
-            AuditService.log('USER_SYNC_CREATE', newUser, { id: newUser.uid }, { method: 'provider_sync' });
         }
     };
 
     // Actions
     const login = async (email, password) => {
         try {
-            const user = await AuthService.login(email, password);
-            // Fetch full profile (Assume DataContext loads users, or just fetch directly here for safety)
-            // Ideally we re-fetch from DB to be fresh
-            const dbUser = await DbService.getDoc('users', user.uid);
-
-            setCurrentUser(dbUser || user);
-            setUserType(dbUser?.role || 'enthusiast');
-            showToast(`Welcome back, ${dbUser?.displayName || 'User'}`);
-            AuditService.log('USER_LOGIN', dbUser || user, {}, { method: 'password' });
+            setIsLoading(true);
+            await AuthService.login(email, password);
+            // onAuthStateChanged will handle the rest
+            showToast("Welcome back.");
             return true;
         } catch (error) {
+            setIsLoading(false);
             let msg = "Login failed.";
             if (error.code === 'auth/user-not-found') msg = "No user found.";
             if (error.code === 'auth/wrong-password') msg = "Incorrect password.";
@@ -86,36 +111,12 @@ export const AuthProvider = ({ children, appMode }) => {
 
     const loginWithGoogle = async () => {
         try {
-            const user = await AuthService.loginWithGoogle();
-            let dbUser = await DbService.getDoc('users', user.uid);
-
-            if (!dbUser) {
-                const role = user.email === 'sspandian.here@gmail.com' ? 'super_admin' : 'user';
-                const newUser = {
-                    uid: user.uid,
-                    email: user.email,
-                    displayName: user.displayName,
-                    role,
-                    joinedAt: new Date().toISOString(),
-                    status: 'Active',
-                    xp: 0,
-                    level: 1,
-                    rank: 'IRON IV'
-                };
-                await DbService.setDoc('users', user.uid, newUser);
-                setCurrentUser(newUser);
-                setUserType(role);
-            } else {
-                if (user.email === 'sspandian.here@gmail.com' && dbUser.role !== 'super_admin') {
-                    dbUser.role = 'super_admin';
-                    await DbService.updateDoc('users', user.uid, { role: 'super_admin' });
-                }
-                setCurrentUser(dbUser);
-                setUserType(dbUser.role);
-            }
-            showToast(`Welcome ${user.displayName || 'User'}`);
+            setIsLoading(true);
+            await AuthService.loginWithGoogle();
+            // onAuthStateChanged will handle the rest
             return true;
         } catch (error) {
+            setIsLoading(false);
             showToast("Google Login Failed: " + error.message);
             return false;
         }
@@ -123,12 +124,19 @@ export const AuthProvider = ({ children, appMode }) => {
 
     const registerUser = async (email, password, userData) => {
         try {
+            setIsLoading(true);
             const authUser = await AuthService.register(email, password);
 
             let role = userData.role || 'enthusiast';
             if (email === 'sspandian.here@gmail.com') role = 'super_admin';
 
             const status = role === 'gym_owner' ? 'Pending' : 'Active';
+            // We set the doc HERE before the listener fires ideally, but listener might fire fast.
+            // Actually listener fires on creation.
+            // To ensure data consistency, we can rely on syncUserFromAuth dealing with "missing doc" 
+            // OR we set it here. 
+            // Let's set it here to be sure we have the custom fields (userData)
+
             const newUser = {
                 uid: authUser.uid,
                 email: authUser.email,
@@ -142,6 +150,7 @@ export const AuthProvider = ({ children, appMode }) => {
             };
 
             await DbService.setDoc('users', authUser.uid, newUser);
+            // The listener will pick this up or we set explicit
             setCurrentUser(newUser);
             setUserType(role);
 
@@ -149,10 +158,24 @@ export const AuthProvider = ({ children, appMode }) => {
             showToast("Welcome to IRON.");
             return { success: true };
         } catch (error) {
+            setIsLoading(false);
             showToast("Registration failed: " + error.message);
             return { success: false, code: error.code };
         }
     };
+
+    const logout = async () => {
+        try {
+            await AuthService.logout();
+            setCurrentUser(null);
+            setUserType('enthusiast');
+            localStorage.removeItem('iron_onboarding_done'); // Optional depending on requirement
+            showToast("Logged out successfully.");
+        } catch (error) {
+            console.error("Logout failed", error);
+            showToast("Logout failed.");
+        }
+    }
 
     const updateUser = async (uid, data) => {
         try {
@@ -181,11 +204,20 @@ export const AuthProvider = ({ children, appMode }) => {
 
     return (
         <AuthContext.Provider value={{
-            currentUser, setCurrentUser,
-            userType, setUserType,
-            onboardingCompleted, completeOnboarding,
-            login, loginWithGoogle, registerUser,
-            updateUser, syncUserFromAuth, checkEmail,
+            currentUser,
+            setCurrentUser, // Exposed for rare manual overrides
+            userType,
+            setUserType,
+            isLoading, // Exposed for router guard
+            onboardingCompleted,
+            completeOnboarding,
+            login,
+            loginWithGoogle,
+            registerUser,
+            logout, // Exposed logout
+            updateUser,
+            syncUserFromAuth,
+            checkEmail,
             AuthService
         }}>
             {children}

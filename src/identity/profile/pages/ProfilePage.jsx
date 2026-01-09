@@ -13,7 +13,7 @@ import { useRetention, useSession } from '../../../app/context';
 const ProfilePage = () => {
     const [activeView, setActiveView] = useState('main');
 
-    const { currentUser } = useSession();
+    const { currentUser, logout } = useSession(); // Correctly destructure logout
     const { streak, lastCheckInDate } = useRetention();
 
     const name = currentUser?.displayName || "Marcus V.";
@@ -28,9 +28,9 @@ const ProfilePage = () => {
         if (label === 'Professional Credentials') setActiveView('certifications');
     };
 
-    const handleLogout = () => {
-        localStorage.removeItem('iron_onboarding_done');
-        window.location.reload();
+    const handleLogout = async () => {
+        await logout();
+        // Router will handle redirect via AuthGuard
     };
 
     if (activeView === 'biometric') return <BiometricView onBack={() => setActiveView('main')} />;
