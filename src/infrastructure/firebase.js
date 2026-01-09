@@ -322,5 +322,6 @@ export const DbService = RealDbService;
 export const StorageService = RealStorageService;
 
 export {
+    auth, db, storage,
     RealAuthService, RealDbService, RealStorageService
 };
