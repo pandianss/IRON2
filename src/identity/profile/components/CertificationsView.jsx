@@ -4,10 +4,13 @@ import Button from '../../../components/UI/Button';
 import Card from '../../../components/UI/Card';
 import CertificateCard from '../../../components/UI/CertificateCard';
 import { useAppContext } from '../../../app/context/AppContext';
+import StorageService from '../../../infrastructure/StorageService';
 
 const CertificationsView = ({ onBack }) => {
-    const { certifications, addCertification } = useAppContext();
+    const { certifications, addCertification, currentUser, showToast } = useAppContext();
     const [isAdding, setIsAdding] = useState(false);
+    const [file, setFile] = useState(null);
+    const [isUploading, setIsUploading] = useState(false);
 
     // Form State
     const [formData, setFormData] = useState({
@@ -19,9 +22,32 @@ const CertificationsView = ({ onBack }) => {
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-        await addCertification(formData);
-        setIsAdding(false);
-        setFormData({ title: '', issuer: '', id: '', issueDate: '' });
+        if (!file && !formData.id) {
+            // If no ID and no file, strictly require one? Let's require file for now as per user request "Upload"
+            showToast("Please upload a document proof.", "error");
+            return;
+        }
+
+        setIsUploading(true);
+        try {
+            let fileUrl = null;
+            if (file) {
+                const userId = currentUser?.uid || 'unknown';
+                const path = `credentials/${userId}/${Date.now()}_${file.name}`;
+                fileUrl = await StorageService.uploadFile(file, path);
+            }
+
+            await addCertification({ ...formData, fileUrl });
+
+            setIsAdding(false);
+            setFormData({ title: '', issuer: '', id: '', issueDate: '' });
+            setFile(null);
+        } catch (error) {
+            console.error("Upload failed", error);
+            showToast("Failed to save credential.", "error");
+        } finally {
+            setIsUploading(false);
+        }
     };
 
     return (
@@ -48,11 +74,15 @@ const CertificationsView = ({ onBack }) => {
                             Upload Credential
                         </h3>
 
-                        <form onSubmit={handleSubmit} className="space-y-4">
+                        <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                             <div>
-                                <label className="block text-xs font-medium text-zinc-400 mb-1">CERTIFICATION TITLE</label>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '600' }}>CERTIFICATION TITLE</label>
                                 <input
-                                    className="w-full bg-zinc-900/50 border border-zinc-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none transition-colors"
+                                    style={{
+                                        width: '100%', padding: '14px', borderRadius: '12px',
+                                        background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)',
+                                        color: '#fff', fontSize: '1rem', outline: 'none'
+                                    }}
                                     placeholder="e.g. CSCS, NASM-CPT"
                                     value={formData.title}
                                     onChange={e => setFormData({ ...formData, title: e.target.value })}
@@ -61,9 +91,13 @@ const CertificationsView = ({ onBack }) => {
                             </div>
 
                             <div>
-                                <label className="block text-xs font-medium text-zinc-400 mb-1">ISSUING ORGANIZATION</label>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '600' }}>ISSUING ORGANIZATION</label>
                                 <input
-                                    className="w-full bg-zinc-900/50 border border-zinc-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none transition-colors"
+                                    style={{
+                                        width: '100%', padding: '14px', borderRadius: '12px',
+                                        background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)',
+                                        color: '#fff', fontSize: '1rem', outline: 'none'
+                                    }}
                                     placeholder="e.g. NSCA"
                                     value={formData.issuer}
                                     onChange={e => setFormData({ ...formData, issuer: e.target.value })}
@@ -71,20 +105,28 @@ const CertificationsView = ({ onBack }) => {
                                 />
                             </div>
 
-                            <div className="grid grid-cols-2 gap-4">
+                            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px' }}>
                                 <div>
-                                    <label className="block text-xs font-medium text-zinc-400 mb-1">CREDENTIAL ID</label>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '600' }}>CREDENTIAL ID</label>
                                     <input
-                                        className="w-full bg-zinc-900/50 border border-zinc-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none transition-colors"
+                                        style={{
+                                            width: '100%', padding: '14px', borderRadius: '12px',
+                                            background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)',
+                                            color: '#fff', fontSize: '1rem', outline: 'none'
+                                        }}
                                         placeholder="Optional"
                                         value={formData.id}
                                         onChange={e => setFormData({ ...formData, id: e.target.value })}
                                     />
                                 </div>
                                 <div>
-                                    <label className="block text-xs font-medium text-zinc-400 mb-1">ISSUE YEAR</label>
+                                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '600' }}>ISSUE YEAR</label>
                                     <input
-                                        className="w-full bg-zinc-900/50 border border-zinc-700 rounded-lg p-3 text-white focus:border-yellow-500 focus:outline-none transition-colors"
+                                        style={{
+                                            width: '100%', padding: '14px', borderRadius: '12px',
+                                            background: 'rgba(0,0,0,0.3)', border: '1px solid var(--border-glass)',
+                                            color: '#fff', fontSize: '1rem', outline: 'none'
+                                        }}
                                         placeholder="YYYY"
                                         value={formData.issueDate}
                                         onChange={e => setFormData({ ...formData, issueDate: e.target.value })}
@@ -93,12 +135,48 @@ const CertificationsView = ({ onBack }) => {
                                 </div>
                             </div>
 
-                            <div className="pt-4 flex gap-3">
+                            <div>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px', fontWeight: '600' }}>DOCUMENT PROOF</label>
+                                <div style={{
+                                    position: 'relative', overflow: 'hidden',
+                                    borderRadius: '12px',
+                                    border: '1px dashed var(--border-glass)',
+                                    background: 'rgba(255,255,255,0.03)',
+                                    textAlign: 'center',
+                                    transition: 'all 0.2s'
+                                }}>
+                                    <input
+                                        type="file"
+                                        accept=".pdf,.jpg,.jpeg,.png"
+                                        onChange={(e) => setFile(e.target.files[0])}
+                                        style={{
+                                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                                            opacity: 0, cursor: 'pointer', zIndex: 2
+                                        }}
+                                    />
+                                    <div style={{ padding: '20px', pointerEvents: 'none' }}>
+                                        {file ? (
+                                            <div style={{ color: 'var(--accent-green)', fontWeight: '600', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
+                                                <Upload size={16} />
+                                                {file.name}
+                                            </div>
+                                        ) : (
+                                            <div style={{ color: 'var(--text-muted)' }}>
+                                                <div style={{ marginBottom: '4px' }}><Upload size={24} style={{ opacity: 0.5 }} /></div>
+                                                <span style={{ fontSize: '0.9rem' }}>Click to upload certificate</span>
+                                                <div style={{ fontSize: '0.7rem', opacity: 0.5 }}>PDF, JPG, PNG</div>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div style={{ display: 'flex', gap: '12px', marginTop: '12px' }}>
                                 <Button type="button" variant="secondary" onClick={() => setIsAdding(false)} style={{ flex: 1 }}>
                                     Cancel
                                 </Button>
-                                <Button type="submit" variant="primary" style={{ flex: 1, background: 'var(--accent-orange)', color: 'black' }}>
-                                    Save Credential
+                                <Button type="submit" variant="accent" disabled={isUploading} style={{ flex: 1, opacity: isUploading ? 0.7 : 1 }}>
+                                    {isUploading ? 'Uploading...' : 'Save Credential'}
                                 </Button>
                             </div>
                         </form>

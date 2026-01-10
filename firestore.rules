@@ -70,6 +70,7 @@ service cloud.firestore {
     match /products/{id} { allow read, write: if true; }
     match /studio_content/{id} { allow read: if true; allow write: if isSuperAdmin(); }
     match /studio_exercises/{id} { allow read: if true; allow write: if isSuperAdmin(); }
+    match /certifications/{id} { allow read, write: if isAuthenticated(); }
     match /audit_logs/{id} { allow read, write: if isAuthenticated(); }
   }
 }

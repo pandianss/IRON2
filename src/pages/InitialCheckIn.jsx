@@ -3,46 +3,101 @@ import { useNavigate } from 'react-router-dom';
 import { Dumbbell, Moon, CheckCircle, AlertTriangle, Loader2 } from 'lucide-react';
 import Button from '../components/UI/Button';
 import { useAppContext } from '../app/context/AppContext';
+import { useRetention } from '../app/context/RetentionContext';
 
 const InitialCheckIn = () => {
     const navigate = useNavigate();
-    const { checkIn, currentUser, completeOnboarding, showToast, logActivity } = useAppContext();
+    const { checkIn, currentUser, completeOnboarding, showToast, logActivity, initiateTrainingSession } = useAppContext();
+
+    // STRICT GATE: If already checked in (Rest OR Trained), go to Hub.
+    // Upgrades happen in the Hub now.
+    const { checkInStatus } = useRetention(); // Direct access for gate logic
+
+    React.useEffect(() => {
+        if (checkInStatus) {
+            navigate('/hub', { replace: true });
+        }
+    }, [checkInStatus, navigate]);
 
     const [loadingAction, setLoadingAction] = useState(null); // 'trained' | 'rest' | null
 
     const handleAction = async (status) => {
         setLoadingAction(status);
         try {
-            await checkIn(status);
+            let result;
+            let xpAwarded = 0;
+            let title = "";
+            let message = "";
+
+            if (status === 'trained') {
+                result = await initiateTrainingSession(); // Sets pending proof & calls checkIn internally
+
+                if (result.status === 'success') {
+                    xpAwarded = 100;
+                    title = "MISSION COMPLETE";
+                    message = "+100 XP | PROOF REQUIRED";
+                } else if (result.status === 'upgraded') {
+                    xpAwarded = 90; // Diff (100 - 10)
+                    title = "STATUS UPGRADED";
+                    message = "+90 XP | PROOF REQUIRED";
+                } else {
+                    // Ignored / Already Done
+                    showToast("Training already logged for today.", "info");
+                    setTimeout(() => {
+                        navigate('/hub');
+                    }, 500);
+                    return;
+                }
+
+            } else {
+                result = await checkIn(status);
+
+                if (result.status === 'success') {
+                    xpAwarded = 10;
+                    title = "RECOVERY LOGGED";
+                    message = "+10 XP";
+                } else if (result.status === 'ignored') {
+                    showToast("Status already logged for today.", "info");
+                    // PROCEED ANYWAY (Fix for stuck users)
+                    setTimeout(() => {
+                        navigate('/hub');
+                    }, 500);
+                    return;
+                }
+            }
 
             // Log Activity & Award XP
             const activityPayload = status === 'trained'
-                ? {
-                    activityType: 'Mission Complete',
-                    description: 'Contract fulfilled. Daily training executed.',
-                    xp: 100,
-                    privacy: 'public'
-                }
-                : {
-                    activityType: 'Rest Day',
-                    description: 'Strategic recovery initiated.',
-                    xp: 10,
-                    privacy: 'public'
-                };
+                ? { type: 'check_in', title: title, xp: xpAwarded, details: message }
+                : { type: 'check_in', title: title, xp: xpAwarded, details: "Active Recovery" };
 
-            await logActivity(activityPayload);
+            // Only log activity if XP was actually awarded
+            if (xpAwarded > 0) {
+                await logActivity({
+                    activityType: "Check In",
+                    title: activityPayload.title,
+                    description: activityPayload.details,
+                    xp: activityPayload.xp
+                });
+            }
 
-            completeOnboarding();
+            // Show Toast
+            showToast(
+                <div className="flex flex-col">
+                    <span className="font-black text-lg glitch-text">{activityPayload.title}</span>
+                    <span className="text-sm font-mono opacity-80">{activityPayload.details}</span>
+                </div>
+                , 'hero');
 
-            showToast(status === 'trained' ? "Activity Logged (+100 XP)" : "Rest Logged (+10 XP).", 'hero');
-
-            // Artificial delay for emotional weight
+            // Navigate
             setTimeout(() => {
-                navigate('/');
-            }, 1000);
+                navigate('/hub');
+            }, 1500);
+
         } catch (error) {
-            console.error("First check-in failed", error);
-            // Fallback for toast if not available via context, but we should add it
+            console.error("Check-in failed:", error);
+            showToast("System Failure. Try again.", "error");
+        } finally {
             setLoadingAction(null);
         }
     };

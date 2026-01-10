@@ -28,7 +28,7 @@ class FirebaseRetentionService {
         const userRef = doc(db, COLLECTION_USERS, userId);
 
         try {
-            await runTransaction(db, async (transaction) => {
+            return await runTransaction(db, async (transaction) => {
                 // 1. Read current user stats
                 const userDoc = await transaction.get(userRef);
                 if (!userDoc.exists()) {
@@ -40,26 +40,41 @@ class FirebaseRetentionService {
                 const lastCheckInDate = userData.lastCheckInDate || null;
                 const longestStreak = userData.longestStreak || 0;
 
-                // 2. Check Idempotency
+                // 2. Check Idempotency & Upgrades
                 const checkInDoc = await transaction.get(checkInRef);
+
                 if (checkInDoc.exists()) {
+                    const existingData = checkInDoc.data();
+
+                    // SCENARIO: UPGRADE (Rest -> Trained)
+                    if (existingData.status === 'rest' && status === 'trained') {
+                        // Allow overwrite
+                        transaction.update(checkInRef, {
+                            status: 'trained',
+                            timestamp: serverTimestamp(),
+                            isUpgrade: true
+                        });
+                        // User stats don't change (streak already counted for today)
+                        // But strictly updating lastCheckInTime might be good
+                        transaction.update(userRef, {
+                            lastCheckInTime: serverTimestamp()
+                        });
+                        return { status: 'upgraded' };
+                    }
+
+                    // SCENARIO: DUPLICATE or DOWNGRADE
                     console.log("Already checked in explicitly today.");
-                    return; // No-op
+                    return { status: 'ignored' };
                 }
 
-                // 3. Calculate New Streak
-                // If last check-in was yesterday, increment.
-                // If last check-in was today (handled above), no-op.
-                // Else (missed day), reset to 1.
-
+                // 3. New Check-In logic (same as before)
                 const yesterday = getLocalYesterday(timezone);
                 let newStreak = 1;
 
                 if (lastCheckInDate === yesterday) {
                     newStreak = currentStreak + 1;
                 } else if (lastCheckInDate === today) {
-                    // This case should be caught by idempotency check, 
-                    // but if data is desynced (doc exists but header field not update), handle it.
+                    // Desync handling
                     newStreak = currentStreak;
                 }
 
@@ -68,7 +83,7 @@ class FirebaseRetentionService {
 
                 transaction.set(checkInRef, {
                     status,
-                    timestamp: serverTimestamp(), // Authoritative server time
+                    timestamp: serverTimestamp(),
                     timezone,
                     dateId: today
                 });
@@ -79,9 +94,9 @@ class FirebaseRetentionService {
                     lastCheckInDate: today,
                     lastCheckInTime: serverTimestamp()
                 });
-            });
 
-            console.log("Check-in successful (Firestore backed)");
+                return { status: 'success' };
+            });
 
         } catch (e) {
             console.error("Firestore Check-in failed", e);

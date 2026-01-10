@@ -18,6 +18,7 @@ if (typeof DbService === 'undefined') console.error("CRITICAL: DbService is unde
 export const DataContext = createContext();
 
 export const DataProvider = ({ children, appMode }) => {
+    console.log("DEBUG: DataProvider Rendering");
     const { showToast, setIsLoading } = useUI();
     const { currentUser, setCurrentUser, setUserType, syncUserFromAuth } = useAuth();
     // Removed useContext(AppContext) for appMode as it is passed as prop
@@ -207,6 +208,21 @@ export const DataProvider = ({ children, appMode }) => {
             showToast("Gym Rejected.");
         } catch (error) {
             showToast("Rejection failed.");
+        }
+    };
+
+    const toggleGymStatus = async (gymId) => {
+        const gym = gyms.find(g => g.id === gymId);
+        if (!gym) return;
+
+        const newStatus = gym.status === 'Active' ? 'Suspended' : 'Active';
+        try {
+            await DbService.updateDoc('gyms', gymId, { status: newStatus });
+            setGyms(prev => prev.map(g => g.id === gymId ? { ...g, status: newStatus } : g));
+            showToast(`Gym ${newStatus === 'Active' ? 'Activated' : 'Suspended'}`);
+        } catch (error) {
+            console.error(error);
+            showToast("Status update failed");
         }
     };
 
@@ -449,7 +465,7 @@ export const DataProvider = ({ children, appMode }) => {
             achievements, logActivity,
             storeProducts, transactions, revenueStats,
             feedActivities, liveSessions, loadMoreFeed, hasMoreFeed,
-            registerGym, approveGym, rejectGym,
+            registerGym, approveGym, rejectGym, toggleGymStatus,
             addMember, approveMember, rejectMember, toggleBanMember,
             biometricHistory, medicalRecords, addMedicalRecord,
             studioContent, addStudioContent,

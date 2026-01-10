@@ -21,7 +21,7 @@ import { mockFeedActivities } from '../services/mockData';
 
 const CommandCenter = () => {
     const { isLoading, currentUser } = useSession();
-    const { isRusting, streak } = useRetention();
+    const { isRusting, streak, verifyProofOfWork } = useRetention();
     const { bpm } = useBluetooth();
     const { showToast } = useUIFeedback();
     const { feedActivities, loadMoreFeed, hasMoreFeed, logActivity } = useActivity();

@@ -37,6 +37,8 @@ const GymDirectory = () => {
         }
     };
 
+    const activeGyms = gyms.filter(g => g.status === 'Active');
+
     return (
         <div className="page-container">
             <header className="page-header">
@@ -45,7 +47,7 @@ const GymDirectory = () => {
             </header>
 
             <div style={{ display: 'grid', gap: '16px' }}>
-                {gyms.length === 0 ? (
+                {activeGyms.length === 0 ? (
                     <div style={{ textAlign: 'center', padding: '40px', border: '1px dashed var(--border-glass)', borderRadius: '16px' }}>
                         <MapPin size={48} color="var(--text-muted)" style={{ margin: '0 auto 16px', opacity: 0.5 }} />
                         <h3 style={{ fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '8px' }}>SECTOR CLEAR</h3>
@@ -59,7 +61,7 @@ const GymDirectory = () => {
                         </Button>
                     </div>
                 ) : (
-                    gyms.map(gym => (
+                    activeGyms.map(gym => (
                         <Card key={gym.id} className="glass-panel">
                             {/* ... existing card content ... */}
                             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '16px' }}>

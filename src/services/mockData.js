@@ -137,11 +137,12 @@ export const mockRatings = [
 ];
 
 // Audio Assets for workout logs
+// Audio Assets for workout logs
 export const mockAudioTracks = [
-    { id: 't1', title: 'Epic Rise', url: 'https://assets.mixkit.co/music/preview/mixkit-uplifting-strings-inspiration-123.mp3', duration: '2:12' },
-    { id: 't2', title: 'Power Drive', url: 'https://assets.mixkit.co/music/preview/mixkit-driving-ambition-32.mp3', duration: '1:45' },
-    { id: 't3', title: 'Zen Focus', url: 'https://assets.mixkit.co/music/preview/mixkit-dreaming-big-31.mp3', duration: '2:30' },
-    { id: 't4', title: 'Iron Heart', url: 'https://assets.mixkit.co/music/preview/mixkit-tech-house-vibes-130.mp3', duration: '1:55' }
+    { id: 't1', title: 'Epic Rise', url: 'https://commondatastorage.googleapis.com/codeskulptor-assets/Epoq-Lepidoptera.ogg', duration: '2:12' },
+    { id: 't2', title: 'Power Drive', url: 'https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/win.ogg', duration: '1:45' },
+    { id: 't3', title: 'Zen Focus', url: 'https://commondatastorage.googleapis.com/codeskulptor-demos/pyman_assets/intromusic.ogg', duration: '2:30' },
+    { id: 't4', title: 'Iron Heart', url: 'https://commondatastorage.googleapis.com/codeskulptor-demos/riceracer_assets/music/race1.ogg', duration: '1:55' }
 ];
 
 export const mockBpm = 72;

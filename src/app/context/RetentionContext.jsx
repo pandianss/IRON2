@@ -15,7 +15,9 @@ export const RetentionProvider = ({ children }) => {
         loading: true,
         // Day Contract State
         streakState: 'pending', // 'completed' | 'pending' | 'broken'
-        missedDays: 0
+        missedDays: 0,
+        checkInStatus: null, // 'trained' | 'rest' | null
+        pendingProofTimestamp: parseInt(localStorage.getItem('iron_pending_proof') || '0', 10)
     });
 
     // Helper: Calculate Day Contract
@@ -59,14 +61,36 @@ export const RetentionProvider = ({ children }) => {
                     const { currentStreak, lastCheckInDate } = data;
                     const contract = resolveDayContract(lastCheckInDate, currentStreak);
 
+                    // Fetch Today's Specific Status (Rest vs Trained)
+                    let todayStatus = null;
+                    if (contract.streakState === 'completed') {
+                        try {
+                            const today = getLocalToday();
+                            // We access the service directly or add a method. 
+                            // For now, let's assume valid data leads to valid check-in.
+                            // Ideally we extend syncHistory or call a getTodayStatus method.
+                            // Let's do a direct read or a lightweight service call.
+                            // Actually, let's add `getTodayStatus` to retention service or just blindly trust for now?
+                            // No, we need to know REST vs TRAINED.
+                            const history = await firebaseRetentionService.getHistory(user.uid, 1);
+                            if (history && history[today]) {
+                                todayStatus = history[today];
+                            }
+                        } catch (e) {
+                            console.warn("Failed to fetch today status", e);
+                        }
+                    }
+
                     setRetentionState(prev => ({
                         ...prev,
                         currentStreak: data.currentStreak || 0,
                         longestStreak: data.longestStreak || 0,
                         lastCheckInDate: data.lastCheckInDate || null,
+                        checkInStatus: todayStatus, // New Field
                         ...contract,
                         loading: false
                     }));
+
 
                 } else {
                     setRetentionState(prev => ({ ...prev, loading: false }));
@@ -81,12 +105,13 @@ export const RetentionProvider = ({ children }) => {
     }, [user]);
 
     const checkIn = async (status) => {
-        if (!user) return;
+        if (!user) return { status: 'ignored' };
         try {
-            await firebaseRetentionService.checkIn(user.uid, status);
-            // Optimistic Update or specific fetch could go here. 
-            // For now, we rely on the realtime listener or re-fetch.
-            // Let's re-fetch for safety in V1.
+            const result = await firebaseRetentionService.checkIn(user.uid, status);
+
+
+
+            // ALWAYS Sync to ensure local state matches DB (fixes infinite redirect loop)
             const data = await firebaseRetentionService.syncHistory(user.uid);
             if (data) {
                 setRetentionState(prev => ({
@@ -95,24 +120,85 @@ export const RetentionProvider = ({ children }) => {
                     longestStreak: data.longestStreak || 0,
                     lastCheckInDate: data.lastCheckInDate || null,
                     streakState: 'completed', // Immediate optimistic update
-                    missedDays: 0
+                    missedDays: 0,
+                    checkInStatus: status // Update local status
                 }));
 
-                // Fire Event for UI Effects (Toast, Feed)
-                // Import eventBus and EVENTS first (needed at top of file)
-                console.log("Loading EventBus...");
-                const { eventBus, EVENTS } = await import('../../services/events/index');
-                console.log("EventBus Loaded", eventBus);
-                eventBus.emit(EVENTS.RETENTION.CHECK_IN, {
-                    status,
-                    streak: data.currentStreak || 0
-                });
+                // Only fire events if it was a new action
+                if (result.status !== 'ignored') {
+                    console.log("Loading EventBus...");
+                    const { eventBus, EVENTS } = await import('../../services/events/index');
+                    console.log("EventBus Loaded", eventBus);
+                    eventBus.emit(EVENTS.RETENTION.CHECK_IN, {
+                        status,
+                        streak: data.currentStreak || 0
+                    });
+                }
             }
+            return result;
         } catch (error) {
             console.error("Check-in failed", error);
-            throw error;
+            // Don't throw, return error status so UI can handle it gracefully
+            return { status: 'error' };
         }
     };
+
+    // --- PROOF OF WORK SYSTEM ---
+    const initiateTrainingSession = async () => {
+        // We attempt the check-in FIRST to see if it's allowed/upgradeable
+        // This returns { status: 'success' | 'upgraded' | 'ignored' }
+        const result = await checkIn('trained');
+
+        // Only start the proof timer if we actually "trained" (or upgraded to trained)
+        if (result && (result.status === 'success' || result.status === 'upgraded')) {
+            const timestamp = Date.now();
+            localStorage.setItem('iron_pending_proof', timestamp.toString());
+            setRetentionState(prev => ({
+                ...prev,
+                pendingProofTimestamp: timestamp,
+                streakState: 'completed', // Optimistic 
+                missedDays: 0
+            }));
+
+            // Optimistically set Rust to false (Iron Slab)
+            setDebugRust(false);
+        }
+
+        return result;
+    };
+
+    const verifyProofOfWork = () => {
+        localStorage.removeItem('iron_pending_proof');
+        setRetentionState(prev => ({ ...prev, pendingProofTimestamp: 0 }));
+
+        // Fully verified.
+        // Could trigger a "Verified" toast here or let the caller do it.
+    };
+
+    // Monitor for 10-minute warning
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const { pendingProofTimestamp } = retentionState;
+            if (pendingProofTimestamp > 0) {
+                const elapsed = Date.now() - pendingProofTimestamp;
+                const TEN_MINUTES = 10 * 60 * 1000;
+
+                if (elapsed > TEN_MINUTES) {
+                    // Emit Warning Event
+                    import('../../services/events/index').then(({ eventBus, EVENTS }) => {
+                        eventBus.emit(EVENTS.SYSTEM.TOAST, {
+                            message: "⚠️ WARNING: Proof of Work required to secure XP!",
+                            type: 'error'
+                        });
+                    });
+                    // Optionally re-enable rust visual to show decay risk?
+                    // setDebugRust(true); // Maybe too harsh? Let's keep it as a warning for now.
+                }
+            }
+        }, 60000); // Check every minute
+
+        return () => clearInterval(interval);
+    }, [retentionState.pendingProofTimestamp]);
 
     const recoverSession = async () => {
         console.warn("Recovery Mode Implementation Pending");
@@ -135,7 +221,10 @@ export const RetentionProvider = ({ children }) => {
             checkIn,
             recoverSession,
             isRusting,
-            toggleRust // Keeping for debug/demo as requested
+            toggleRust, // Keeping for debug/demo as requested
+            initiateTrainingSession,
+            verifyProofOfWork,
+            pendingProofTimestamp: retentionState.pendingProofTimestamp
         }}>
             {children}
         </RetentionContext.Provider>

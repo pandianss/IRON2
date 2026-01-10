@@ -43,59 +43,94 @@ const Hub = () => {
             {/* System Health (Live Status) */}
             <section style={{ marginBottom: '40px' }}>
                 <h3 className="section-label">SYSTEM HEALTH</h3>
-                <Card className="glass-panel" style={{
+                <Card style={{
                     padding: '24px',
                     position: 'relative',
                     overflow: 'hidden',
-                    border: isRusting ? '1px solid #ff4d00' : '1px solid rgba(255,255,255,0.1)',
+                    // Border: Bevel effect
+                    borderTop: isRusting ? '1px solid #5a1a1a' : '1px solid rgba(255,255,255,0.3)',
+                    borderLeft: isRusting ? '1px solid #5a1a1a' : '1px solid rgba(255,255,255,0.1)',
+                    borderRight: isRusting ? '1px solid #1a0500' : '1px solid rgba(0,0,0,0.5)',
+                    borderBottom: isRusting ? '1px solid #1a0500' : '1px solid rgba(0,0,0,0.5)',
+
+                    // Background: Metallic vs Rusted
+                    // Polished: Gunmetal Blue-Grey to Black gradient
+                    // Rust: Deep Brown/Red gradient
                     background: isRusting
-                        ? 'linear-gradient(135deg, #2a0a00 0%, #5a1a00 100%)' // Deep rust
-                        : 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)', // Clean steel
+                        ? 'linear-gradient(135deg, #2a0a00 0%, #3d1000 100%)'
+                        : 'linear-gradient(135deg, #2c3e50 0%, #080808 100%)',
+
                     boxShadow: isRusting
-                        ? '0 0 20px rgba(255, 77, 0, 0.2), inset 0 0 20px rgba(0,0,0,0.5)' // Rust glow
-                        : '0 0 20px rgba(0, 255, 255, 0.05)' // Subtle cool glow
+                        ? 'inset 2px 2px 20px rgba(0,0,0,0.8), 0 10px 20px rgba(0,0,0,0.5)' // Deep inset
+                        : 'inset 1px 1px 2px rgba(255,255,255,0.1), 0 10px 30px rgba(0,0,0,0.5)' // Metallic shine
                 }}>
-                    {/* Texture Overlays */}
-                    {isRusting && (
+                    {/* Metal Texture Overlay */}
+                    <div style={{
+                        position: 'absolute', inset: 0,
+                        opacity: isRusting ? 0.4 : 0.05,
+                        backgroundImage: isRusting
+                            ? 'radial-gradient(circle, rgba(255,100,0,0.2) 1px, transparent 1px)' // Rust Spots
+                            : 'repeating-linear-gradient(90deg, transparent 0, transparent 2px, rgba(255,255,255,0.1) 3px)', // Brushed metal
+                        pointerEvents: 'none',
+                        mixBlendMode: 'overlay',
+                        backgroundSize: isRusting ? '10px 10px' : 'auto'
+                    }} />
+
+                    {/* Rust Glow / Shine */}
+                    {isRusting ? (
                         <div style={{
-                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
-                            backgroundImage: 'url("https://www.transparenttextures.com/patterns/rust.png")', // Optional subtle texture if valid, or just noise
-                            opacity: 0.2, mixBlendMode: 'overlay', pointerEvents: 'none'
+                            position: 'absolute', inset: 0,
+                            background: 'radial-gradient(circle at 30% 20%, rgba(200, 50, 0, 0.1) 0%, transparent 60%)',
+                            pointerEvents: 'none'
+                        }} />
+                    ) : (
+                        <div style={{
+                            position: 'absolute', top: -100, right: -100, width: 300, height: 300,
+                            background: 'radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%)',
+                            pointerEvents: 'none'
                         }} />
                     )}
 
-                    {!isRusting && (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '24px', position: 'relative', zIndex: 1 }}>
+                        {/* Icon with Bevel */}
                         <div style={{
-                            position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
-                            background: 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.03) 45%, transparent 50%)',
-                            transform: 'rotate(25deg)', pointerEvents: 'none'
-                        }} />
-                    )}
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', position: 'relative', zIndex: 1 }}>
-                        <div className={`icon-box ${isRusting ? 'icon-box-danger' : 'icon-box-success'}`}
-                            style={{
-                                width: '56px', height: '56px', borderRadius: '16px',
-                                background: isRusting ? 'rgba(255, 60, 0, 0.2)' : 'rgba(0, 255, 150, 0.1)',
-                                color: isRusting ? '#ff4d00' : '#00ff94',
-                                border: isRusting ? '1px solid rgba(255,60,0,0.3)' : '1px solid rgba(0,255,150,0.2)'
-                            }}>
-                            {isRusting ? <ShieldAlert size={28} /> : <Star size={28} />}
+                            width: '64px', height: '64px', borderRadius: '50%',
+                            background: isRusting ? '#1a0500' : 'linear-gradient(145deg, #111, #222)',
+                            boxShadow: isRusting ? 'inset 2px 2px 5px rgba(0,0,0,0.5)' : '5px 5px 10px #0b0b0b, -5px -5px 10px #252525', // Neumorphic Metal
+                            display: 'flex', alignItems: 'center', justifyContent: 'center',
+                            color: isRusting ? '#ff3b00' : '#00ff94',
+                            border: isRusting ? '2px solid #3d1000' : '2px solid rgba(255,255,255,0.05)'
+                        }}>
+                            {isRusting ? <ShieldAlert size={32} /> : <Star size={32} fill={!isRusting ? "#00ff94" : "none"} fillOpacity={0.1} />}
                         </div>
+
                         <div style={{ flex: 1 }}>
                             <h4 style={{
                                 fontWeight: '900',
-                                fontSize: '1.2rem',
-                                letterSpacing: '0.5px',
-                                color: isRusting ? '#ff6b3d' : '#fff',
-                                textShadow: isRusting ? '0 0 10px rgba(255,77,0,0.3)' : 'none'
+                                fontSize: '1.4rem',
+                                letterSpacing: '1px',
+                                textTransform: 'uppercase',
+                                color: isRusting ? '#ff3b00' : '#fff',
+                                textShadow: isRusting ? '0 2px 4px rgba(0,0,0,0.8)' : '0 2px 10px rgba(0,255,148,0.3)',
+                                fontFamily: 'var(--font-display)',
+                                margin: 0, marginBottom: '4px'
                             }}>
-                                {isRusting ? 'SYSTEM CRITICAL: RUST DETECTED' : 'SYSTEM OPTIMAL: POLISHED'}
+                                {isRusting ? 'SYSTEM CRITICAL' : 'SYSTEM OPTIMAL'}
                             </h4>
-                            <p style={{ fontSize: '0.9rem', color: isRusting ? '#ffad99' : 'var(--text-secondary)', marginTop: '4px' }}>
+                            <div style={{
+                                display: 'inline-block',
+                                padding: '4px 12px', borderRadius: '4px',
+                                background: isRusting ? 'rgba(255, 60, 0, 0.1)' : 'rgba(0, 255, 148, 0.1)',
+                                border: isRusting ? '1px solid rgba(255, 60, 0, 0.2)' : '1px solid rgba(0, 255, 148, 0.2)',
+                                color: isRusting ? '#ff6b3d' : '#00ff94',
+                                fontSize: '0.75rem', fontWeight: '700', letterSpacing: '2px'
+                            }}>
+                                {isRusting ? 'RUST DETECTED' : 'POLISHED'}
+                            </div>
+                            <p style={{ fontSize: '0.9rem', color: isRusting ? '#cc8877' : '#8899aa', marginTop: '12px', maxWidth: '90%' }}>
                                 {isRusting
-                                    ? 'Inactivity has compromised gear integrity. Log a workout immediately to restore status.'
-                                    : 'All systems shining. Discipline verified. Keep grinding to maintain luster.'}
+                                    ? 'Integrity compromised. Training required to remove oxidation.'
+                                    : 'Armor is shining. Discipline verified. Maintain luster.'}
                             </p>
                         </div>
                     </div>

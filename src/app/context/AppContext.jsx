@@ -23,6 +23,8 @@ export const AppProvider = ({ children }) => {
     // Legacy support if anything calls setAppMode, though it should be removed.
     const setMode = () => console.warn("App Mode is locked to LIVE");
 
+    console.log("DEBUG: AppProvider Rendering");
+
     return (
         <AppContext.Provider value={{ appMode, setAppMode: setMode }}>
             <UIProvider>

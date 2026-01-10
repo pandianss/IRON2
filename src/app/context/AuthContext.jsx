@@ -204,11 +204,30 @@ export const AuthProvider = ({ children, appMode }) => {
 
     const logout = async () => {
         try {
+            // CHECK FOR PENDING PROOF (Contract Breach)
+            const pendingProof = localStorage.getItem('iron_pending_proof');
+            if (pendingProof && currentUser) {
+                console.log("Logout with pending proof - S applying penalty.");
+                const penalty = 100;
+                const newXp = Math.max(0, (currentUser.xp || 0) - penalty);
+
+                // Penalize immediately before auth cut
+                await DbService.updateDoc('users', currentUser.uid, { xp: newXp });
+
+                // Log Breach (Optional but good for history)
+                // We'll skip complex logging to avoid race conditions with auth cutoff, 
+                // just rely on the toast and XP calc.
+                showToast(`CONTRACT BREACH: -${penalty} XP`, 'hero'); // Show prominent error
+
+                // Clear the flag so it doesn't persist
+                localStorage.removeItem('iron_pending_proof');
+            }
+
             await AuthService.logout();
             setCurrentUser(null);
             setUserType('enthusiast');
             localStorage.removeItem('iron_onboarding_done');
-            showToast("Logged out successfully.");
+            showToast("Logged out.");
         } catch (error) {
             console.error("Logout failed", error);
             showToast("Logout failed.");

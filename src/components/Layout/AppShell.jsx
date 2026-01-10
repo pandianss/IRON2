@@ -166,7 +166,7 @@ const AppShell = () => {
                                 justifyContent: 'center',
                                 boxShadow: '0 4px 10px rgba(0,0,0,0.3)'
                             }}>
-                            {userType === 'super_admin' ? 'CMD' : (currentUser?.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : 'ME')}
+                            {currentUser?.displayName ? currentUser.displayName.slice(0, 2).toUpperCase() : 'ME'}
                         </div>
                         {(userType === 'gym' || userType === 'gym_owner') && location.pathname !== '/partner' && (
                             <div

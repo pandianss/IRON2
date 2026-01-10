@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import { ShieldCheck, Map } from 'lucide-react';
 import QRCode from 'react-qr-code';
 
-const PassportCard = ({ userName, rank, userId, streak = 0, lastCheckIn = 'NEVER' }) => {
+const PassportCard = ({ userName, rank, userId, streak = 0, lastCheckIn = 'NEVER', homeGym = 'ROGUE' }) => {
     // Generate QR Data securely
     const qrData = JSON.stringify({
         id: userId,
@@ -99,7 +99,7 @@ const PassportCard = ({ userName, rank, userId, streak = 0, lastCheckIn = 'NEVER
             }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                     <Map size={14} color="var(--text-muted)" />
-                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>HOME FORGE: ANVIL GYM</span>
+                    <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>HOME FORGE: {homeGym}</span>
                 </div>
                 <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>EXP: DEC 2026</span>
             </div>

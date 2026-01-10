@@ -8,5 +8,11 @@ service firebase.storage {
       // Anyone can read (for social feed visibility)
       allow read: if true;
     }
+
+    // Allow access to 'credentials' folder
+    match /credentials/{userId}/{allPaths=**} {
+      allow write: if request.auth != null && request.auth.uid == userId;
+      allow read: if true; // Public for profile verification
+    }
   }
 }

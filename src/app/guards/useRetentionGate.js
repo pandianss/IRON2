@@ -11,7 +11,8 @@ export const useRetentionGate = () => {
         performCheckIn,
         dismissCheckIn,
         streak,
-        loading
+        loading,
+        isCheckedInToday
     } = useStreaks();
 
     const { currentUser } = useSession();
@@ -35,12 +36,17 @@ export const useRetentionGate = () => {
         // Wait for Loading to complete to avoid false positives (streak 0 while loading)
         // console.log("RetentionGate Check:", { loading, hasUser: !!currentUser, streak, path: location.pathname });
 
-        if (!loading && currentUser && streak === 0 &&
+        // CONDITION:
+        // 1. Not Loading
+        // 2. Logged In
+        // 3. Zero Streak
+        // 4. NOT Checked In Today (Critical fix: prevents loop if streak calc is 0 but action done)
+        if (!loading && currentUser && streak === 0 && !isCheckedInToday &&
             !['/auth', '/onboarding', '/checkin/initial', '/welcome'].includes(location.pathname)) {
             console.warn("RetentionGate: Redirecting to initial check-in due to 0 streak.");
             navigate('/checkin/initial', { replace: true });
         }
-    }, [streak, location.pathname, navigate, currentUser, loading]);
+    }, [streak, isCheckedInToday, location.pathname, navigate, currentUser, loading]);
 
     return {
         shouldShowCheckIn,

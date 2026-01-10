@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Mic, Music, Lock, Globe, Camera } from 'lucide-react';
+import { X, Upload, Mic, Music, Lock, Globe, Camera, Play, Pause } from 'lucide-react';
 import Button from '../UI/Button';
 import StorageService from '../../infrastructure/StorageService';
 import { useSession } from '../../app/context';
@@ -17,6 +17,61 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [selectedTrack, setSelectedTrack] = useState(null);
+
+    // Audio Preview Logic
+    const [playingTrackId, setPlayingTrackId] = useState(null);
+    const audioRef = useRef(null);
+
+    // Cleanup audio on unmount
+    React.useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+            }
+        };
+    }, []);
+
+    const handleTrackClick = (track) => {
+        setSelectedTrack(track);
+
+        // Stop current
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
+
+        // If clicking currently playing -> Stop (Toggle)
+        if (playingTrackId === track.id) {
+            setPlayingTrackId(null);
+            return;
+        }
+
+        // Play new
+        setPlayingTrackId(track.id);
+        const audio = new Audio(track.url);
+        audio.volume = 0.5;
+
+        // Play with promise handling
+        const playPromise = audio.play();
+        if (playPromise !== undefined) {
+            playPromise.catch(error => {
+                console.warn("Audio play prevented:", error);
+                setPlayingTrackId(null);
+            });
+        }
+
+        audioRef.current = audio;
+
+        // Auto-stop after 5s (Preview limit)
+        setTimeout(() => {
+            if (audioRef.current === audio) {
+                audio.pause();
+                setPlayingTrackId(prev => (prev === track.id ? null : prev));
+            }
+        }, 5000);
+
+        audio.onended = () => setPlayingTrackId(prev => (prev === track.id ? null : prev));
+    };
 
     const fileInputRef = useRef(null);
 
@@ -58,6 +113,8 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
             };
 
             await onLog(workoutData);
+            // Verify Proof of Work (if applicable)
+            if (verifyProofOfWork) verifyProofOfWork(); // Assuming we pass it or import it
             onClose();
         } catch (error) {
             console.error("Failed to log workout:", error);
@@ -169,19 +226,30 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
                             {mockAudioTracks.map(track => (
                                 <div
                                     key={track.id}
-                                    onClick={() => setSelectedTrack(track)}
+                                    onClick={() => handleTrackClick(track)}
                                     style={{
                                         padding: '10px', borderRadius: '8px', marginBottom: '4px', cursor: 'pointer',
-                                        background: selectedTrack?.id === track.id ? 'var(--accent-orange)' : 'transparent',
+                                        background: selectedTrack?.id === track.id ? 'var(--accent-orange)' : 'rgba(255,255,255,0.05)',
                                         color: selectedTrack?.id === track.id ? '#000' : '#fff',
                                         display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                                        fontSize: '0.85rem', fontWeight: selectedTrack?.id === track.id ? '700' : '400'
+                                        fontSize: '0.85rem', fontWeight: selectedTrack?.id === track.id ? '700' : '400',
+                                        transition: 'all 0.2s',
+                                        border: selectedTrack?.id === track.id ? '1px solid var(--accent-orange)' : '1px solid transparent'
                                     }}
                                 >
-                                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Music size={14} /> {track.title}
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                                        <div style={{
+                                            width: '28px', height: '28px', borderRadius: '50%',
+                                            background: selectedTrack?.id === track.id ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+                                            display: 'flex', alignItems: 'center', justifyContent: 'center'
+                                        }}>
+                                            {playingTrackId === track.id ? <Pause size={14} fill="currentColor" /> : <Play size={14} fill="currentColor" />}
+                                        </div>
+                                        <span>{track.title}</span>
+                                    </div>
+                                    <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>
+                                        {playingTrackId === track.id ? 'Previewing...' : track.duration}
                                     </span>
-                                    <span style={{ fontSize: '0.75rem', opacity: 0.7 }}>{track.duration}</span>
                                 </div>
                             ))}
                         </div>
