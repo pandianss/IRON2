@@ -53,84 +53,82 @@ export const DataProvider = ({ children, appMode }) => {
     // Certifications State
     const [certifications, setCertifications] = useState([]);
 
-    // Fetch Data on Mount
-    useEffect(() => {
-        const fetchAllData = async () => {
-            setIsLoading(true);
-            try {
-                // 1. Fetch Public Data (Always Allow)
-                const [gymsData, plansData, productsData] = await Promise.all([
-                    DbService.getDocs('gyms'),
-                    DbService.getDocs('partner_plans'),
-                    DbService.getDocs('products'),
+    const refreshData = async () => {
+        setIsLoading(true);
+        try {
+            // 1. Fetch Public Data (Always Allow)
+            const [gymsData, plansData, productsData] = await Promise.all([
+                DbService.getDocs('gyms'),
+                DbService.getDocs('partner_plans'),
+                DbService.getDocs('products'),
+            ]);
+
+            setGyms(gymsData);
+            setPartnerPlans(plansData);
+            setStoreProducts(productsData.length ? productsData : []);
+
+            if (gymsData.length > 0 && !selectedGymId) {
+                setSelectedGymId(gymsData[0].id);
+            }
+
+            // 2. Fetch Protected Data (Only if Authenticated)
+            const authUser = await AuthService.getCurrentUser();
+
+            if (authUser) {
+                await syncUserFromAuth(authUser);
+
+                const [
+                    usersData, notifsData, enqData, achData,
+                    liveData, transData, challengesData,
+                    ratingsData, studioContentData, studioExercisesData
+                ] = await Promise.all([
+                    DbService.getDocs('users'),
+                    DbService.getDocs('notifications'),
+                    DbService.getDocs('enquiries'),
+                    DbService.getDocs('achievements'),
+                    DbService.getDocs('live_sessions'),
+                    DbService.getDocs('transactions'),
+                    DbService.getDocs('challenges'),
+                    DbService.getDocs('ratings'),
+                    DbService.getDocs('studio_content'),
+                    DbService.getDocs('studio_exercises')
                 ]);
 
-                setGyms(gymsData);
-                setPartnerPlans(plansData);
-                setStoreProducts(productsData.length ? productsData : []);
+                // Separate Pagination Fetch for Feed
+                const { data: paginatedFeed, lastVisible } = await DbService.getPaginatedDocs('feed_activities', 5);
 
-                if (gymsData.length > 0 && !selectedGymId) {
-                    setSelectedGymId(gymsData[0].id);
-                }
+                setUsers(usersData);
+                setNotifications(notifsData);
+                setEnquiries(enqData);
+                setAchievements(achData);
 
-                // 2. Fetch Protected Data (Only if Authenticated)
-                const authUser = await AuthService.getCurrentUser();
+                setFeedActivities(paginatedFeed);
+                setLastFeedDoc(lastVisible);
+                setHasMoreFeed(!!lastVisible);
 
-                if (authUser) {
-                    await syncUserFromAuth(authUser);
+                setLiveSessions(liveData);
+                setTransactions(transData);
+                setChallenges(challengesData);
+                setRatings(ratingsData);
+                setStudioContent(studioContentData);
+                setStudioExercises(studioExercisesData);
 
-                    const [
-                        usersData, notifsData, enqData, achData,
-                        liveData, transData, challengesData,
-                        ratingsData, studioContentData, studioExercisesData
-                    ] = await Promise.all([
-                        DbService.getDocs('users'),
-                        DbService.getDocs('notifications'),
-                        DbService.getDocs('enquiries'),
-                        DbService.getDocs('achievements'),
-                        DbService.getDocs('live_sessions'),
-                        DbService.getDocs('transactions'),
-                        DbService.getDocs('challenges'),
-                        DbService.getDocs('ratings'),
-                        DbService.getDocs('studio_content'),
-                        DbService.getDocs('studio_exercises')
-                    ]);
-
-                    // Separate Pagination Fetch for Feed
-                    const { data: paginatedFeed, lastVisible } = await DbService.getPaginatedDocs('feed_activities', 5);
-
-                    setUsers(usersData);
-                    setNotifications(notifsData);
-                    setEnquiries(enqData);
-                    setAchievements(achData);
-
-                    setFeedActivities(paginatedFeed);
-                    setLastFeedDoc(lastVisible);
-                    setHasMoreFeed(!!lastVisible);
-
-                    setLiveSessions(liveData);
-                    setTransactions(transData);
-                    setChallenges(challengesData);
-                    setRatings(ratingsData);
-                    setStudioContent(studioContentData);
-                    setStudioExercises(studioExercisesData);
-
-                    calculateRevenue(transData);
-                } else {
-                    console.log("Guest Mode: Skipping protected data fetch");
-                }
-
-            } catch (error) {
-                console.error("Failed to fetch data", error);
-                showToast("Connection to Forge failed.");
-            } finally {
-                setIsLoading(false);
+                calculateRevenue(transData);
+            } else {
+                console.log("Guest Mode: Skipping protected data fetch");
             }
-        };
 
-        fetchAllData();
+        } catch (error) {
+            console.error("Failed to fetch data", error);
+            showToast("Connection to Forge failed.");
+        } finally {
+            setIsLoading(false);
+        }
+    };
 
-
+    // Fetch Data on Mount
+    useEffect(() => {
+        refreshData();
         return () => {
             // Cleanup if needed
         };
@@ -443,6 +441,7 @@ export const DataProvider = ({ children, appMode }) => {
     return (
         <DataContext.Provider value={{
             gyms, selectedGymId, setSelectedGymId, switchGym: setSelectedGymId,
+            refreshData,
             users, members: users,
             partnerPlans, addPlan,
             notifications, markNotificationRead: (id) => DbService.updateDoc('notifications', id, { read: true }),

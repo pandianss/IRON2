@@ -16,6 +16,7 @@ import GymDirectory from '../pages/GymDirectory';
 import AuthPage from '../pages/AuthPage';
 import AdminDashboard from '../pages/AdminDashboard';
 import SplashScreen from '../pages/SplashScreen';
+import GymJoin from '../pages/GymJoin';
 
 const router = createBrowserRouter([
     {
@@ -33,6 +34,10 @@ const router = createBrowserRouter([
     {
         path: '/checkin/initial',
         element: <InitialCheckIn />,
+    },
+    {
+        path: '/join/:gymId',
+        element: <GymJoin />,
     },
     {
         path: '/',

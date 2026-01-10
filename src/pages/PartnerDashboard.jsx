@@ -12,6 +12,7 @@ const PartnerDashboard = () => {
     const { currentUser } = useSession();
     const { showToast } = useUIFeedback();
     const {
+        refreshData, // Assuming I add this to DataContext
         gyms,
         selectedGymId,
         switchGym,
@@ -19,7 +20,8 @@ const PartnerDashboard = () => {
         approveMember,
         toggleBanMember,
         enquiries,
-        registerGym
+        registerGym,
+        partnerPlans
     } = useData();
     const [showPlanCreator, setShowPlanCreator] = useState(false);
     const [showAddMember, setShowAddMember] = useState(false);
@@ -169,63 +171,88 @@ const PartnerDashboard = () => {
                 <div className="header-title-group">
                     <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Command</h1>
 
-                    {/* Custom Gym Selector */}
-                    <div style={{ position: 'relative' }}>
-                        <div
-                            className="glass-panel"
-                            onClick={() => setShowGymSelector(!showGymSelector)}
-                            style={{
-                                display: 'inline-flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '8px 16px',
-                                borderRadius: '20px',
-                                border: '1px solid var(--border-glass)',
-                                cursor: 'pointer',
-                                minWidth: '200px',
-                                justifyContent: 'space-between'
-                            }}
-                        >
-                            <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{currentGym.name}</span>
-                            <ChevronDown size={16} color="var(--accent-orange)" />
+                    {/* Custom Gym Selector & Refresh */}
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                        <div style={{ position: 'relative' }}>
+                            <div
+                                className="glass-panel"
+                                onClick={() => setShowGymSelector(!showGymSelector)}
+                                style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '8px',
+                                    padding: '8px 16px',
+                                    borderRadius: '20px',
+                                    border: '1px solid var(--border-glass)',
+                                    cursor: 'pointer',
+                                    minWidth: '200px',
+                                    justifyContent: 'space-between'
+                                }}
+                            >
+                                <span style={{ fontWeight: '700', fontSize: '0.9rem' }}>{currentGym.name}</span>
+                                <ChevronDown size={16} color="var(--accent-orange)" />
+                            </div>
+
+                            {showGymSelector && (
+                                <div className="glass-panel" style={{
+                                    position: 'absolute',
+                                    top: '110%',
+                                    left: 0,
+                                    width: '100%',
+                                    padding: '8px',
+                                    borderRadius: '12px',
+                                    zIndex: 100,
+                                    border: '1px solid var(--border-glass)',
+                                    background: 'rgba(10, 10, 10, 0.95)',
+                                    backdropFilter: 'blur(10px)'
+                                }}>
+                                    {gyms.map(gym => (
+                                        <div
+                                            key={gym.id}
+                                            onClick={() => {
+                                                switchGym(gym.id);
+                                                setShowGymSelector(false);
+                                            }}
+                                            style={{
+                                                padding: '10px',
+                                                borderRadius: '8px',
+                                                cursor: 'pointer',
+                                                fontSize: '0.9rem',
+                                                fontWeight: gym.id === selectedGymId ? '700' : '400',
+                                                color: gym.id === selectedGymId ? 'var(--accent-orange)' : '#fff',
+                                                background: gym.id === selectedGymId ? 'rgba(255, 77, 0, 0.1)' : 'transparent',
+                                                marginBottom: '4px'
+                                            }}
+                                        >
+                                            {gym.name}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
 
-                        {showGymSelector && (
-                            <div className="glass-panel" style={{
-                                position: 'absolute',
-                                top: '110%',
-                                left: 0,
-                                width: '100%',
-                                padding: '8px',
+                        {/* Refresh Button */}
+                        <div
+                            onClick={() => {
+                                refreshData && refreshData();
+                                showToast(`Syncing... Found ${gyms?.length || 0} gyms`);
+                            }}
+                            className="glass-panel"
+                            style={{
+                                height: '40px',
+                                padding: '0 12px',
                                 borderRadius: '12px',
-                                zIndex: 100,
-                                border: '1px solid var(--border-glass)',
-                                background: 'rgba(10, 10, 10, 0.95)',
-                                backdropFilter: 'blur(10px)'
+                                border: '1px solid var(--accent-orange)',
+                                color: 'var(--accent-orange)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                fontSize: '0.75rem',
+                                fontWeight: '900',
+                                cursor: 'pointer'
                             }}>
-                                {gyms.map(gym => (
-                                    <div
-                                        key={gym.id}
-                                        onClick={() => {
-                                            switchGym(gym.id);
-                                            setShowGymSelector(false);
-                                        }}
-                                        style={{
-                                            padding: '10px',
-                                            borderRadius: '8px',
-                                            cursor: 'pointer',
-                                            fontSize: '0.9rem',
-                                            fontWeight: gym.id === selectedGymId ? '700' : '400',
-                                            color: gym.id === selectedGymId ? 'var(--accent-orange)' : '#fff',
-                                            background: gym.id === selectedGymId ? 'rgba(255, 77, 0, 0.1)' : 'transparent',
-                                            marginBottom: '4px'
-                                        }}
-                                    >
-                                        {gym.name}
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                            SYNC
+                        </div>
                     </div>
                 </div>
                 <div
@@ -235,10 +262,10 @@ const PartnerDashboard = () => {
                 >
                     <Activity size={20} />
                 </div>
-            </header>
+            </header >
 
             {/* Quick Stats Grid */}
-            <div className="stat-grid" style={{ marginBottom: '32px' }}>
+            < div className="stat-grid" style={{ marginBottom: '32px' }}>
                 <Card noPadding className="glass-panel" onClick={() => handleStatClick('Live Occupancy')} style={{ cursor: 'pointer' }}>
                     <div className="stat-card-inner">
                         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px', justifyContent: 'center' }}>
@@ -272,77 +299,112 @@ const PartnerDashboard = () => {
                         </div>
                     </div>
                 </Card>
-            </div>
+            </div >
 
             {/* Pending Approvals Section */}
-            {pendingMembers.length > 0 && (
-                <section style={{ marginBottom: '32px' }}>
-                    <h3 className="section-label" style={{ color: 'var(--accent-orange)' }}>PENDING APPROVALS ({pendingMembers.length})</h3>
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                        {pendingMembers.map(member => (
-                            <div key={member.id} className="glass-panel" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--accent-orange)' }}>
-                                <div>
-                                    <h4 style={{ fontWeight: '700', fontSize: '1rem' }}>{member.name}</h4>
-                                    <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Requested: {member.plan}</span>
+            {
+                pendingMembers.length > 0 && (
+                    <section style={{ marginBottom: '32px' }}>
+                        <h3 className="section-label" style={{ color: 'var(--accent-orange)' }}>PENDING APPROVALS ({pendingMembers.length})</h3>
+                        <div style={{ display: 'grid', gap: '12px' }}>
+                            {pendingMembers.map(member => (
+                                <div key={member.id} className="glass-panel" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: '1px solid var(--accent-orange)' }}>
+                                    <div>
+                                        <h4 style={{ fontWeight: '700', fontSize: '1rem' }}>{member.name}</h4>
+                                        <span style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>Requested: {member.plan}</span>
+                                    </div>
+                                    <div style={{ display: 'flex', gap: '8px' }}>
+                                        <Button
+                                            variant="accent"
+                                            icon={CheckCircle}
+                                            onClick={() => {
+                                                approveMember(member.id);
+                                                showToast(`${member.name} approved`);
+                                            }}
+                                        >
+                                            Approve
+                                        </Button>
+                                        <Button
+                                            variant="ghost"
+                                            onClick={() => {
+                                                toggleBanMember(member.id); // Assuming we can use ban to 'reject' or just leave them pending for now, or use delete? User only asked for addition/approval. 
+                                                // Actually, for now let's just implement Approve. Banning a pending user essentially rejects them.
+                                                showToast(`${member.name} rejected`);
+                                            }}
+                                            style={{ color: 'var(--rust-primary)' }}
+                                        >
+                                            Reject
+                                        </Button>
+                                    </div>
                                 </div>
-                                <div style={{ display: 'flex', gap: '8px' }}>
-                                    <Button
-                                        variant="accent"
-                                        icon={CheckCircle}
-                                        onClick={() => {
-                                            approveMember(member.id);
-                                            showToast(`${member.name} approved`);
-                                        }}
-                                    >
-                                        Approve
-                                    </Button>
-                                    <Button
-                                        variant="ghost"
-                                        onClick={() => {
-                                            toggleBanMember(member.id); // Assuming we can use ban to 'reject' or just leave them pending for now, or use delete? User only asked for addition/approval. 
-                                            // Actually, for now let's just implement Approve. Banning a pending user essentially rejects them.
-                                            showToast(`${member.name} rejected`);
-                                        }}
-                                        style={{ color: 'var(--rust-primary)' }}
-                                    >
-                                        Reject
-                                    </Button>
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
+                            ))}
+                        </div>
+                    </section>
+                )
+            }
 
             {/* Enquiries Section */}
-            {gymEnquiries.length > 0 && (
-                <section style={{ marginBottom: '32px' }}>
-                    <h3 className="section-label" style={{ color: 'var(--accent-blue)' }}>MESSAGES ({gymEnquiries.length})</h3>
-                    <div style={{ display: 'grid', gap: '12px' }}>
-                        {gymEnquiries.map(enquiry => (
-                            <div key={enquiry.id} className="glass-panel" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'start', border: '1px solid var(--accent-blue)' }}>
-                                <div style={{ display: 'flex', gap: '12px' }}>
-                                    <div className="icon-box" style={{ width: '40px', height: '40px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-blue)' }}>
-                                        <MessageSquare size={20} />
+            {
+                gymEnquiries.length > 0 && (
+                    <section style={{ marginBottom: '32px' }}>
+                        <h3 className="section-label" style={{ color: 'var(--accent-blue)' }}>MESSAGES ({gymEnquiries.length})</h3>
+                        <div style={{ display: 'grid', gap: '12px' }}>
+                            {gymEnquiries.map(enquiry => (
+                                <div key={enquiry.id} className="glass-panel" style={{ padding: '16px', display: 'flex', justifyContent: 'space-between', alignItems: 'start', border: '1px solid var(--accent-blue)' }}>
+                                    <div style={{ display: 'flex', gap: '12px' }}>
+                                        <div className="icon-box" style={{ width: '40px', height: '40px', background: 'rgba(56, 189, 248, 0.1)', color: 'var(--accent-blue)' }}>
+                                            <MessageSquare size={20} />
+                                        </div>
+                                        <div>
+                                            <h4 style={{ fontWeight: '700', fontSize: '0.95rem' }}>{enquiry.userName}</h4>
+                                            <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: '4px' }}>"{enquiry.message}"</p>
+                                            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{enquiry.date}</span>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <h4 style={{ fontWeight: '700', fontSize: '0.95rem' }}>{enquiry.userName}</h4>
-                                        <p style={{ fontSize: '0.9rem', color: 'var(--text-primary)', marginTop: '4px' }}>"{enquiry.message}"</p>
-                                        <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>{enquiry.date}</span>
-                                    </div>
+                                    <Button
+                                        variant="ghost"
+                                        onClick={() => showToast("Reply feature coming soon")}
+                                        style={{ fontSize: '0.8rem' }}
+                                    >
+                                        Reply
+                                    </Button>
                                 </div>
-                                <Button
-                                    variant="ghost"
-                                    onClick={() => showToast("Reply feature coming soon")}
-                                    style={{ fontSize: '0.8rem' }}
-                                >
-                                    Reply
-                                </Button>
-                            </div>
-                        ))}
-                    </div>
-                </section>
-            )}
+                            ))}
+                        </div>
+                    </section>
+                )
+            }
+            {/* Active Plans Section */}
+            {
+                partnerPlans && partnerPlans.length > 0 && (
+                    <section style={{ marginBottom: '32px' }}>
+                        <h3 className="section-label" style={{ color: 'var(--text-primary)' }}>MEMBERSHIP PLANS ({partnerPlans.length})</h3>
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '16px' }}>
+                            {partnerPlans.map(plan => (
+                                <Card key={plan.id} className="glass-panel" style={{ border: '1px solid var(--border-glass)', position: 'relative' }}>
+                                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', marginBottom: '12px' }}>
+                                        <div>
+                                            <h4 style={{ fontSize: '1.1rem', fontWeight: '800', fontFamily: 'var(--font-display)' }}>{plan.name}</h4>
+                                            <span style={{ fontSize: '0.8rem', color: 'var(--accent-orange)', textTransform: 'uppercase', letterSpacing: '1px' }}>{plan.duration}</span>
+                                        </div>
+                                        <div style={{ textAlign: 'right' }}>
+                                            <span style={{ fontSize: '1.2rem', fontWeight: '900', color: '#fff' }}>₹{plan.price}</span>
+                                        </div>
+                                    </div>
+                                    <ul style={{ listStyle: 'none', padding: 0, margin: 0 }}>
+                                        {plan.benefits && plan.benefits.map((benefit, i) => (
+                                            <li key={i} style={{ fontSize: '0.85rem', color: 'var(--text-secondary)', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                                                <div style={{ width: '4px', height: '4px', background: 'var(--accent-orange)', borderRadius: '50%' }} />
+                                                {benefit}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                </Card>
+                            ))}
+                        </div>
+                    </section>
+                )
+            }
 
             {/* Actions with Add Member */}
             <section style={{ marginBottom: '32px', display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '16px' }}>
@@ -440,7 +502,7 @@ const PartnerDashboard = () => {
                     )}
                 </div>
             </section>
-        </div>
+        </div >
     );
 };
 

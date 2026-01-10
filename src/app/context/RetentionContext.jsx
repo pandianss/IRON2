@@ -119,8 +119,24 @@ export const RetentionProvider = ({ children }) => {
         // Future: specific service call to pay 'freeze' and repair streak
     };
 
+    // --- RUST SIMULATION / LOGIC ---
+    // If we have missed days, or if explicit 'rust' state is active
+    // For V1, let's say Rust sets in if missedDays > 2
+    const [debugRust, setDebugRust] = useState(false);
+
+    const isRusting = (retentionState.missedDays > 2) || debugRust;
+
+    const toggleRust = () => setDebugRust(prev => !prev);
+
+
     return (
-        <RetentionContext.Provider value={{ ...retentionState, checkIn, recoverSession }}>
+        <RetentionContext.Provider value={{
+            ...retentionState,
+            checkIn,
+            recoverSession,
+            isRusting,
+            toggleRust // Keeping for debug/demo as requested
+        }}>
             {children}
         </RetentionContext.Provider>
     );

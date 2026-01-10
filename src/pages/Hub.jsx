@@ -12,7 +12,7 @@ const Hub = () => {
     const navigate = useNavigate();
     const { isRusting, toggleRust } = useRetention();
     const { showToast } = useUIFeedback();
-    const { users, getRatingStats, addRating } = useData();
+    const { users, getRatingStats, addRating, gyms } = useData();
     const [reviewTarget, setReviewTarget] = React.useState(null);
 
     const experts = users.filter(u => u.role === 'expert');
@@ -38,51 +38,67 @@ const Hub = () => {
                 </div>
             </header>
 
-            <section style={{ marginBottom: '32px' }}>
-                <h3 className="section-label">NEARBY FORGES</h3>
+            {/* Nearby Forges section removed as per user request */}
 
-                <Card noPadding className="glass-panel" style={{ overflow: 'hidden' }}>
-                    <div style={{ height: '140px', background: '#1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-muted)' }}>
-                        <MapPin size={32} />
-                    </div>
-                    <div style={{ padding: '20px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                            <h4 style={{ fontWeight: '800', fontSize: '1.2rem' }}>ANVIL FORGE MUMBAI</h4>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', background: 'rgba(0, 255, 148, 0.1)', padding: '4px 8px', borderRadius: '6px' }}>
-                                <Star size={12} color="var(--accent-green)" fill="var(--accent-green)" />
-                                <span style={{ color: 'var(--accent-green)', fontWeight: '900', fontSize: '0.75rem' }}>4.9</span>
-                            </div>
-                        </div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.85rem', marginBottom: '20px' }}>
-                            The elite standard in powerlifting. Bandra West, Mumbai. Verified IRON equipment.
-                        </p>
-                        <Button variant="secondary" fullWidth>View Details</Button>
-                    </div>
-                </Card>
-            </section>
-
-            {/* Rust Simulation (Debug/Demo) */}
+            {/* System Health (Live Status) */}
             <section style={{ marginBottom: '40px' }}>
                 <h3 className="section-label">SYSTEM HEALTH</h3>
                 <Card className="glass-panel" style={{
-                    padding: '20px',
-                    border: isRusting ? '1px solid var(--rust-primary)' : '1px solid var(--border-glass)',
-                    background: isRusting ? 'rgba(139, 62, 47, 0.1)' : 'var(--bg-card)'
+                    padding: '24px',
+                    position: 'relative',
+                    overflow: 'hidden',
+                    border: isRusting ? '1px solid #ff4d00' : '1px solid rgba(255,255,255,0.1)',
+                    background: isRusting
+                        ? 'linear-gradient(135deg, #2a0a00 0%, #5a1a00 100%)' // Deep rust
+                        : 'linear-gradient(135deg, #0a0a0a 0%, #1a1a1a 100%)', // Clean steel
+                    boxShadow: isRusting
+                        ? '0 0 20px rgba(255, 77, 0, 0.2), inset 0 0 20px rgba(0,0,0,0.5)' // Rust glow
+                        : '0 0 20px rgba(0, 255, 255, 0.05)' // Subtle cool glow
                 }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginBottom: '20px' }}>
-                        <div className={`icon-box ${isRusting ? 'icon-box-accent' : 'icon-box-muted'}`} style={{ color: isRusting ? 'var(--rust-primary)' : 'var(--text-secondary)' }}>
-                            <ShieldAlert size={24} />
+                    {/* Texture Overlays */}
+                    {isRusting && (
+                        <div style={{
+                            position: 'absolute', top: 0, left: 0, right: 0, bottom: 0,
+                            backgroundImage: 'url("https://www.transparenttextures.com/patterns/rust.png")', // Optional subtle texture if valid, or just noise
+                            opacity: 0.2, mixBlendMode: 'overlay', pointerEvents: 'none'
+                        }} />
+                    )}
+
+                    {!isRusting && (
+                        <div style={{
+                            position: 'absolute', top: '-50%', left: '-50%', width: '200%', height: '200%',
+                            background: 'linear-gradient(45deg, transparent 40%, rgba(255,255,255,0.03) 45%, transparent 50%)',
+                            transform: 'rotate(25deg)', pointerEvents: 'none'
+                        }} />
+                    )}
+
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '20px', position: 'relative', zIndex: 1 }}>
+                        <div className={`icon-box ${isRusting ? 'icon-box-danger' : 'icon-box-success'}`}
+                            style={{
+                                width: '56px', height: '56px', borderRadius: '16px',
+                                background: isRusting ? 'rgba(255, 60, 0, 0.2)' : 'rgba(0, 255, 150, 0.1)',
+                                color: isRusting ? '#ff4d00' : '#00ff94',
+                                border: isRusting ? '1px solid rgba(255,60,0,0.3)' : '1px solid rgba(0,255,150,0.2)'
+                            }}>
+                            {isRusting ? <ShieldAlert size={28} /> : <Star size={28} />}
                         </div>
                         <div style={{ flex: 1 }}>
-                            <h4 style={{ fontWeight: '700' }}>{isRusting ? 'IRON IS RUSTING' : 'IRON IS SHARP'}</h4>
-                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                                {isRusting ? 'Log an activity to polish your gear.' : 'System prime. Discipline verified.'}
+                            <h4 style={{
+                                fontWeight: '900',
+                                fontSize: '1.2rem',
+                                letterSpacing: '0.5px',
+                                color: isRusting ? '#ff6b3d' : '#fff',
+                                textShadow: isRusting ? '0 0 10px rgba(255,77,0,0.3)' : 'none'
+                            }}>
+                                {isRusting ? 'SYSTEM CRITICAL: RUST DETECTED' : 'SYSTEM OPTIMAL: POLISHED'}
+                            </h4>
+                            <p style={{ fontSize: '0.9rem', color: isRusting ? '#ffad99' : 'var(--text-secondary)', marginTop: '4px' }}>
+                                {isRusting
+                                    ? 'Inactivity has compromised gear integrity. Log a workout immediately to restore status.'
+                                    : 'All systems shining. Discipline verified. Keep grinding to maintain luster.'}
                             </p>
                         </div>
                     </div>
-                    <Button onClick={toggleRust} variant={isRusting ? 'accent' : 'secondary'} fullWidth>
-                        {isRusting ? 'Polish the Iron' : 'Simulate Inactivity'}
-                    </Button>
                 </Card>
             </section>
 

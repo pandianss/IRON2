@@ -4,9 +4,11 @@ import Button from '../UI/Button';
 import StorageService from '../../infrastructure/StorageService';
 import { useSession } from '../../app/context';
 import { mockAudioTracks } from '../../services/mockData';
+import { useUIFeedback } from '../../app/context';
 
 const LogWorkoutModal = ({ onClose, onLog }) => {
     const { currentUser } = useSession();
+    const { showToast } = useUIFeedback();
     const [description, setDescription] = useState('');
     const [file, setFile] = useState(null);
     const [preview, setPreview] = useState(null);
@@ -28,7 +30,7 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
 
     const handleSubmit = async () => {
         if (!description && !file) {
-            // Basic validation
+            showToast("Please add a description or upload proof", "error");
             return;
         }
 
@@ -37,7 +39,9 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
 
         try {
             if (file && currentUser) {
-                const path = `workouts/${currentUser.id}/${Date.now()}_${file.name}`;
+                // Determine storage path
+                const userId = currentUser.id || currentUser.uid || 'unknown_user';
+                const path = `workouts/${userId}/${Date.now()}_${file.name}`;
                 mediaUrl = await StorageService.uploadFile(file, path, (progress) => {
                     setUploadProgress(progress);
                 });
@@ -57,7 +61,7 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
             onClose();
         } catch (error) {
             console.error("Failed to log workout:", error);
-            // Ideally show error toast here or pass error up
+            showToast(error.message || "Failed to upload log", "error");
         } finally {
             setIsUploading(false);
         }
@@ -201,7 +205,8 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
                     <div
                         onClick={() => setPrivacy(privacy === 'public' ? 'private' : 'public')}
                         style={{
-                            width: '40px', height: '24px', background: privacy === 'public' ? 'var(--accent-blue)' : 'var(--bg-muted)',
+                            width: '40px', height: '24px',
+                            background: privacy === 'public' ? 'var(--accent-blue)' : 'var(--rust-primary)',
                             borderRadius: '12px', position: 'relative', cursor: 'pointer', transition: 'background 0.3s'
                         }}
                     >
@@ -217,7 +222,7 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
                     fullWidth
                     variant="accent"
                     onClick={handleSubmit}
-                    disabled={isUploading || (!description && !file)}
+                    disabled={isUploading}
                     style={{ height: '56px' }}
                 >
                     {isUploading ? `UPLOADING... ${Math.round(uploadProgress)}%` : 'CONFIRM LOG (+50 XP)'}

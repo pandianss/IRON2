@@ -249,7 +249,7 @@ const CommandCenter = () => {
                 <LogWorkoutModal
                     onClose={() => setShowLogModal(false)}
                     onLog={(data) => {
-                        logActivity({
+                        return logActivity({
                             ...data,
                             activityType: "Workout Log",
                             location: userLocation ? "Field Ops" : "Unknown",
