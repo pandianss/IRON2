@@ -34,13 +34,22 @@ const Arena = () => {
         showToast(message);
     };
 
-    const leaderboards = [
-        { rank: 1, userName: "Iron Titan", value: "14,800 XP", trend: 'neutral', badge: "Platinum" },
-        { rank: 2, userName: "Sprint King", value: "12,450 XP", trend: 'up', badge: "Gold" },
-        { rank: 3, userName: "Power Haus", value: "11,200 XP", trend: 'down', badge: "Gold" },
-        { rank: 17, userName: "Marcus V.", value: "4,200 XP", trend: 'up', isUser: true, badge: "Silver" },
-        { rank: 18, userName: "Lifting Legend", value: "4,150 XP", trend: 'neutral', badge: "Silver" }
-    ];
+    // Compute real leaderboard from users data
+    const leaderboards = users
+        .slice() // Copy to avoid mutating context
+        .sort((a, b) => (b.xp || 0) - (a.xp || 0)) // Sort by XP descending
+        .slice(0, 10) // Top 10
+        .map((user, index) => ({
+            rank: index + 1,
+            userName: user.displayName || 'Unknown',
+            value: `${(user.xp || 0).toLocaleString()} XP`,
+            trend: 'neutral', // Future: Calculate trend based on history
+            badge: index === 0 ? 'Platinum' : index < 3 ? 'Gold' : 'Silver',
+            isUser: user.id === currentUser?.id
+        }));
+
+    // If current user is not in top 10, maybe we should append them? (Optional, but good for UX)
+    // For V1 let's stick to Top 10 lists.
 
     return (
         <div className="page-container" style={{ paddingBottom: '100px' }}>

@@ -11,7 +11,7 @@ const Notifications = () => {
 
     // Filter notifications based on user type
     const filteredNotifications = notifications.filter(n => {
-        if (userType === 'gym') {
+        if (userType === 'gym_owner') {
             return n.gymId === selectedGymId || n.type === 'system';
         }
         return !n.gymId; // Enthusiasts see general notifications
@@ -29,9 +29,9 @@ const Notifications = () => {
         } else {
             // Default Navigation Logic
             setIsOpen(false);
-            if (notification.type === 'message' && userType === 'gym') {
+            if (notification.type === 'message' && userType === 'gym_owner') {
                 navigate('/partner');
-            } else if (notification.type === 'alert' && userType === 'gym') {
+            } else if (notification.type === 'alert' && userType === 'gym_owner') {
                 navigate('/partner');
             } else if (notification.type === 'success') {
                 navigate('/profile');

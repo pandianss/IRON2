@@ -14,7 +14,8 @@ export const useStreaks = () => {
         streakState,
         missedDays,
         checkInStatus,
-        initiateTrainingSession
+        initiateTrainingSession,
+        history
     } = useRetention();
 
     const [sessionDismissed, setSessionDismissed] = useState(false);
@@ -65,6 +66,7 @@ export const useStreaks = () => {
         missedDays,
         recoverSession,
         checkInStatus,
-        initiateTrainingSession
+        initiateTrainingSession,
+        history
     };
 };

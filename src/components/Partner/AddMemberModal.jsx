@@ -8,6 +8,8 @@ const AddMemberModal = ({ onClose }) => {
     const { addMember, showToast, selectedGymId } = useAppContext();
     const [mode, setMode] = useState('manual'); // 'manual' | 'link'
     const [name, setName] = useState('');
+    const [email, setEmail] = useState('');
+    const [mobile, setMobile] = useState(''); // Added Mobile State
     const [plan, setPlan] = useState('Monthly');
 
     const joinLink = `${window.location.origin}/join/${selectedGymId}`;
@@ -30,6 +32,8 @@ const AddMemberModal = ({ onClose }) => {
 
         const newMember = {
             name,
+            email,
+            mobileNumber: mobile, // Added Mobile Number
             gymId: selectedGymId,
             rank: 'IRON V',
             status: 'Active',
@@ -120,6 +124,42 @@ const AddMemberModal = ({ onClose }) => {
                                     placeholder="e.g. John Doe"
                                     value={name}
                                     onChange={(e) => setName(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(0,0,0,0.3)',
+                                        color: '#fff',
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-glass)'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>EMAIL ADDRESS</label>
+                                <input
+                                    className="iron-input-border"
+                                    placeholder="e.g. valid@email.com"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    style={{
+                                        width: '100%',
+                                        background: 'rgba(0,0,0,0.3)',
+                                        color: '#fff',
+                                        padding: '12px',
+                                        borderRadius: '8px',
+                                        border: '1px solid var(--border-glass)'
+                                    }}
+                                />
+                            </div>
+
+                            <div style={{ marginBottom: '16px' }}>
+                                <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>MOBILE NUMBER</label>
+                                <input
+                                    className="iron-input-border"
+                                    placeholder="e.g. +91 98765 43210"
+                                    value={mobile}
+                                    onChange={(e) => setMobile(e.target.value)}
                                     style={{
                                         width: '100%',
                                         background: 'rgba(0,0,0,0.3)',

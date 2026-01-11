@@ -1,41 +1,27 @@
 export const WORKOUTS = [
     {
-        id: 'w1',
-        title: '5x5 Stronglifts',
+        id: 'iron-proto-1',
+        title: 'The Iron Protocol',
         category: 'Strength',
-        difficulty: 'Beginner',
-        image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?q=80&w=1470&auto=format&fit=crop',
-        summary: 'The ultimate beginner strength program. Squat, Bench, Deadlift, Overhead Press, and Rows.',
-        duration: '45-60 min',
-        frequency: '3x / week'
+        difficulty: 'Advanced',
+        image: 'https://images.unsplash.com/photo-1517963879466-e9b5ce382d5d?q=80&w=1470&auto=format&fit=crop',
+        summary: 'The signature strength program of the Forge. Focuses on compound lifts and progressive overload.',
+        duration: '75-90 min',
+        frequency: '4x / week',
+        videoUrl: 'https://www.youtube.com/embed/biodT65e78k?si=1', // Placeholder workout video
+        instructions: [
+            { step: 1, title: 'Squat', description: 'Warm up with empty bar. Perform 5 sets of 5 reps, increasing weight each set.' },
+            { step: 2, title: 'Bench Press', description: 'Keep elbows tucked at 45 degrees. 5 sets of 5 reps. Control the descent.' },
+            { step: 3, title: 'Barbell Row', description: 'Pull to sternum/lower chest. Keep back flat. 5 sets of 5 reps.' }
+        ]
     },
     {
-        id: 'w2',
-        title: 'PPL (Push Pull Legs)',
-        category: 'Hypertrophy',
-        difficulty: 'Intermediate',
-        image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?q=80&w=1470&auto=format&fit=crop',
-        summary: 'Classic split for building muscle. 6 days a week high volume training.',
-        duration: '60-75 min',
-        frequency: '6x / week'
-    },
-    {
-        id: 'w3',
-        title: 'HIIT Torch',
-        category: 'Conditioning',
-        difficulty: 'All Levels',
-        image: 'https://images.unsplash.com/photo-1601422407692-ec4ee6bf3e23?q=80&w=1374&auto=format&fit=crop',
-        summary: 'High Intensity Interval Training to burn fat and improve cardiovascular health.',
-        duration: '20-30 min',
-        frequency: '2-4x / week'
-    },
-    {
-        id: 'w4',
-        title: 'Mobility Flow',
+        id: 'mobility-found',
+        title: 'Mobility Foundations',
         category: 'Recovery',
-        difficulty: 'Beginner',
-        image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?q=80&w=1470&auto=format&fit=crop',
-        summary: 'Full body mobility routine to unlock stiff joints and improve posture.',
+        difficulty: 'All Levels',
+        image: 'https://images.unsplash.com/photo-1552674605-46d5267761ce?q=80&w=1470&auto=format&fit=crop',
+        summary: 'Essential daily mobility routine to maintain joint health and prevent injury.',
         duration: '15 min',
         frequency: 'Daily'
     }
@@ -43,39 +29,21 @@ export const WORKOUTS = [
 
 export const DIETS = [
     {
-        id: 'd1',
-        title: 'Keto Basics',
+        id: 'perf-fuel',
+        title: 'Performance Fuel',
+        category: 'Balanced',
+        difficulty: 'Moderate',
+        image: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?q=80&w=1470&auto=format&fit=crop',
+        summary: 'Optimized macronutrient balance for high-performance athletes.',
+        tags: ['High Protein', 'Carb Cycling']
+    },
+    {
+        id: 'metabolic-reset',
+        title: 'Metabolic Reset',
         category: 'Fat Loss',
-        difficulty: 'Hard',
-        image: 'https://images.unsplash.com/photo-1547592180-85f173990554?q=80&w=1470&auto=format&fit=crop',
-        summary: 'High fat, low carb diet to shift your body into ketosis.',
-        tags: ['Low Carb', 'High Fat']
-    },
-    {
-        id: 'd2',
-        title: 'Macro Counting 101',
-        category: 'Education',
-        difficulty: 'Moderate',
-        image: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?q=80&w=1453&auto=format&fit=crop',
-        summary: 'Learn how to track protein, carbs, and fats to reach your body composition goals.',
-        tags: ['Flexible', 'Science-Based']
-    },
-    {
-        id: 'd3',
-        title: 'Intermittent Fasting',
-        category: 'Lifestyle',
         difficulty: 'Easy',
-        image: 'https://images.unsplash.com/photo-1620916566398-39f1143ab7be?q=80&w=1374&auto=format&fit=crop',
-        summary: 'Time-restricted eating windows to simplify nutrition and control calories.',
-        tags: ['16:8', 'Simplification']
-    },
-    {
-        id: 'd4',
-        title: 'Muscle Gain Blueprint',
-        category: 'Bulking',
-        difficulty: 'Moderate',
-        image: 'https://images.unsplash.com/photo-1627483297886-4971c43bc924?q=80&w=1470&auto=format&fit=crop',
-        summary: 'High protein and calorie surplus strategies for maximum hypertrophy.',
-        tags: ['High Protein', 'Bulking']
+        image: 'https://images.unsplash.com/photo-1498837167922-ddd27525d352?q=80&w=1470&auto=format&fit=crop',
+        summary: 'Whole-food based approach to reset insulin sensitivity and shed body fat.',
+        tags: ['Clean Eating', 'Anti-Inflammatory']
     }
 ];

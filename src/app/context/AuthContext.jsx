@@ -3,6 +3,7 @@ import PropTypes from 'prop-types';
 import {
     AuthService, DbService
 } from '../../infrastructure/firebase';
+import { where } from 'firebase/firestore';
 import { AuditService } from '../../services/audit';
 import { useUI } from './UIContext';
 
@@ -86,25 +87,47 @@ export const AuthProvider = ({ children, appMode }) => {
             setCurrentUser(dbUser);
             setUserType(dbUser.role);
         } else {
-            // Handle case where auth exists but no DB doc (rare, but possible if registration failed partial)
-            // Or just a fresh social login that hasn't registered yet? 
-            // For now, we assume if they are in Firebase Auth, we treat them as at least 'User'
-            // We will create the doc if missing, similar to loginWithGoogle logic
+            // Check for pre-existing member record (from Partner Onboarding)
+            let existingMember = null;
+            if (authUser.email) {
+                const results = await DbService.queryDocs('users', [where('email', '==', authUser.email)]);
+                // Filter out any that ironically assume the same ID (shouldn't happen here but safe)
+                if (results.length > 0) existingMember = results.find(u => u.id !== authUser.uid) || results[0];
+            }
+
             const role = (authUser.email === 'sspandian.here@gmail.com') ? 'super_admin' : 'user';
+
             const newUser = {
                 uid: authUser.uid,
                 email: authUser.email || authUser.phoneNumber,
-                displayName: authUser.displayName || 'User',
+                displayName: authUser.displayName || existingMember?.name || 'User',
                 role,
                 joinedAt: new Date().toISOString(),
-                status: 'Active',
+                status: existingMember?.status || 'Active',
                 xp: 0,
                 level: 1,
-                rank: 'IRON IV'
+                rank: 'IRON IV',
+                // Validation Data from Partner
+                gymId: existingMember?.gymId || null,
+                plan: existingMember?.plan || null,
+                expiry: existingMember?.expiry || null,
+                joinedVia: existingMember?.joinedVia || 'App',
+                medical: existingMember?.medical || null
             };
+
             await DbService.setDoc('users', authUser.uid, newUser);
             setCurrentUser(newUser);
             setUserType(role);
+
+            // Cleanup old partial doc
+            if (existingMember && existingMember.id !== authUser.uid) {
+                console.log("Merging pre-onboarded member doc:", existingMember.id);
+                try {
+                    await DbService.deleteDoc('users', existingMember.id);
+                } catch (e) {
+                    console.warn("Failed to delete stale member doc", e);
+                }
+            }
         }
     };
 

@@ -51,7 +51,7 @@ const MemberProfileModal = ({ member, onClose }) => {
                         color: isBanned ? 'var(--rust-primary)' : 'var(--accent-orange)',
                         margin: '0 auto 16px'
                     }}>
-                        {member.name.charAt(0)}
+                        {(member.name || '?').charAt(0)}
                     </div>
                     <h2 className="title-display" style={{ fontSize: '1.5rem', marginBottom: '4px' }}>{member.name}</h2>
                     <p style={{ color: 'var(--text-muted)', fontSize: '0.9rem', letterSpacing: '2px' }}>{member.rank}</p>

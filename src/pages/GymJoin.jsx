@@ -17,7 +17,7 @@ const GymJoin = () => {
 
     const [selectedPlan, setSelectedPlan] = useState(null);
     const [step, setStep] = useState(1); // 1: Plan, 2: Details/Pay
-    const [formData, setFormData] = useState({ name: '', phone: '' });
+    const [formData, setFormData] = useState({ name: '', phone: '', email: '' });
 
     // Auto-select first plan if available
     useEffect(() => {
@@ -35,6 +35,7 @@ const GymJoin = () => {
         setTimeout(() => {
             const newMember = {
                 name: formData.name,
+                email: formData.email,
                 phone: formData.phone,
                 gymId: gymId,
                 plan: selectedPlan.name,
@@ -111,6 +112,13 @@ const GymJoin = () => {
                             placeholder="Full Name"
                             value={formData.name}
                             onChange={e => setFormData({ ...formData, name: e.target.value })}
+                        />
+                        <input
+                            type="email"
+                            className="iron-input-border"
+                            placeholder="Email Address"
+                            value={formData.email}
+                            onChange={e => setFormData({ ...formData, email: e.target.value })}
                         />
                         <input
                             className="iron-input-border"

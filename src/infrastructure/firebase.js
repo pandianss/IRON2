@@ -27,7 +27,8 @@ import {
     limit,
     startAfter,
     orderBy,
-    onSnapshot
+    onSnapshot,
+    deleteDoc
 } from "firebase/firestore";
 import {
     ref,
@@ -316,6 +317,34 @@ const RealDbService = {
         } catch (error) {
             console.error(`Error updating doc in ${collectionName}:`, error);
             throw error;
+        }
+    },
+
+    // Delete Document
+    deleteDoc: async (collectionName, docId) => {
+        try {
+            const docRef = doc(db, collectionName, docId);
+            await deleteDoc(docRef);
+            return { id: docId, deleted: true };
+        } catch (error) {
+            console.error(`Error deleting doc ${docId} from ${collectionName}:`, error);
+            throw error;
+        }
+    },
+
+    // Query Documents (One-shot)
+    queryDocs: async (collectionName, queryConstraints = []) => {
+        try {
+            const colRef = collection(db, collectionName);
+            const q = query(colRef, ...queryConstraints);
+            const querySnapshot = await getDocs(q);
+            return querySnapshot.docs.map(doc => ({
+                id: doc.id,
+                ...doc.data()
+            }));
+        } catch (error) {
+            console.error(`Error querying ${collectionName}:`, error);
+            return [];
         }
     }
 };

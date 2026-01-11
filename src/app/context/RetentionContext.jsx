@@ -72,26 +72,32 @@ export const RetentionProvider = ({ children }) => {
                             // Let's do a direct read or a lightweight service call.
                             // Actually, let's add `getTodayStatus` to retention service or just blindly trust for now?
                             // No, we need to know REST vs TRAINED.
-                            const history = await firebaseRetentionService.getHistory(user.uid, 1);
-                            if (history && history[today]) {
-                                todayStatus = history[today];
+                            // Fetch 30 days history for Calendar
+                            const historyData = await firebaseRetentionService.getHistory(user.uid, 30);
+
+                            // Check today's status
+                            if (historyData && historyData[today]) {
+                                todayStatus = historyData[today];
                             }
+
+                            setRetentionState(prev => ({
+                                ...prev,
+                                currentStreak: data.currentStreak || 0,
+                                longestStreak: data.longestStreak || 0,
+                                lastCheckInDate: data.lastCheckInDate || null,
+                                checkInStatus: todayStatus,
+                                history: historyData || {}, // Store history
+                                ...contract,
+                                loading: false
+                            }));
                         } catch (e) {
-                            console.warn("Failed to fetch today status", e);
+                            console.warn("Failed to fetch history", e);
                         }
                     }
 
-                    setRetentionState(prev => ({
-                        ...prev,
-                        currentStreak: data.currentStreak || 0,
-                        longestStreak: data.longestStreak || 0,
-                        lastCheckInDate: data.lastCheckInDate || null,
-                        checkInStatus: todayStatus, // New Field
-                        ...contract,
-                        loading: false
-                    }));
-
-
+                    // Fallback if not completed but we still want history?
+                    // Ideally we fetch history regardless of 'completed' status to show misses.
+                    // But for now, let's keep it inside the if(data) block.
                 } else {
                     setRetentionState(prev => ({ ...prev, loading: false }));
                 }
@@ -109,21 +115,27 @@ export const RetentionProvider = ({ children }) => {
         try {
             const result = await firebaseRetentionService.checkIn(user.uid, status);
 
-
-
-            // ALWAYS Sync to ensure local state matches DB (fixes infinite redirect loop)
+            // ALWAYS Sync to ensure local state matches DB
             const data = await firebaseRetentionService.syncHistory(user.uid);
+            // Also refresh history to show the new check mark immediately
+            const historyData = await firebaseRetentionService.getHistory(user.uid, 30);
+
             if (data) {
                 setRetentionState(prev => ({
                     ...prev,
                     currentStreak: data.currentStreak || 0,
                     longestStreak: data.longestStreak || 0,
                     lastCheckInDate: data.lastCheckInDate || null,
-                    streakState: 'completed', // Immediate optimistic update
+                    streakState: 'completed',
                     missedDays: 0,
-                    checkInStatus: status // Update local status
+                    checkInStatus: status,
+                    history: historyData || {}, // Update history
                 }));
-
+                // We access the service directly or add a method. 
+                // For now, let's assume valid data leads to valid check-in.
+                // Ideally we extend syncHistory or call a getTodayStatus method.
+                // Let's do a direct read or a lightweight service call.
+                // Actually, let's add `getTodayStatus` to retention service or just blindly trust for now?
                 // Only fire events if it was a new action
                 if (result.status !== 'ignored') {
                     console.log("Loading EventBus...");
@@ -214,17 +226,17 @@ export const RetentionProvider = ({ children }) => {
 
     const toggleRust = () => setDebugRust(prev => !prev);
 
-
     return (
         <RetentionContext.Provider value={{
             ...retentionState,
             checkIn,
             recoverSession,
             isRusting,
-            toggleRust, // Keeping for debug/demo as requested
+            toggleRust,
             initiateTrainingSession,
             verifyProofOfWork,
-            pendingProofTimestamp: retentionState.pendingProofTimestamp
+            pendingProofTimestamp: retentionState.pendingProofTimestamp,
+            history: retentionState.history // Expose history
         }}>
             {children}
         </RetentionContext.Provider>

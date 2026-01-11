@@ -35,17 +35,17 @@ const InitialCheckIn = () => {
                 if (result.status === 'success') {
                     xpAwarded = 100;
                     title = "MISSION COMPLETE";
-                    message = "+100 XP | PROOF REQUIRED";
+                    message = "+100 XP | My Workout for the Day";
                 } else if (result.status === 'upgraded') {
                     xpAwarded = 90; // Diff (100 - 10)
                     title = "STATUS UPGRADED";
-                    message = "+90 XP | PROOF REQUIRED";
+                    message = "+90 XP | My Workout for the Day";
                 } else {
                     // Ignored / Already Done
                     showToast("Training already logged for today.", "info");
                     setTimeout(() => {
                         navigate('/hub');
-                    }, 500);
+                    }, 100);
                     return;
                 }
 
@@ -61,7 +61,7 @@ const InitialCheckIn = () => {
                     // PROCEED ANYWAY (Fix for stuck users)
                     setTimeout(() => {
                         navigate('/hub');
-                    }, 500);
+                    }, 100);
                     return;
                 }
             }
@@ -92,7 +92,7 @@ const InitialCheckIn = () => {
             // Navigate
             setTimeout(() => {
                 navigate('/hub');
-            }, 1500);
+            }, 100);
 
         } catch (error) {
             console.error("Check-in failed:", error);

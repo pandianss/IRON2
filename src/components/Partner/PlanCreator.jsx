@@ -69,10 +69,10 @@ const PlanCreator = ({ onClose }) => {
                             onChange={(e) => setDuration(e.target.value)}
                             style={{ width: '100%', background: 'rgba(0,0,0,0.3)', color: '#fff', padding: '12px', borderRadius: '8px', border: '1px solid var(--border-glass)' }}
                         >
-                            <option value="Monthly">Monthly</option>
-                            <option value="Quarterly">Quarterly</option>
-                            <option value="Annual">Annual</option>
-                            <option value="Special Camp">Special Camp</option>
+                            <option value="Monthly" style={{ background: '#111', color: '#fff' }}>Monthly</option>
+                            <option value="Quarterly" style={{ background: '#111', color: '#fff' }}>Quarterly</option>
+                            <option value="Annual" style={{ background: '#111', color: '#fff' }}>Annual</option>
+                            <option value="Special Camp" style={{ background: '#111', color: '#fff' }}>Special Camp</option>
                         </select>
                     </div>
                 </div>

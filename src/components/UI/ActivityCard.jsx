@@ -1,6 +1,6 @@
 import React from 'react';
 import PropTypes from 'prop-types';
-import { Flame, Music } from 'lucide-react';
+import { Flame, Music, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const ActivityCard = ({
     userName,
@@ -15,10 +15,21 @@ const ActivityCard = ({
     distance = null,
     description,
     audioTrack,
-    audioMode
+    audioMode,
+    // Verification Props
+    userId,
+    isVerified,
+    currentUserId,
+    onVerify,
+    // Admin Props
+    hubCandidate = false,
+    promoted = false,
+    onPromote,
+    onReport,
+    isAdmin = false
 }) => {
     return (
-        <div className={`glass-panel ${isPR ? 'pr-glow heat-streak-pulse' : ''}`} style={{
+        <div className={`glass-panel ${isPR ? 'pr-glow heat-streak-pulse' : ''} ${hubCandidate && !promoted ? 'hub-candidate-glow' : ''}`} style={{
             borderRadius: '20px',
             marginBottom: '16px',
             padding: '20px',
@@ -196,6 +207,104 @@ const ActivityCard = ({
                     </p>
                 </div>
             )}
+
+            {/* Admin / Verification Actions */}
+            <div style={{ marginTop: '16px', display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+
+                {/* Report Action (Community Moderation) */}
+                <button
+                    onClick={() => {
+                        if (window.confirm("Report this content as inappropriate?")) {
+                            onReport('inappropriate');
+                        }
+                    }}
+                    style={{
+                        background: 'transparent',
+                        border: 'none',
+                        color: 'var(--text-muted)',
+                        cursor: 'pointer',
+                        padding: '4px',
+                        display: 'flex',
+                        alignItems: 'center',
+                        marginRight: 'auto' // Pushes other actions to the right
+                    }}
+                    title="Report Content"
+                >
+                    <AlertCircle size={14} />
+                </button>
+
+                {/* Admin Promotion Action */}
+                {promoted ? (
+                    <div style={{ fontSize: '0.7rem', color: 'var(--accent-blue)', border: '1px solid var(--accent-blue)', padding: '4px 8px', borderRadius: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <CheckCircle2 size={12} /> LIBRARY CONTENT
+                    </div>
+                ) : (
+                    hubCandidate && isAdmin && (
+                        <button
+                            onClick={onPromote}
+                            style={{
+                                background: 'rgba(255, 255, 255, 0.1)',
+                                color: '#fff',
+                                border: '1px solid rgba(255, 255, 255, 0.2)',
+                                padding: '6px 12px',
+                                borderRadius: '4px',
+                                fontSize: '0.7rem',
+                                fontWeight: 'bold',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}
+                        >
+                            + ADD TO LIBRARY
+                        </button>
+                    )
+                )}
+
+                {/* Verification Action */}
+                {isVerified ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--accent-green)', fontSize: '0.75rem', fontWeight: 'bold' }}>
+                        <CheckCircle2 size={14} /> VERIFIED
+                    </div>
+                ) : (
+                    currentUserId && currentUserId !== userId ? (
+                        <button
+                            onClick={onVerify}
+                            className="heat-streak-pulse" // Add pulse animation
+                            style={{
+                                background: 'transparent',
+                                color: 'var(--accent-orange)',
+                                border: '1px solid var(--accent-orange)',
+                                padding: '6px 16px',
+                                borderRadius: '4px',
+                                fontSize: '0.75rem',
+                                fontWeight: '900',
+                                letterSpacing: '1px',
+                                cursor: 'pointer',
+                                boxShadow: '0 0 15px rgba(255, 77, 0, 0.3)',
+                                textTransform: 'uppercase',
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '6px'
+                            }}
+                        >
+                            <CheckCircle2 size={14} /> VERIFY THIS POST
+                        </button>
+                    ) : (
+                        <div style={{
+                            fontSize: '0.7rem',
+                            color: 'var(--accent-orange)',
+                            border: '1px dashed var(--accent-orange)',
+                            padding: '4px 8px',
+                            borderRadius: '4px',
+                            fontWeight: 'bold',
+                            letterSpacing: '0.5px'
+                        }}>
+                            WAITING FOR VERIFICATION
+                        </div>
+                    )
+                )}
+            </div>
         </div>
     );
 };
@@ -218,7 +327,11 @@ ActivityCard.propTypes = {
     audioTrack: PropTypes.shape({
         title: PropTypes.string,
         url: PropTypes.string
-    })
+    }),
+    userId: PropTypes.string,
+    isVerified: PropTypes.bool,
+    currentUserId: PropTypes.string,
+    onVerify: PropTypes.func
 };
 
 export default ActivityCard;

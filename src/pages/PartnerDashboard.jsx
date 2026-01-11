@@ -8,7 +8,7 @@ import PlanCreator from '../components/Partner/PlanCreator';
 import MemberProfileModal from '../components/Partner/MemberProfileModal';
 import AddMemberModal from '../components/Partner/AddMemberModal';
 
-const PartnerDashboard = () => {
+const PartnerDashboard = ({ isEmbedded }) => {
     const { currentUser } = useSession();
     const { showToast } = useUIFeedback();
     const {
@@ -56,7 +56,7 @@ const PartnerDashboard = () => {
     // Handle Zero State (No Gyms)
     if (!gyms || gyms.length === 0) {
         return (
-            <div className="page-container" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
+            <div className={isEmbedded ? "" : "page-container"} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '80vh' }}>
                 <div className="icon-box" style={{ width: '80px', height: '80px', marginBottom: '24px', background: 'rgba(255, 77, 0, 0.1)' }}>
                     <IndianRupee size={40} color="var(--accent-orange)" />
                 </div>
@@ -123,7 +123,7 @@ const PartnerDashboard = () => {
 
     // Safety check for selectedGymId
     const currentGym = gyms.find(g => g.id === selectedGymId) || gyms[0];
-    if (!currentGym) return <div className="page-container">Loading Headquarters...</div>;
+    if (!currentGym) return <div className={isEmbedded ? "" : "page-container"}>Loading Headquarters...</div>;
 
     const allGymMembers = members.filter(m => m.gymId === selectedGymId);
 
@@ -148,7 +148,7 @@ const PartnerDashboard = () => {
     };
 
     return (
-        <div className="page-container">
+        <div className={isEmbedded ? "" : "page-container"}>
             {/* Modals */}
             {showPlanCreator && (
                 <div style={{ position: 'fixed', inset: 0, zIndex: 2000, background: 'rgba(0,0,0,0.8)', padding: '20px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
@@ -167,9 +167,9 @@ const PartnerDashboard = () => {
                 />
             )}
 
-            <header className="page-header">
+            <header className="page-header" style={isEmbedded ? { paddingTop: 0 } : {}}>
                 <div className="header-title-group">
-                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Command</h1>
+                    {!isEmbedded && <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>Command</h1>}
 
                     {/* Custom Gym Selector & Refresh */}
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -471,7 +471,7 @@ const PartnerDashboard = () => {
                                     fontSize: '0.9rem',
                                     color: 'var(--text-muted)'
                                 }}>
-                                    {member.name.charAt(0)}
+                                    {(member.name || '?').charAt(0)}
                                 </div>
                                 <div>
                                     <span style={{ fontWeight: '700', fontSize: '0.95rem', display: 'block' }}>{member.name}</span>
@@ -501,7 +501,7 @@ const PartnerDashboard = () => {
                         </div>
                     )}
                 </div>
-            </section>
+            </section >
         </div >
     );
 };

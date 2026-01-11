@@ -8,7 +8,7 @@ import ContentLibrary from '../components/ContentLibrary';
 import RoutineArchitect from '../components/RoutineArchitect';
 import LiveStudio from '../components/LiveStudio';
 
-const StudioPage = () => {
+const StudioPage = ({ isEmbedded }) => {
     const { currentUser } = useSession();
     const { showToast } = useUIFeedback();
     const {
@@ -23,8 +23,38 @@ const StudioPage = () => {
 
     // Access Control
     if (currentUser?.role !== 'expert' && currentUser?.role !== 'gym_owner' && currentUser?.role !== 'super_admin') {
+        const [showCertUpload, setShowCertUpload] = useState(false);
+
+        // State 2: Application Submitted / Pending
+        if (currentUser?.expertStatus === 'pending') {
+            return (
+                <div className={isEmbedded ? "fade-in" : "page-container fade-in"} style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+                    <div className="icon-box icon-box-warning" style={{ width: '80px', height: '80px', marginBottom: '24px', background: 'rgba(255, 165, 0, 0.1)', color: 'orange' }}>
+                        <BarChart3 size={40} />
+                    </div>
+                    <h1 className="title-display" style={{ fontSize: '1.8rem', marginBottom: '16px' }}>UNDER REVIEW</h1>
+                    <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', maxWidth: '300px' }}>
+                        Your application is currently being reviewed by our administrators. You will be notified once approved.
+                    </p>
+                    <Button variant="secondary" onClick={() => showToast("We'll email you soon.")}>
+                        CHECK STATUS
+                    </Button>
+                </div>
+            );
+        }
+
+        // State 3: Applying
+        if (showCertUpload) {
+            return (
+                <div className={isEmbedded ? "" : "page-container"} style={{ paddingBottom: '100px' }}>
+                    <CertificationsView onBack={() => setShowCertUpload(false)} />
+                </div>
+            );
+        }
+
+        // State 1: Not an Expert (Splash)
         return (
-            <div className="page-container fade-in" style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
+            <div className={isEmbedded ? "fade-in" : "page-container fade-in"} style={{ height: '80vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', textAlign: 'center' }}>
                 <div className="icon-box icon-box-muted" style={{ width: '80px', height: '80px', marginBottom: '24px' }}>
                     <BarChart3 size={40} color="var(--accent-orange)" />
                 </div>
@@ -32,8 +62,8 @@ const StudioPage = () => {
                 <p style={{ color: 'var(--text-secondary)', marginBottom: '32px', maxWidth: '300px' }}>
                     Unlock creator tools, track analytics, and monetize your expertise.
                 </p>
-                <Button variant="accent" onClick={() => showToast("Request sent to Admin")}>
-                    BECOME A CREATOR
+                <Button variant="accent" onClick={() => setShowCertUpload(true)}>
+                    START APPLICATION
                 </Button>
             </div>
         );
@@ -65,18 +95,20 @@ const StudioPage = () => {
     }
 
     return (
-        <div className="page-container" style={{ paddingBottom: '100px' }}>
-            <header className="page-header" style={{ marginBottom: '24px' }}>
-                <div className="header-title-group">
-                    <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>STUDIO</h1>
-                    <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
-                        CREATOR DASHBOARD
-                    </p>
-                </div>
-                <div className="icon-box icon-box-muted" style={{ width: '45px', height: '45px' }}>
-                    <BarChart3 size={20} />
-                </div>
-            </header>
+        <div className={isEmbedded ? "" : "page-container"} style={{ paddingBottom: '100px' }}>
+            {!isEmbedded && (
+                <header className="page-header" style={{ marginBottom: '24px' }}>
+                    <div className="header-title-group">
+                        <h1 className="title-display" style={{ fontSize: '2.5rem', marginBottom: '8px' }}>STUDIO</h1>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>
+                            CREATOR DASHBOARD
+                        </p>
+                    </div>
+                    <div className="icon-box icon-box-muted" style={{ width: '45px', height: '45px' }}>
+                        <BarChart3 size={20} />
+                    </div>
+                </header>
+            )}
 
             {/* Navigation Tabs */}
             <div style={{

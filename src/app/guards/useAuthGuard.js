@@ -29,6 +29,19 @@ export const useAuthGuard = () => {
             return;
         }
 
+        // 2.5 Session Restoration (If at root)
+        // Disabled: Causes revert loop when manually navigating to Home from another page.
+        /*
+        if (location.pathname === '/' || location.pathname === '/index.html') {
+            const lastPath = localStorage.getItem('iron_last_path');
+            if (lastPath && lastPath !== '/' && !lastPath.startsWith('/auth') && !lastPath.startsWith('/welcome')) {
+                // console.log("GUARD: Restoring Session ->", lastPath);
+                navigate(lastPath, { replace: true });
+                return;
+            }
+        }
+        */
+
         // 3. Onboarding Check
         if (!onboardingCompleted && userType !== 'super_admin') {
             navigate('/onboarding', { replace: true });

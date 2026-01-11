@@ -2,12 +2,14 @@ import React, { useState, useRef } from 'react';
 import { X, Upload, Mic, Music, Lock, Globe, Camera, Play, Pause } from 'lucide-react';
 import Button from '../UI/Button';
 import StorageService from '../../infrastructure/StorageService';
-import { useSession } from '../../app/context';
+import { useSession, useRetention } from '../../app/context';
 import { mockAudioTracks } from '../../services/mockData';
 import { useUIFeedback } from '../../app/context';
+import { optimizeImage } from '../../utils/mediaOptimizer';
 
 const LogWorkoutModal = ({ onClose, onLog }) => {
     const { currentUser } = useSession();
+    const { verifyProofOfWork } = useRetention();
     const { showToast } = useUIFeedback();
     const [description, setDescription] = useState('');
     const [file, setFile] = useState(null);
@@ -17,6 +19,7 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
     const [selectedTrack, setSelectedTrack] = useState(null);
+    const [category, setCategory] = useState('general');
 
     // Audio Preview Logic
     const [playingTrackId, setPlayingTrackId] = useState(null);
@@ -75,11 +78,29 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
 
     const fileInputRef = useRef(null);
 
-    const handleFileChange = (e) => {
+    const handleFileChange = async (e) => {
         const selectedFile = e.target.files[0];
         if (selectedFile) {
-            setFile(selectedFile);
-            setPreview(URL.createObjectURL(selectedFile));
+            try {
+                if (selectedFile.type.startsWith('image/')) {
+                    const optimizedDataUrl = await optimizeImage(selectedFile);
+                    setPreview(optimizedDataUrl);
+
+                    // Convert Data URL to File for upload
+                    const response = await fetch(optimizedDataUrl);
+                    const blob = await response.blob();
+                    const optimizedFile = new File([blob], selectedFile.name, { type: 'image/jpeg' });
+                    setFile(optimizedFile);
+                } else {
+                    setFile(selectedFile);
+                    setPreview(URL.createObjectURL(selectedFile));
+                }
+            } catch (err) {
+                console.error("Optimization failed", err);
+                // Fallback
+                setFile(selectedFile);
+                setPreview(URL.createObjectURL(selectedFile));
+            }
         }
     };
 
@@ -109,7 +130,10 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
                 privacy,
                 audioMode,
                 audioTrack: audioMode === 'music' ? selectedTrack : null,
-                timestamp: new Date().toISOString()
+                audioTrack: audioMode === 'music' ? selectedTrack : null,
+                timestamp: new Date().toISOString(),
+                category,
+                hubCandidate: category !== 'general'
             };
 
             await onLog(workoutData);
@@ -167,7 +191,7 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
                     ) : (
                         <>
                             <Camera size={32} color="var(--text-muted)" style={{ marginBottom: '8px' }} />
-                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Upload Proof of Work</span>
+                            <span style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>Upload Workout Photo</span>
                         </>
                     )}
                     <input
@@ -252,6 +276,40 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
                                     </span>
                                 </div>
                             ))}
+                        </div>
+                    )}
+                </div>
+
+                {/* Contribution Category */}
+                <div style={{ marginBottom: '24px' }}>
+                    <label style={{ display: 'block', fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '8px' }}>POST CATEGORY</label>
+                    <div style={{ display: 'flex', gap: '8px' }}>
+                        {['general', 'workout', 'nutrition'].map(cat => (
+                            <button
+                                key={cat}
+                                onClick={() => setCategory(cat)}
+                                style={{
+                                    flex: 1,
+                                    padding: '10px',
+                                    borderRadius: '8px',
+                                    border: category === cat ? '1px solid var(--accent-orange)' : '1px solid var(--border-glass)',
+                                    background: category === cat ? 'rgba(255, 77, 0, 0.1)' : 'transparent',
+                                    color: category === cat ? 'var(--accent-orange)' : 'var(--text-muted)',
+                                    fontSize: '0.85rem',
+                                    fontWeight: 'bold',
+                                    textTransform: 'uppercase',
+                                    cursor: 'pointer',
+                                    transition: 'all 0.2s'
+                                }}
+                            >
+                                {cat}
+                            </button>
+                        ))}
+                    </div>
+                    {category !== 'general' && (
+                        <div style={{ marginTop: '8px', fontSize: '0.75rem', color: 'var(--accent-green)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <Globe size={12} />
+                            <span>This post will be submitted to the {category} library.</span>
                         </div>
                     )}
                 </div>

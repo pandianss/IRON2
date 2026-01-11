@@ -1,14 +1,16 @@
 import React from 'react';
-import { NavLink } from 'react-router-dom';
-import { Home, Activity, Trophy, MapPin, User, Lock } from 'lucide-react';
+import { NavLink, useLocation, useNavigate } from 'react-router-dom';
+import { Home, Activity, Trophy, MapPin, User, Lock, BookOpen } from 'lucide-react';
 import { useRetention } from '../../app/context';
 
 const BottomNav = () => {
     const { streak } = useRetention();
+    const location = useLocation();
+    const navigate = useNavigate();
 
     const navItems = [
         { icon: Home, label: 'Command', path: '/', minStreak: 0 },
-        { icon: MapPin, label: 'Nexus', path: '/hub', minStreak: 3 }, // Unlock with Partner
+        { icon: BookOpen, label: 'Library', path: '/hub', minStreak: 3 }, // Unlock with Partner
         { icon: Trophy, label: 'Arena', path: '/arena', minStreak: 7 }, // Unlock with Squads
         { icon: Activity, label: 'Pulse', path: '/viral', minStreak: 14 }, // Unlock with Challenges
         { icon: User, label: 'Identity', path: '/profile', minStreak: 0 },
@@ -55,53 +57,52 @@ const BottomNav = () => {
                     );
                 }
 
+                const isActive = location.pathname === item.path;
+
                 return (
-                    <NavLink
+                    <div
                         key={item.label}
-                        to={item.path}
-                        style={({ isActive }) => ({
+                        onClick={() => navigate(item.path)}
+                        style={{
                             display: 'flex',
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            textDecoration: 'none',
+                            cursor: 'pointer',
                             color: isActive ? 'var(--accent-orange)' : 'var(--text-secondary)',
                             transition: 'all 0.3s ease',
-                            transform: isActive ? 'translateY(-2px)' : 'none'
-                        })}
+                            transform: isActive ? 'translateY(-2px)' : 'none',
+                            flex: 1
+                        }}
                     >
-                        {({ isActive }) => (
-                            <>
-                                <div style={{
-                                    position: 'relative',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                }}>
-                                    <item.icon
-                                        size={24}
-                                        strokeWidth={isActive ? 2.5 : 2}
-                                        style={{
-                                            filter: isActive ? 'drop-shadow(0 0 8px rgba(255, 77, 0, 0.6))' : 'none'
-                                        }}
-                                    />
+                        <div style={{
+                            position: 'relative',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center'
+                        }}>
+                            <item.icon
+                                size={24}
+                                strokeWidth={isActive ? 2.5 : 2}
+                                style={{
+                                    filter: isActive ? 'drop-shadow(0 0 8px rgba(255, 77, 0, 0.6))' : 'none'
+                                }}
+                            />
 
-                                    {/* Active Dot Indicator */}
-                                    {isActive && (
-                                        <div style={{
-                                            position: 'absolute',
-                                            bottom: '-8px',
-                                            width: '4px',
-                                            height: '4px',
-                                            borderRadius: '50%',
-                                            background: 'var(--accent-orange)',
-                                            boxShadow: '0 0 5px var(--accent-orange)'
-                                        }} />
-                                    )}
-                                </div>
-                            </>
-                        )}
-                    </NavLink>
+                            {/* Active Dot Indicator */}
+                            {isActive && (
+                                <div style={{
+                                    position: 'absolute',
+                                    bottom: '-8px',
+                                    width: '4px',
+                                    height: '4px',
+                                    borderRadius: '50%',
+                                    background: 'var(--accent-orange)',
+                                    boxShadow: '0 0 5px var(--accent-orange)'
+                                }} />
+                            )}
+                        </div>
+                    </div>
                 );
             })}
         </nav>

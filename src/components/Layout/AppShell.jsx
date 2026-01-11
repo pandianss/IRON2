@@ -38,29 +38,41 @@ const AppShell = () => {
     // 4. UI Feedback
     // Toast handled by component directly
 
+    // 5. Session Persistence: Save Last Visited Path
+    useEffect(() => {
+        if (!['/auth', '/welcome', '/onboarding'].includes(location.pathname)) {
+            localStorage.setItem('iron_last_path', location.pathname);
+        }
+    }, [location.pathname]);
+
     if (isLoading) {
         return (
             <div style={{
                 height: '100vh',
                 display: 'flex',
+                flexDirection: 'column',
                 alignItems: 'center',
                 justifyContent: 'center',
                 background: '#000',
                 color: 'var(--accent-orange)'
             }}>
-                <div className="animate-spin" style={{ marginBottom: '16px' }}>
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                        <path d="M21 12a9 9 0 1 1-6.219-8.56" />
-                    </svg>
+                {/* Sprinter Silhouette GIF */}
+                <div style={{ marginBottom: '24px', opacity: 0.8 }}>
+                    <img
+                        src="https://i.gifer.com/origin/34/34338d26023e5515f6cc8969aa027bca_w200.gif"
+                        alt="Loading..."
+                        style={{ width: '100px', height: 'auto', filter: 'invert(1)' }}
+                    />
                 </div>
                 <div style={{
                     fontFamily: 'var(--font-display)',
                     fontWeight: 900,
                     letterSpacing: '2px',
                     fontSize: '0.9rem',
-                    animation: 'pulse 2s infinite'
+                    animation: 'pulse 1.5s infinite',
+                    color: '#fff'
                 }}>
-                    CALIBRATING...
+                    WARMING UP...
                 </div>
             </div>
         );
@@ -79,6 +91,8 @@ const AppShell = () => {
             default: return '';
         }
     };
+
+
 
     return (
         <div className="app-container">

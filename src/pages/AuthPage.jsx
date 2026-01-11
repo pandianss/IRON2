@@ -294,7 +294,7 @@ const AuthPage = () => {
                     </form>
                 )}
 
-                )}
+
 
             </Card >
             <Toast />

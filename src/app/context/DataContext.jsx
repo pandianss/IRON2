@@ -316,7 +316,9 @@ export const DataProvider = ({ children, appMode }) => {
             userName: currentUser?.displayName || 'Unknown',
             userPhoto: currentUser?.photoURL || null,
             date: new Date().toISOString(),
-            likes: 0
+            likes: 0,
+            isVerified: false,
+            verifications: 0
         };
 
         const newFeed = await DbService.addDoc('feed_activities', feedItem);
@@ -387,9 +389,36 @@ export const DataProvider = ({ children, appMode }) => {
         await DbService.addDoc('medical_records', record);
     };
 
-    const addStudioContent = async (item) => {
-        setStudioContent(prev => [item, ...prev]);
-        await DbService.addDoc('studio_content', item);
+    const submitContent = async (item) => {
+        const isAutoApproved = ['expert', 'gym_owner', 'admin'].includes(currentUser?.role);
+        const newContent = {
+            ...item,
+            status: isAutoApproved ? 'active' : 'pending',
+            authorId: currentUser?.uid || 'guest',
+            authorName: currentUser?.displayName || 'Unknown',
+            timestamp: new Date().toISOString(),
+            popularity: 0,
+            approvedBy: isAutoApproved ? 'system' : null
+        };
+        const docRef = await DbService.addDoc('studio_content', newContent);
+        // Only add to local if active, or if I am the author (maybe?)
+        // For simplicity, add to local, Hub will filter.
+        setStudioContent(prev => [docRef, ...prev]);
+        showToast(isAutoApproved ? "Content Published!" : "Submitted for Approval");
+    };
+
+    const approveContent = async (contentId) => {
+        try {
+            await DbService.updateDoc('studio_content', contentId, {
+                status: 'active',
+                approvedBy: currentUser?.uid
+            });
+            setStudioContent(prev => prev.map(c => c.id === contentId ? { ...c, status: 'active', approvedBy: currentUser?.uid } : c));
+            showToast("Content Approved");
+        } catch (error) {
+            console.error(error);
+            showToast("Approval Failed");
+        }
     };
 
     const addStudioExercise = async (exercise) => {
@@ -407,6 +436,40 @@ export const DataProvider = ({ children, appMode }) => {
         setCertifications(prev => [newCert, ...prev]);
         await DbService.addDoc('certifications', newCert);
         showToast("Credential Uploaded.");
+    };
+
+    const deleteContent = async (contentId) => {
+        try {
+            await DbService.deleteDoc('studio_content', contentId);
+            setStudioContent(prev => prev.filter(c => c.id !== contentId));
+            showToast("Content Deleted");
+        } catch (error) {
+            console.error(error);
+            showToast("Delete Failed");
+        }
+    };
+
+    const toggleContentStatus = async (contentId) => {
+        const item = studioContent.find(c => c.id === contentId);
+        if (!item) return;
+        const newStatus = item.status === 'hidden' ? 'active' : 'hidden'; // active <-> hidden
+        try {
+            await DbService.updateDoc('studio_content', contentId, { status: newStatus });
+            setStudioContent(prev => prev.map(c => c.id === contentId ? { ...c, status: newStatus } : c));
+            showToast(`Content ${newStatus === 'hidden' ? 'Hidden' : 'Visible'}`);
+        } catch (error) {
+            showToast("Status Update Failed");
+        }
+    };
+
+    const updateContent = async (contentId, data) => {
+        try {
+            await DbService.updateDoc('studio_content', contentId, data);
+            setStudioContent(prev => prev.map(c => c.id === contentId ? { ...c, ...data } : c));
+            showToast("Content Updated");
+        } catch (error) {
+            showToast("Update Failed");
+        }
     };
 
     const createChallenge = async (challengeData) => {
@@ -454,24 +517,129 @@ export const DataProvider = ({ children, appMode }) => {
         };
     };
 
+    const verifyActivity = async (activityId) => {
+        try {
+            await DbService.updateDoc('feed_activities', activityId, { isVerified: true });
+
+            // Update local state
+            setFeedActivities(prev => prev.map(act =>
+                act.id === activityId
+                    ? { ...act, isVerified: true, verifications: (act.verifications || 0) + 1 }
+                    : act
+            ));
+
+            showToast("Activity Verified!");
+        } catch (error) {
+            console.error("Verification failed", error);
+            showToast("Verification failed");
+        }
+    };
+
+    const promoteToHub = async (activityId, category = 'Workout') => {
+        try {
+            const activity = feedActivities.find(a => a.id === activityId);
+            if (!activity) return;
+
+            // Map Activity to Hub Content
+            const newContent = {
+                title: activity.activityType || 'Community Post',
+                type: category === 'workout' ? 'workout' : 'nutrition', // Normalize
+                category: category === 'workout' ? 'Community Workouts' : 'Community Nutrition',
+                image: activity.mediaUrl || 'https://via.placeholder.com/400x300?text=No+Image',
+                difficulty: 'Intermediate', // Default or could check stats
+                duration: 'N/A',
+                rating: 5.0,
+                authorId: activity.userId || 'guest',
+                authorName: activity.userName || 'Unknown',
+                description: activity.description || 'No description provided.',
+                status: 'active', // Live immediately
+                timestamp: new Date().toISOString(),
+                promotedFrom: activityId,
+                approvedBy: currentUser?.uid
+            };
+
+            // Add to Studio Content
+            const docRef = await DbService.addDoc('studio_content', newContent);
+            setStudioContent(prev => [docRef, ...prev]);
+
+            // Mark Activity as Promoted
+            await DbService.updateDoc('feed_activities', activityId, { promoted: true });
+            setFeedActivities(prev => prev.map(a => a.id === activityId ? { ...a, promoted: true } : a));
+
+            showToast("Promoted to Library!");
+        } catch (error) {
+            console.error("Promotion failed", error);
+            showToast("Promotion Failed");
+        }
+    };
+
+    const reportActivity = async (activityId, reason) => {
+        try {
+            const activity = feedActivities.find(a => a.id === activityId);
+            if (!activity) return;
+
+            const newReportCount = (activity.reportCount || 0) + 1;
+            const newStatus = newReportCount >= 3 ? 'hidden' : (activity.visibility || 'public');
+
+            const updates = {
+                reportCount: newReportCount,
+                visibility: newStatus
+            };
+
+            await DbService.updateDoc('feed_activities', activityId, updates);
+
+            // Update Local State
+            setFeedActivities(prev => prev.map(a =>
+                a.id === activityId
+                    ? { ...a, ...updates }
+                    : a
+            ));
+
+            // If hidden, maybe filter it out immediately? 
+            // setFeedActivities(prev => prev.filter(a => a.id !== activityId)); 
+            // ^ decided to keep it in state but let UI handle hidden logic or just filter it out here.
+            // If we filter it out, it disappears instantly, which is good.
+            if (newStatus === 'hidden') {
+                setFeedActivities(prev => prev.filter(a => a.id !== activityId));
+            }
+
+            showToast("Report Submitted. Thank you.");
+        } catch (error) {
+            console.error("Report failed", error);
+            showToast("Report failed");
+        }
+    };
+
     return (
         <DataContext.Provider value={{
+            // Global Data
             gyms, selectedGymId, setSelectedGymId, switchGym: setSelectedGymId,
             refreshData,
+
+            // Users & Partners
             users, members: users,
             partnerPlans, addPlan,
             notifications, markNotificationRead: (id) => DbService.updateDoc('notifications', id, { read: true }),
             enquiries, sendEnquiries: sendEnquiry, sendEnquiry,
-            achievements, logActivity,
-            storeProducts, transactions, revenueStats,
-            feedActivities, liveSessions, loadMoreFeed, hasMoreFeed,
+            achievements,
+            transactions, revenueStats,
+
+            // Feed & Activity
+            feedActivities, liveSessions, loadMoreFeed, hasMoreFeed, logActivity,
+            verifyActivity, promoteToHub, reportActivity,
+
+            // Gym Management Actions
             registerGym, approveGym, rejectGym, toggleGymStatus,
             addMember, approveMember, rejectMember, toggleBanMember,
+
+            // Health & Studio
             biometricHistory, medicalRecords, addMedicalRecord,
-            studioContent, addStudioContent,
+            studioContent, submitContent, approveContent, deleteContent, toggleContentStatus, updateContent,
             studioExercises, addStudioExercise,
             studioRoutineName, setStudioRoutineName,
 
+            // Social & Marketplace
+            storeProducts,
             challenges, createChallenge,
             ratings, addRating, getRatingStats,
             certifications, addCertification
