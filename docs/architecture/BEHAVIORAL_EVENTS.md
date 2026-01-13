@@ -65,6 +65,15 @@ These events are the *only* valid inputs that can mutate the User State.
   - Awards **Synergy Bonus** (+10 Score).
   - Increments `social.witness_count` by `participantCount`.
 
+### `ENCOURAGED`
+**Description**: Momentum booster / Identity reinforcement.
+- **Trigger**: Partner encourages another user.
+- **Payload**:
+  - `fromUid`: UUID
+- **Effect**:
+  - Small Engagement Score Boost (+2).
+  - Does NOT affect Streak calculation directly (unless paired with other logic).
+
 ---
 
 ## 3. System Events

@@ -13,8 +13,9 @@ export const EVENT_TYPES = {
     SYSTEM_ADJUSTMENT: 'SYSTEM_ADJUSTMENT', // Admin/System fix
     MIGRATION: 'MIGRATION',      // Legacy data import
     WITNESS_WORKOUT: 'WITNESS_WORKOUT', // Partner validation
-    SEND_SUPPORT: 'SEND_SUPPORT', // Partner encouragement
-    GROUP_CHECKIN: 'GROUP_CHECKIN' // Collective action
+    SEND_SUPPORT: 'SEND_SUPPORT', // Partner encouragement (Pact Save)
+    GROUP_CHECKIN: 'GROUP_CHECKIN', // Collective action
+    ENCOURAGED: 'ENCOURAGED'    // Momentum booster / Identity reinforcement
 };
 
 /**

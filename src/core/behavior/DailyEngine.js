@@ -97,23 +97,28 @@ const resolveRiskState = (currentState, dayStatus, streakCount) => {
 
     // Transitions based on Day Status
     if (dayStatus === 'COMPLETED' || dayStatus === 'RESTED') {
-        if (currentState === 'STREAK_BROKEN') {
+        if (currentState === 'ONBOARDED') {
+            nextState = 'ENGAGED';
+        } else if (currentState === 'STREAK_BROKEN') {
             nextState = 'RECOVERING';
         } else if (currentState === 'RECOVERING') {
-            // Check if recovery is complete (simplified logic: essentially if streak > N)
-            // Ideally we track separate recovery counter, but streak count works if we reset it to 0 on break.
             if (streakCount >= RECOVERY_DAYS_REQUIRED) {
                 nextState = 'ENGAGED';
             }
         } else if (currentState === 'AT_RISK' || currentState === 'DORMANT') {
             nextState = 'ENGAGED'; // Saved!
         }
+
+        // MOMENTUM Promotion
+        // If ENGAGED and Streak is high, promote to MOMENTUM
+        if (nextState === 'ENGAGED' && streakCount >= 7) {
+            nextState = 'MOMENTUM';
+        }
+
     } else if (dayStatus === 'MISSED') {
-        if (currentState === 'ENGAGED' || currentState === 'RECOVERING') {
-            // First miss? AT_RISK (Grace) or Straight to BROKEN?
-            // Iron Philosophy: 1 Miss = AT_RISK (can recover with Freeze or Action next day)
-            // But if no freeze tokens?
-            // Let's say: Miss -> AT_RISK. Second Miss -> BROKEN.
+        if (currentState === 'ENGAGED' || currentState === 'RECOVERING' || currentState === 'MOMENTUM') {
+            // First miss? AT_RISK.
+            // Even MOMENTUM users fall to AT_RISK (High stakes).
             nextState = 'AT_RISK';
         } else if (currentState === 'AT_RISK') {
             nextState = 'STREAK_BROKEN';
@@ -127,7 +132,7 @@ export const runDailyEngine = (previousState, action, serverDate) => {
     // Optimization: If today is already settled and date hasn't changed, return state as-is
     // BUT exception: Social events (support/witness) can happen anytime
     if (action && previousState.current_day === serverDate && previousState.today.primary_action_done) {
-        if (['CHECK_IN', 'REST', 'GROUP_CHECKIN'].includes(action.type)) {
+        if (['CHECK_IN', 'REST', 'GROUP_CHECKIN', 'ENCOURAGED'].includes(action.type)) {
             console.warn("DailyEngine: Optimization - Returning previous state (Done for today).");
             return previousState;
         }
@@ -231,6 +236,12 @@ export const runDailyEngine = (previousState, action, serverDate) => {
                 state.engagement.score += 5; // Bonus
                 state.social.witness_count += 1;
             }
+        }
+        else if (action.type === 'ENCOURAGED') {
+            // "IDENTITY REINFORCEMENT"
+            // If RECOVERING, this might help? 
+            // For now, it's a pure Engagement Score boost + Identity flag
+            state.engagement.score += 2;
         }
     }
 
