@@ -39,9 +39,19 @@ export const INITIAL_USER_STATE = (uid) => ({
     },
 
     // Retention State (Psychological Status)
-    engagement_state: "DORMANT", // See RISK_STATES below
+    // ONBOARDING | ENGAGED | MOMENTUM | AT_RISK | STREAK_FRACTURED | RECOVERING | DORMANT
+    engagement_state: "ONBOARDING",
 
-    // Recovery & Grace Windows
+    // Decay Physics (Entropy)
+    retention: {
+        decay: {
+            last_active_timestamp: null, // For precise clock
+            inactivity_days: 0,          // Distance from light
+            decay_rate: 10               // Base score loss per day when broken
+        }
+    },
+
+    // Recovery State
     recovery: {
         is_salvageable: false,
         window_remaining_hours: 0,

@@ -1,5 +1,6 @@
 
 import { TIERS } from './EngineSchema.js';
+import { RETENTION_STATES } from '../governance/RetentionPolicy.js';
 
 /**
  * Helper: Add days to a Date string YYYY-MM-DD
@@ -97,31 +98,34 @@ const resolveRiskState = (currentState, dayStatus, streakCount) => {
 
     // Transitions based on Day Status
     if (dayStatus === 'COMPLETED' || dayStatus === 'RESTED') {
-        if (currentState === 'ONBOARDED') {
-            nextState = 'ENGAGED';
-        } else if (currentState === 'STREAK_BROKEN') {
-            nextState = 'RECOVERING';
-        } else if (currentState === 'RECOVERING') {
+        if (currentState === RETENTION_STATES.ONBOARDING) {
+            nextState = RETENTION_STATES.ENGAGED;
+        } else if (currentState === RETENTION_STATES.STREAK_FRACTURED) {
+            nextState = RETENTION_STATES.RECOVERING;
+        } else if (currentState === RETENTION_STATES.RECOVERING) {
             if (streakCount >= RECOVERY_DAYS_REQUIRED) {
-                nextState = 'ENGAGED';
+                nextState = RETENTION_STATES.ENGAGED;
             }
-        } else if (currentState === 'AT_RISK' || currentState === 'DORMANT') {
-            nextState = 'ENGAGED'; // Saved!
+        } else if (currentState === RETENTION_STATES.AT_RISK) {
+            nextState = RETENTION_STATES.ENGAGED; // Saved!
+        } else if (currentState === RETENTION_STATES.DORMANT) {
+            // RESURRECTION LOGIC
+            // In a real system, we'd check if "Resurrection Fee" was paid.
+            // For now, Action -> RECOVERING (Hard path).
+            nextState = RETENTION_STATES.RECOVERING;
         }
 
         // MOMENTUM Promotion
-        // If ENGAGED and Streak is high, promote to MOMENTUM
-        if (nextState === 'ENGAGED' && streakCount >= 7) {
-            nextState = 'MOMENTUM';
+        if (nextState === RETENTION_STATES.ENGAGED && streakCount >= 7) {
+            nextState = RETENTION_STATES.MOMENTUM;
         }
 
     } else if (dayStatus === 'MISSED') {
-        if (currentState === 'ENGAGED' || currentState === 'RECOVERING' || currentState === 'MOMENTUM') {
-            // First miss? AT_RISK.
-            // Even MOMENTUM users fall to AT_RISK (High stakes).
-            nextState = 'AT_RISK';
-        } else if (currentState === 'AT_RISK') {
-            nextState = 'STREAK_BROKEN';
+        if ([RETENTION_STATES.ENGAGED, RETENTION_STATES.RECOVERING, RETENTION_STATES.MOMENTUM].includes(currentState)) {
+            // Momentum/Engaged -> AT_RISK
+            nextState = RETENTION_STATES.AT_RISK;
+        } else if (currentState === RETENTION_STATES.AT_RISK) {
+            nextState = RETENTION_STATES.STREAK_FRACTURED;
         }
     }
 
@@ -141,8 +145,9 @@ export const runDailyEngine = (previousState, action, serverDate) => {
     let state = JSON.parse(JSON.stringify(previousState)); // Deep clone for immutability
 
     // Ensure new schema fields exist if migration didn't happen
-    if (!state.engagement_state) state.engagement_state = 'DORMANT';
+    if (!state.engagement_state) state.engagement_state = RETENTION_STATES.DORMANT;
     if (!state.recovery) state.recovery = { is_salvageable: false, window_remaining_hours: 0, missed_day_count: 0 };
+    if (!state.retention) state.retention = { decay: { inactivity_days: 0, decay_rate: 10 } };
 
     const lastDay = state.last_evaluated_day;
     const diff = getDayDiff(lastDay, serverDate);
@@ -172,6 +177,24 @@ export const runDailyEngine = (previousState, action, serverDate) => {
 
     // 2. Setup TODAY (serverDate)
     if (state.current_day !== serverDate) {
+
+        // CRITICAL FIX: If yesterday ended as PENDING, it is now MISSED.
+        // We must resolve this *before* resetting for the new day.
+        if (!state.today.primary_action_done) {
+            const dayStatus = 'MISSED';
+            // Apply logic for the day that just passed (state.current_day)
+            state.streak = resolveStreak(state.streak, dayStatus);
+            state.engagement = resolveEngagement(state.engagement, state.streak.count, dayStatus);
+            state.engagement_state = resolveRiskState(state.engagement_state, dayStatus, state.streak.count);
+
+            state.lifecycle.days_missed += 1;
+            state.recovery.missed_day_count += 1;
+
+            // Update the status for historical accuracy (though it's about to be overwritten in 'today' object, 
+            // it might be preserved if we had a history array. For now, just the effects matter.)
+            state.today.status = 'MISSED';
+        }
+
         state.previous_day_status = state.today.status;
         state.current_day = serverDate;
         state.last_evaluated_day = serverDate;
@@ -182,8 +205,6 @@ export const runDailyEngine = (previousState, action, serverDate) => {
             secondary_actions: 0,
             action_log: []
         };
-
-        // Reset recovery count if we were ENGAGED? No, handle in Resolve
     }
 
     // 3. Process Action (If any)
@@ -218,14 +239,14 @@ export const runDailyEngine = (previousState, action, serverDate) => {
             // Iron Model: Support grants 1 Freeze Token (max 1) if they have none, 
             // giving them a "Free Pass" for the missed day.
 
-            if (state.engagement_state === 'AT_RISK') {
+            if (state.engagement_state === RETENTION_STATES.AT_RISK) {
                 if (state.streak.freeze_tokens === 0) {
                     state.streak.freeze_tokens += 1;
                     state.social.pact_saves += 1;
                     // Note: We don't change state to ENGAGED immediately, 
-                    // the token will be consumed tomorrow to prevent STREAK_BROKEN.
+                    // the token will be consumed tomorrow to prevent FRACTURE.
                 }
-            } else if (state.engagement_state === 'ENGAGED') {
+            } else if (state.engagement_state === RETENTION_STATES.ENGAGED) {
                 // Boosting morale? Maybe just log it.
             }
         }
@@ -246,13 +267,38 @@ export const runDailyEngine = (previousState, action, serverDate) => {
     }
 
     // 4. Post-Processing Calculation (Recovery Windows)
-    // If AT_RISK, calculate time remaining? 
-    if (state.engagement_state === 'AT_RISK') {
+    if (state.engagement_state === RETENTION_STATES.AT_RISK) {
         state.recovery.is_salvageable = true;
         state.recovery.window_remaining_hours = 24;
     } else {
         state.recovery.is_salvageable = false;
         state.recovery.window_remaining_hours = 0;
+    }
+
+    // 5. DECAY PHYSICS (Entropy)
+    // If user is STREAK_FRACTURED, entropy takes over.
+    if (state.engagement_state === RETENTION_STATES.STREAK_FRACTURED) {
+        // Increment Inactivity
+        if (!state.retention) state.retention = { decay: { inactivity_days: 0, decay_rate: 10 } };
+
+        state.retention.decay.inactivity_days += 1;
+
+        // Score Bleed
+        const bleed = state.retention.decay.decay_rate || 10;
+        state.engagement.score = Math.max(0, state.engagement.score - bleed);
+
+        // The Event Horizon (Zombie Cull)
+        if (state.engagement.score <= 0 || state.retention.decay.inactivity_days > 7) {
+            state.engagement_state = RETENTION_STATES.DORMANT;
+            // Final death of the streak data
+            state.streak.longest = state.streak.longest; // preserved
+            state.streak.count = 0;
+        }
+    } else if ([RETENTION_STATES.ENGAGED, RETENTION_STATES.MOMENTUM, RETENTION_STATES.RECOVERING].includes(state.engagement_state)) {
+        // Light returns. Reset entropy.
+        if (state.retention && state.retention.decay) {
+            state.retention.decay.inactivity_days = 0;
+        }
     }
 
     return state;
