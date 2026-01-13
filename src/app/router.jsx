@@ -1,22 +1,41 @@
 import { createBrowserRouter } from 'react-router-dom';
+import React, { lazy, Suspense } from 'react';
+import { Loader2 } from 'lucide-react';
 import AppShell from '../components/Layout/AppShell';
+
+// Eager Imports (Critical Path)
 import CommandCenter from '../pages/CommandCenter';
 import InitialCheckIn from '../pages/InitialCheckIn';
-import Lab from '../pages/Lab';
-import Arena from '../pages/Arena';
-import Bazaar from '../pages/Bazaar';
-import Hub from '../pages/Hub';
 import Onboarding from '../pages/Onboarding';
-import Viral from '../pages/Viral';
-import { StudioPage } from '../features/studio'; // Not moved? Yes, only retention/feed moved. Wait. Feed moved to social/feed. Profile moved. Studio stayed? Plan said "Identity, Social, Checkin, Streak". Studio stays in features? Yes.
-import { ProfilePage } from '../identity/profile';
-import { KnowledgePage } from '../features/knowledge';
-import PartnerDashboard from '../pages/PartnerDashboard';
-import GymDirectory from '../pages/GymDirectory';
 import AuthPage from '../pages/AuthPage';
-import AdminDashboard from '../pages/AdminDashboard';
 import SplashScreen from '../pages/SplashScreen';
-import GymJoin from '../pages/GymJoin';
+
+// Lazy Imports (Feature Bundles)
+const Lab = lazy(() => import('../pages/Lab'));
+const Arena = lazy(() => import('../pages/Arena'));
+const Bazaar = lazy(() => import('../pages/Bazaar'));
+const Hub = lazy(() => import('../pages/Hub'));
+const Viral = lazy(() => import('../pages/Viral'));
+const StudioPage = lazy(() => import('../features/studio').then(module => ({ default: module.StudioPage })));
+const ProfilePage = lazy(() => import('../identity/profile').then(module => ({ default: module.ProfilePage })));
+const KnowledgePage = lazy(() => import('../features/knowledge').then(module => ({ default: module.KnowledgePage })));
+const PartnerDashboard = lazy(() => import('../pages/PartnerDashboard'));
+const GymDirectory = lazy(() => import('../pages/GymDirectory'));
+const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
+const GymJoin = lazy(() => import('../pages/GymJoin'));
+
+// Loading Fallback
+const PageLoader = () => (
+    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '50vh', width: '100%' }}>
+        <Loader2 className="animate-spin" color="var(--accent-orange)" size={48} />
+    </div>
+);
+
+const Loadable = (Component) => (
+    <Suspense fallback={<PageLoader />}>
+        <Component />
+    </Suspense>
+);
 
 const router = createBrowserRouter([
     {
@@ -37,24 +56,24 @@ const router = createBrowserRouter([
     },
     {
         path: '/join/:gymId',
-        element: <GymJoin />,
+        element: Loadable(GymJoin),
     },
     {
         path: '/',
         element: <AppShell />,
         children: [
             { index: true, element: <CommandCenter /> },
-            { path: 'lab', element: <Lab /> },
-            { path: 'arena', element: <Arena /> },
-            { path: 'bazaar', element: <Bazaar /> },
-            { path: 'hub', element: <Hub /> },
-            { path: 'viral', element: <Viral /> },
-            { path: 'studio', element: <StudioPage /> },
-            { path: 'profile', element: <ProfilePage /> },
-            { path: 'knowledge', element: <KnowledgePage /> },
-            { path: 'partner', element: <PartnerDashboard /> },
-            { path: 'gyms', element: <GymDirectory /> },
-            { path: 'admin', element: <AdminDashboard /> },
+            { path: 'lab', element: Loadable(Lab) },
+            { path: 'arena', element: Loadable(Arena) },
+            { path: 'bazaar', element: Loadable(Bazaar) },
+            { path: 'hub', element: Loadable(Hub) },
+            { path: 'viral', element: Loadable(Viral) },
+            { path: 'studio', element: Loadable(StudioPage) },
+            { path: 'profile', element: Loadable(ProfilePage) },
+            { path: 'knowledge', element: Loadable(KnowledgePage) },
+            { path: 'partner', element: Loadable(PartnerDashboard) },
+            { path: 'gyms', element: Loadable(GymDirectory) },
+            { path: 'admin', element: Loadable(AdminDashboard) },
         ],
     },
 ]);

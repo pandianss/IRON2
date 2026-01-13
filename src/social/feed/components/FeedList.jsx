@@ -1,6 +1,7 @@
 import React from 'react';
 import { useFeed } from '../hooks/useFeed';
 import FeedPost from './FeedPost';
+import CreatePostWidget from './CreatePostWidget';
 import { Sparkles } from 'lucide-react';
 
 const FeedList = () => {
@@ -8,6 +9,7 @@ const FeedList = () => {
 
     return (
         <div className="w-full max-w-md mx-auto pb-20">
+            <CreatePostWidget />
 
 
             <div className="space-y-8">

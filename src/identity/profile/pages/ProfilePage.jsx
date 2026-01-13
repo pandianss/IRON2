@@ -2,6 +2,8 @@ import React, { useState } from 'react';
 import { LogOut, ChevronRight, Download, Trash2 } from 'lucide-react';
 import Card from '../../../components/UI/Card';
 import PassportCard from '../../../components/UI/PassportCard';
+import { PartnerWidget } from '../../../social/partner';
+import ConsistencyGraph from '../components/ConsistencyGraph';
 import { useRetention, useSession, useData } from '../../../app/context';
 
 const ProfilePage = () => {
@@ -101,6 +103,13 @@ const ProfilePage = () => {
                         lastCheckIn={lastCheckInDate}
                         homeGym={homeGymName}
                     />
+                </div>
+
+                <div style={{ maxWidth: '400px', margin: '0 auto' }}>
+
+                    <ConsistencyGraph activities={feedActivities.filter(a => a.userId === currentUser?.uid)} />
+
+                    <PartnerWidget />
                 </div>
             </div>
 
