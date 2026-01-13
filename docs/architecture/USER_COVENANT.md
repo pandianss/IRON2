@@ -1,6 +1,7 @@
 # The IRON User Covenant
 
-**Authority: Constitutional Layer**
+**Layer: Constitutional**
+**Version: 1.0.0**
 **Status: FOUNDATIONAL**
 **Binding: All users, all systems, all interventions**
 

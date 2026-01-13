@@ -1,6 +1,7 @@
 # The IRON Appeals, Authority & Mercy Charter
 
-**Authority: Constitutional Layer**
+**Layer: Constitutional**
+**Version: 1.0.0**
 **Status: IMMUTABLE**
 
 This document defines the interface between the System and Human Agency. It is the final check against tyranny.

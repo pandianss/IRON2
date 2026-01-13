@@ -1,7 +1,8 @@
 # The Transparency & Ledger Charter
 
-Authority: Institutional Layer
-Status: IMMUTABLE
+**Layer: Institutional**
+**Version: 1.0.0**
+**Status: IMMUTABLE**
 
 ## 1. The Right of Inspection
 Every user has the absolute right to inspect the complete causal history of their account.
