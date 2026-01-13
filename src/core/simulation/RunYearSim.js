@@ -65,6 +65,13 @@ const runSimulation = () => {
             u.archetype = typeKey;
             u.history = { actions: 0, freezes_used: 0 };
 
+            // Civil Layer Init (if not in INITIAL_USER_STATE already, but it is now)
+            // Explicitly set ROLE for Socialites for testing
+            if (typeKey === 'SOCIALITE') {
+                u.civil.role = "WITNESS"; // Socialites start as Witnesses
+                u.civil.authority_level = 1;
+            }
+
             // SEED SOCIAL CAPITAL
             if (typeKey === 'SOCIALITE') u.social.social_capital = 10;
             if (typeKey === 'SOCIALITE') u.social.witness_count = 15; // High Witness Count

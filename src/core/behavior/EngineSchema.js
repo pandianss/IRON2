@@ -72,6 +72,25 @@ export const INITIAL_USER_STATE = (uid) => ({
         days_missed: 0,
         total_actions: 0,
         joined_date: new Date().toISOString()
+    },
+
+    // Civil Layer (Roles & Rituals)
+    civil: {
+        role: "PARTICIPANT", // PARTICIPANT | WITNESS | MENTOR | SENTINEL | CHRONICLER | STEWARD
+        authority_level: 0,  // 0-5
+        active_rituals: [],  // Currently active ritual states
+        ritual_history: {
+            oath_signed: null, // Date
+            first_fracture_acknowledged: null,
+            momentum_marks: [], // Array of dates
+            appeals_filed: 0,
+            pardons_received: 0
+        },
+        service_history: {
+            mentorships_completed: 0,
+            witness_events: 0,
+            sentinel_flags: 0
+        }
     }
 });
 
@@ -88,7 +107,27 @@ export const RISK_STATES = {
     AT_RISK: "AT_RISK",         // Missed yesterday, in grace period (if applicable)
     STREAK_BROKEN: "STREAK_BROKEN", // Officially lost streak, needs restart
     RECOVERING: "RECOVERING",   // Rebuilding (e.g., first 3 days after break)
-    DORMANT: "DORMANT"          // Inactive for > 7 days
+    DORMANT: "DORMANT",          // Inactive for > 7 days
+    FROZEN: "FROZEN"             // Administratively locked
+};
+
+export const ROLES = {
+    PARTICIPANT: { id: "PARTICIPANT", authority: 0, min_sc: 0 },
+    WITNESS: { id: "WITNESS", authority: 1, min_sc: 50 },
+    MENTOR: { id: "MENTOR", authority: 2, min_sc: 200, min_streak: 90 },
+    SENTINEL: { id: "SENTINEL", authority: 3, min_sc: 500 },
+    CHRONICLER: { id: "CHRONICLER", authority: 3, min_sc: 800 },
+    STEWARD: { id: "STEWARD", authority: 5, min_sc: 2000 }
+};
+
+export const RITUALS = {
+    ENTRY_RITE: "ENTRY_RITE",
+    MOMENTUM_MARK: "MOMENTUM_MARK",
+    YEAR_CLOSE: "YEAR_CLOSE",
+    FRACTURE_PROTOCOL: "FRACTURE_PROTOCOL",
+    APPEAL_PETITION: "APPEAL_PETITION",
+    RETURN_CEREMONY: "RETURN_CEREMONY",
+    SERVICE_OATH: "SERVICE_OATH"
 };
 
 /**
