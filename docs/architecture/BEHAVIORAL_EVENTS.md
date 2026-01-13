@@ -54,6 +54,17 @@ These events are the *only* valid inputs that can mutate the User State.
   - Increments `social.witness_count`.
   - Reinforces "Official History".
 
+### `GROUP_CHECKIN`
+**Description**: Collective workout session (Synergy).
+- **Trigger**: Multiple users training together.
+- **Payload**:
+  - `participantCount`: Integer (Number of people)
+  - `partnerUids`: Array of UUIDs
+- **Effect**:
+  - Acts as a `CHECK_IN` (Completes Day).
+  - Awards **Synergy Bonus** (+10 Score).
+  - Increments `social.witness_count` by `participantCount`.
+
 ---
 
 ## 3. System Events

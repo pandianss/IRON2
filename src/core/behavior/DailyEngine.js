@@ -127,7 +127,7 @@ export const runDailyEngine = (previousState, action, serverDate) => {
     // Optimization: If today is already settled and date hasn't changed, return state as-is
     // BUT exception: Social events (support/witness) can happen anytime
     if (action && previousState.current_day === serverDate && previousState.today.primary_action_done) {
-        if (['CHECK_IN', 'REST'].includes(action.type)) {
+        if (['CHECK_IN', 'REST', 'GROUP_CHECKIN'].includes(action.type)) {
             console.warn("DailyEngine: Optimization - Returning previous state (Done for today).");
             return previousState;
         }
@@ -182,16 +182,23 @@ export const runDailyEngine = (previousState, action, serverDate) => {
     }
 
     // 3. Process Action (If any)
+    // 3. Process Action (If any)
     if (action) {
-        if (action.type === 'CHECK_IN' || action.type === 'REST') {
-            const statusType = action.type === 'CHECK_IN' ? 'COMPLETED' : 'RESTED';
+        if (['CHECK_IN', 'REST', 'GROUP_CHECKIN'].includes(action.type)) {
+            const statusType = (action.type === 'CHECK_IN' || action.type === 'GROUP_CHECKIN') ? 'COMPLETED' : 'RESTED';
 
             state.today.primary_action_done = true;
             state.today.status = statusType;
-            state.today.action_log.push(action.id || (action.type === 'CHECK_IN' ? 'check-in' : 'rest'));
+            state.today.action_log.push(action.id || action.type);
 
             state.streak = resolveStreak(state.streak, statusType === 'RESTED' ? 'COMPLETED' : 'COMPLETED');
             state.engagement = resolveEngagement(state.engagement, state.streak.count, 'COMPLETED');
+
+            // BONUS: Group Check-in Multiplier
+            if (action.type === 'GROUP_CHECKIN') {
+                state.engagement.score += 10; // Synergy Bonus
+                state.social.witness_count += (action.participantCount || 1);
+            }
 
             // Retention Update
             state.engagement_state = resolveRiskState(state.engagement_state, statusType, state.streak.count);
