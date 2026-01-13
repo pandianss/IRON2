@@ -3,6 +3,7 @@ import { INITIAL_USER_STATE, TIERS } from '../behavior/EngineSchema.js';
 import { RETENTION_STATES } from '../governance/RetentionPolicy.js';
 import { evaluateInterventions, INTERVENTION_TYPES } from '../governance/InterventionEngine.js';
 import { SocialCapitalEngine } from '../social/SocialCapitalEngine.js'; // Import New Engine
+import { AppealSystem } from '../governance/AppealSystem.js'; // Import Court
 
 /**
  * LARGE SCALE SIMULATION: THE CRUCIBLE v5.0 (Social Capital)
@@ -124,11 +125,6 @@ const runSimulation = () => {
             nextState.social.social_capital = newSC;
             // ---------------------------------------------------------
 
-            // LOGGING MINTING for Verification
-            if (d === 0 && i === 16000) {
-                // console.error(`Debug SC: User ${i} (${nextState.archetype}) Action: ${action ? action.type : 'None'} | Delta: ${scDelta} | OldSC: ${user.social.social_capital} | NewSC: ${newSC}`);
-            }
-
             // Run Governance
             const interventions = evaluateInterventions(user, nextState, nextState.social);
             if (interventions.length > 0) {
@@ -137,6 +133,32 @@ const runSimulation = () => {
                     nextState.metrics.interventions[iv.type] = (nextState.metrics.interventions[iv.type] || 0) + 1;
                 });
             }
+
+            // ---------------------------------------------------------
+            // APPEAL SYSTEM (The Court)
+            // ---------------------------------------------------------
+            // If user Fractures AND has Capital (>50), they auto-appeal (Simulation Logic)
+            if (nextState.engagement_state === RETENTION_STATES.STREAK_FRACTURED) {
+                // Check Appeal Logic
+                if (AppealSystem.canAppeal(nextState)) {
+                    // Simulate an Appeal
+                    const appealResult = AppealSystem.processAppeal(nextState, nextState, 'mock-fracture-id-123');
+
+                    if (appealResult.approved) {
+                        // Apply State Surgery
+                        nextState.engagement_state = appealResult.new_state;
+                        nextState.social.social_capital -= appealResult.cost;
+
+                        // Track it
+                        if (!nextState.metrics.interventions['APPEAL_GRANTED']) nextState.metrics.interventions['APPEAL_GRANTED'] = 0;
+                        nextState.metrics.interventions['APPEAL_GRANTED']++;
+
+                        // Log verification
+                        if (i === 16000) console.error(`Debug Appeal: User ${i} Appealed Fracture! New State: ${nextState.engagement_state}. SC Cost: ${appealResult.cost}`);
+                    }
+                }
+            }
+            // ---------------------------------------------------------
 
             population[i] = nextState;
         }
@@ -170,6 +192,13 @@ const generateReport = (population) => {
         const state = u.engagement_state;
         report.states[state] = (report.states[state] || 0) + 1;
         if (state === RETENTION_STATES.DORMANT) report.health.dormantCount++;
+
+        // Aggregate Interventions
+        if (u.metrics && u.metrics.interventions) {
+            Object.keys(u.metrics.interventions).forEach(k => {
+                report.interventions[k] = (report.interventions[k] || 0) + u.metrics.interventions[k];
+            });
+        }
     });
 
     // Averages (Flooring might hide small decimal gains, use toFixed for logging?)
