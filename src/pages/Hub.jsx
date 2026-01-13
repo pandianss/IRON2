@@ -15,7 +15,10 @@ const Hub = () => {
     const navigate = useNavigate();
     const { showToast } = useUIFeedback();
     const { currentUser } = useSession();
-    const { users, getRatingStats, addRating, studioContent, submitContent, approveContent, deleteContent, toggleContentStatus, updateContent } = useData();
+    const {
+        users, getRatingStats, addRating, studioContent, submitContent, approveContent, deleteContent, toggleContentStatus, updateContent
+    } = useData();
+    const { isAtRisk, isRecovering, recoveryProgress } = useRetention();
     const [reviewTarget, setReviewTarget] = React.useState(null);
     const [activeTab, setActiveTab] = useState('workouts');
     const [showSubmissionModal, setShowSubmissionModal] = useState(false);
@@ -161,6 +164,53 @@ const Hub = () => {
                     </div>
                     <div className="divider" style={{ margin: '24px 0' }} />
                 </section>
+            )}
+
+            {/* Retention Risk Banners */}
+            {isAtRisk && (
+                <div style={{
+                    backgroundColor: 'rgba(255, 60, 0, 0.1)',
+                    border: '1px solid var(--accent-danger)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '12px'
+                }}>
+                    <div style={{ color: 'var(--accent-danger)' }}>⚠️</div>
+                    <div>
+                        <h3 style={{ color: 'var(--accent-danger)', margin: 0, fontSize: '1rem' }}>STREAK AT RISK</h3>
+                        <p style={{ margin: 0, fontSize: '0.9rem', opacity: 0.8 }}>
+                            You missed yesterday. Complete an action TODAY to save your streak!
+                        </p>
+                    </div>
+                </div>
+            )}
+
+            {isRecovering && (
+                <div style={{
+                    backgroundColor: 'rgba(0, 150, 255, 0.1)',
+                    border: '1px solid var(--accent-info)',
+                    borderRadius: '12px',
+                    padding: '16px',
+                    marginBottom: '24px'
+                }}>
+                    <h3 style={{ color: 'var(--accent-info)', margin: '0 0 8px 0', fontSize: '1rem' }}>RECOVERY MODE</h3>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                        {[1, 2, 3].map(day => (
+                            <div key={day} style={{
+                                flex: 1,
+                                height: '4px',
+                                background: day <= recoveryProgress ? 'var(--accent-info)' : 'rgba(255,255,255,0.1)',
+                                borderRadius: '2px'
+                            }} />
+                        ))}
+                    </div>
+                    <p style={{ margin: '8px 0 0 0', fontSize: '0.8rem', opacity: 0.7 }}>
+                        {recoveryProgress}/3 Days to restore full engagement
+                    </p>
+                </div>
             )}
 
             {/* Content Grid */}

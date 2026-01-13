@@ -32,9 +32,25 @@ export const INITIAL_USER_STATE = (uid) => ({
         history_quality: 0 // Internal metric for tier promotion
     },
 
+    // Social Mechanics (New P2)
+    social: {
+        pact_saves: 0,    // Times saved by a partner
+        witness_count: 0  // Total times witnessed
+    },
+
+    // Retention State (Psychological Status)
+    engagement_state: "DORMANT", // See RISK_STATES below
+
+    // Recovery & Grace Windows
+    recovery: {
+        is_salvageable: false,
+        window_remaining_hours: 0,
+        missed_day_count: 0 // Track consecutive misses for recovery logic
+    },
+
     // The Sandbox for Today (Reset daily)
     today: {
-        status: "PENDING", // PENDING | COMPLETED | MISSED | RECOVERED | FROZEN
+        status: "PENDING", // PENDING | COMPLETED | MISSED | RECOVERED | FROZEN | RESTED
         primary_action_done: false,
         secondary_actions: 0,
         action_log: [] // Array of action IDs specifically for today
@@ -55,6 +71,14 @@ export const TIERS = {
     COMMITTED: { min: 50, decay: 1 },
     DISCIPLINED: { min: 150, decay: 0.5 },
     ELITE: { min: 500, decay: 0.1 }
+};
+
+export const RISK_STATES = {
+    ENGAGED: "ENGAGED",         // Healthy, maintaining flow
+    AT_RISK: "AT_RISK",         // Missed yesterday, in grace period (if applicable)
+    STREAK_BROKEN: "STREAK_BROKEN", // Officially lost streak, needs restart
+    RECOVERING: "RECOVERING",   // Rebuilding (e.g., first 3 days after break)
+    DORMANT: "DORMANT"          // Inactive for > 7 days
 };
 
 /**

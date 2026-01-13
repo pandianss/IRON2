@@ -56,6 +56,12 @@ export const RetentionProvider = ({ children }) => {
     const isRusting = (userState?.engagement?.tier === 'DORMANT');
     const todayStatus = userState?.today?.status === 'COMPLETED' ? 'trained' : null;
 
+    // New Retention Projections
+    const isAtRisk = userState?.engagement_state === 'AT_RISK';
+    const isRecovering = userState?.engagement_state === 'RECOVERING';
+    const isDormant = userState?.engagement_state === 'DORMANT';
+    const recoveryProgress = isRecovering ? userState?.streak?.count : 0;
+
     return (
         <RetentionContext.Provider value={{
             // Core State
@@ -68,6 +74,13 @@ export const RetentionProvider = ({ children }) => {
             lastCheckInDate: userState?.last_evaluated_day,
             checkInStatus: todayStatus,
             missedDays: userState?.lifecycle?.days_missed || 0,
+
+            // Retention Logic
+            isAtRisk,
+            isRecovering,
+            isDormant,
+            recoveryProgress,
+            socialStats: userState?.social || { pact_saves: 0, witness_count: 0 },
 
             // Actions
             checkIn,

@@ -12,7 +12,7 @@ export const EngineService = {
      */
     processAction: async (uid, action) => {
         const userStateRef = doc(db, 'user_state', uid);
-        const actionRef = doc(db, 'daily_actions', `${uid}_${Date.now()}`);
+        const logRef = doc(db, 'behavior_logs', `${uid}_${Date.now()}`); // Auto-ordered by TS roughly
 
         return await runTransaction(db, async (transaction) => {
             // 1. Fetch Current State
@@ -20,39 +20,45 @@ export const EngineService = {
             let currentState;
 
             if (!stateDoc.exists()) {
-                // Determine if we need migration or fresh start
-                // For now, fresh start
                 currentState = INITIAL_USER_STATE(uid);
             } else {
                 currentState = stateDoc.data();
             }
 
-            // 2. Run Deterministic Engine
+            // 2. Prepare Immutable Event
+            // We strip 'type' from action to avoid duping it if it's already there, 
+            // but for safety we explicitly construct it.
+            const eventPayload = { ...action };
+            delete eventPayload.type; // Type is top-level in event
+
+            const behaviorEvent = {
+                uid,
+                type: action.type,
+                payload: eventPayload,
+                server_ts: new Date().toISOString(),
+                schema_version: 1
+            };
+
+            // 3. Run Deterministic Engine (Derive State)
             // Use User's Timezone if available, else UTC (server default)
             const timeZone = currentState.timezone || 'UTC';
-            const serverDate = new Date().toLocaleDateString('en-CA', { timeZone }); // YYYY-MM-DD format in specific TZ
+            const serverDate = new Date().toLocaleDateString('en-CA', { timeZone });
 
             const newState = runDailyEngine(currentState, action, serverDate);
 
-            // Validate Result
+            // 4. Validate Result
             validateState(newState);
 
-            // 3. Commit Writes
+            // 5. Commit Writes (Log First, Then State)
 
-            // A. Update Canonical State
+            // A. Write to Immutable Log
+            transaction.set(logRef, behaviorEvent);
+
+            // B. Update Canonical State
             transaction.set(userStateRef, newState);
 
-            // B. Log Immutable Action
-            transaction.set(actionRef, {
-                uid,
-                action,
-                server_ts: new Date().toISOString(),
-                day: serverDate,
-                previous_state_hash: 'TODO_HASH', // simplified
-                new_state_hash: 'TODO_HASH'
-            });
-
-            // C. Log Transitions (if Streak changed)
+            // C. Legacy/Optimization Logs (Optional: streak_transitions)
+            // We keep this for easy querying without replaying logs
             if (newState.streak.count !== currentState.streak.count) {
                 const transitionRef = doc(db, 'streak_transitions', `${uid}_${Date.now()}`);
                 transaction.set(transitionRef, {

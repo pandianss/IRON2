@@ -86,10 +86,47 @@ const resolveEngagement = (currentEng, streakCount, dayStatus) => {
  * @param {object} action - Optional action occurring TODAY (or null if just time processing)
  * @param {string} serverDate - YYYY-MM-DD
  */
+const RECOVERY_DAYS_REQUIRED = 3;
+
+/**
+ * Phase 5: Retention State Engine
+ * Determines psychological state (ENGAGED, AT_RISK, etc.)
+ */
+const resolveRiskState = (currentState, dayStatus, streakCount) => {
+    let nextState = currentState;
+
+    // Transitions based on Day Status
+    if (dayStatus === 'COMPLETED' || dayStatus === 'RESTED') {
+        if (currentState === 'STREAK_BROKEN') {
+            nextState = 'RECOVERING';
+        } else if (currentState === 'RECOVERING') {
+            // Check if recovery is complete (simplified logic: essentially if streak > N)
+            // Ideally we track separate recovery counter, but streak count works if we reset it to 0 on break.
+            if (streakCount >= RECOVERY_DAYS_REQUIRED) {
+                nextState = 'ENGAGED';
+            }
+        } else if (currentState === 'AT_RISK' || currentState === 'DORMANT') {
+            nextState = 'ENGAGED'; // Saved!
+        }
+    } else if (dayStatus === 'MISSED') {
+        if (currentState === 'ENGAGED' || currentState === 'RECOVERING') {
+            // First miss? AT_RISK (Grace) or Straight to BROKEN?
+            // Iron Philosophy: 1 Miss = AT_RISK (can recover with Freeze or Action next day)
+            // But if no freeze tokens?
+            // Let's say: Miss -> AT_RISK. Second Miss -> BROKEN.
+            nextState = 'AT_RISK';
+        } else if (currentState === 'AT_RISK') {
+            nextState = 'STREAK_BROKEN';
+        }
+    }
+
+    return nextState;
+};
+
 export const runDailyEngine = (previousState, action, serverDate) => {
     // Optimization: If today is already settled and date hasn't changed, return state as-is
+    // BUT exception: Social events (support/witness) can happen anytime
     if (action && previousState.current_day === serverDate && previousState.today.primary_action_done) {
-        // Only if it's a primary action attempt
         if (['CHECK_IN', 'REST'].includes(action.type)) {
             console.warn("DailyEngine: Optimization - Returning previous state (Done for today).");
             return previousState;
@@ -98,88 +135,106 @@ export const runDailyEngine = (previousState, action, serverDate) => {
 
     let state = JSON.parse(JSON.stringify(previousState)); // Deep clone for immutability
 
+    // Ensure new schema fields exist if migration didn't happen
+    if (!state.engagement_state) state.engagement_state = 'DORMANT';
+    if (!state.recovery) state.recovery = { is_salvageable: false, window_remaining_hours: 0, missed_day_count: 0 };
+
     const lastDay = state.last_evaluated_day;
     const diff = getDayDiff(lastDay, serverDate);
-
-    // 1. Process Missed Days (Time Travel)
-    // If last_evaluated was 2023-01-01 and today is 2023-01-03, we must close 01 and 02.
-    // Wait, if last_eval was 01, that means 01 was "touched". 
-    // If today is 03, we missed 02.
-
-    // Iterate strictly for days BETWEEN last evaluated and today
-    let pointerDate = lastDay;
 
     // Safety Break
     if (diff > 365) throw new Error("State too old to reconcile.");
 
-    // Advance time day-by-day until YESTERDAY
-    // (We stop before Today because Today is open for business)
+    // 1. Process Missed Days (Time Travel)
+    let pointerDate = lastDay;
     while (addDays(pointerDate, 1) < serverDate) {
         pointerDate = addDays(pointerDate, 1);
+        const dayStatus = 'MISSED'; // Intermediate day missed
 
-        // This intermediate day was definitely MISSED because we are only seeing it now
-        // (unless we had future planned leaves, but Phase 1 doesn't support that)
-
-        // Close the day
-        const dayStatus = 'MISSED'; // Resolved status
-
-        // Update Stats
+        // Engine Logic
         state.streak = resolveStreak(state.streak, dayStatus);
         state.engagement = resolveEngagement(state.engagement, state.streak.count, dayStatus);
-        state.lifecycle.days_missed += 1;
-        state.lifecycle.days_active += 1; // Time passed
 
-        // Log it (In a real system we'd push to an event array, here we just mutate state)
+        // Retention Logic
+        state.engagement_state = resolveRiskState(state.engagement_state, dayStatus, state.streak.count);
+
+        if (dayStatus === 'MISSED') {
+            state.lifecycle.days_missed += 1;
+            state.recovery.missed_day_count += 1;
+        }
+        state.lifecycle.days_active += 1;
     }
 
     // 2. Setup TODAY (serverDate)
     if (state.current_day !== serverDate) {
-        // New Day Dawn
-        state.previous_day_status = state.today.status; // Archive yesterday's final status
+        state.previous_day_status = state.today.status;
         state.current_day = serverDate;
         state.last_evaluated_day = serverDate;
 
-        // Reset Today Shell
         state.today = {
             status: 'PENDING',
             primary_action_done: false,
             secondary_actions: 0,
             action_log: []
         };
+
+        // Reset recovery count if we were ENGAGED? No, handle in Resolve
     }
 
     // 3. Process Action (If any)
     if (action) {
-        // Validate Action
-        if (action.type === 'CHECK_IN') {
-            state.today.primary_action_done = true;
-            state.today.status = 'COMPLETED';
-            state.today.action_log.push(action.id || 'check-in');
+        if (action.type === 'CHECK_IN' || action.type === 'REST') {
+            const statusType = action.type === 'CHECK_IN' ? 'COMPLETED' : 'RESTED';
 
-            // Immediate Gratification
-            state.streak = resolveStreak(state.streak, 'COMPLETED');
+            state.today.primary_action_done = true;
+            state.today.status = statusType;
+            state.today.action_log.push(action.id || (action.type === 'CHECK_IN' ? 'check-in' : 'rest'));
+
+            state.streak = resolveStreak(state.streak, statusType === 'RESTED' ? 'COMPLETED' : 'COMPLETED');
             state.engagement = resolveEngagement(state.engagement, state.streak.count, 'COMPLETED');
+
+            // Retention Update
+            state.engagement_state = resolveRiskState(state.engagement_state, statusType, state.streak.count);
+            state.recovery.missed_day_count = 0; // Reset consecutive misses
+
             state.lifecycle.total_actions += 1;
         }
-        else if (action.type === 'REST') {
-            state.today.primary_action_done = true;
-            state.today.status = 'RESTED'; // New Status
-            state.today.action_log.push(action.id || 'rest');
+        else if (action.type === 'SEND_SUPPORT') {
+            // "PACT SAVE" Mechanic
+            // If user is AT_RISK, support saves them from breaking streak tomorrow.
+            // We give them a "Freeze Token" essentially, OR we treat today as handled?
+            // Iron Model: Support grants 1 Freeze Token (max 1) if they have none, 
+            // giving them a "Free Pass" for the missed day.
 
-            // Rest maintains streak (or increments if we want, policy decision)
-            // For now: Rest maintains, does not increment, does not break.
-            // Actually contract says: "Logs rest, increments streak (if logic allows) or maintains"
-            // Let's implemented: Maintains.
-            // EDIT: To make it feel good, let's say Rest counts as a "valid day" so streak count + 1?
-            // No, usually rest doesn't add to streak number but keeps it alive. 
-            // Let's increment for now to be generous, or user policy can decide.
-            // Contract: "Rest Day -> ... increments streak (if logic allows)"
-            // Implementation: We will increment for now to keep momentum.
-
-            state.streak = resolveStreak(state.streak, 'COMPLETED'); // Treat as completed for streak purposes
-            // Different engagement score?
-            state.engagement.score += 5; // Less points than workout
+            if (state.engagement_state === 'AT_RISK') {
+                if (state.streak.freeze_tokens === 0) {
+                    state.streak.freeze_tokens += 1;
+                    state.social.pact_saves += 1;
+                    // Note: We don't change state to ENGAGED immediately, 
+                    // the token will be consumed tomorrow to prevent STREAK_BROKEN.
+                }
+            } else if (state.engagement_state === 'ENGAGED') {
+                // Boosting morale? Maybe just log it.
+            }
         }
+        else if (action.type === 'WITNESS_WORKOUT') {
+            // "WITNESS" Mechanic
+            // Increases score for the day
+            if (state.today.status === 'COMPLETED') {
+                state.engagement.score += 5; // Bonus
+                state.social.witness_count += 1;
+            }
+        }
+    }
+
+    // 4. Post-Processing Calculation (Recovery Windows)
+    // If AT_RISK, calculate time remaining? 
+    if (state.engagement_state === 'AT_RISK') {
+        state.recovery.is_salvageable = true;
+        state.recovery.window_remaining_hours = 24;
+    } else {
+        state.recovery.is_salvageable = false;
+        state.recovery.window_remaining_hours = 0;
     }
 
     return state;
