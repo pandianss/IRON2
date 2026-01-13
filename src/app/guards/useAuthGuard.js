@@ -51,7 +51,7 @@ export const useAuthGuard = () => {
         // 4. Role-Based Access Control
         // Gym/Partner Restricted from Root
         if ((userType === 'gym' || userType === 'gym_owner') && (location.pathname === '/' || location.pathname === '/home')) {
-            navigate('/partner', { replace: true });
+            navigate('/command', { replace: true });
             return;
         }
 

@@ -1,7 +1,7 @@
 import React from 'react';
-import { useAppContext } from '../../app/context/AppContext';
-import Card from '../UI/Card';
-import Button from '../UI/Button';
+import { useAppContext } from '../../../app/context/AppContext';
+import Card from '../../../components/UI/Card';
+import Button from '../../../components/UI/Button';
 import { X, User, Activity, AlertCircle, Calendar, Ban, History as HistoryIcon, CheckCircle } from 'lucide-react';
 
 const MemberProfileModal = ({ member, onClose }) => {

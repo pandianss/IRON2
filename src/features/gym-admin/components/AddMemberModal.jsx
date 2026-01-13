@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import Card from '../UI/Card';
-import Button from '../UI/Button';
+import Card from '../../../components/UI/Card';
+import Button from '../../../components/UI/Button';
 import { X, User, Check, Wallet } from 'lucide-react';
-import { useAppContext } from '../../app/context/AppContext';
+import { useAppContext } from '../../../app/context/AppContext';
 
 const AddMemberModal = ({ onClose }) => {
     const { addMember, showToast, selectedGymId } = useAppContext();

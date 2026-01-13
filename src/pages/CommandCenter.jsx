@@ -20,7 +20,7 @@ import {
     useData
 } from '../app/context';
 import LogWorkoutModal from '../components/Workouts/LogWorkoutModal';
-import PartnerDashboard from './PartnerDashboard';
+import CommandDashboard from '../features/gym-admin/pages/CommandDashboard';
 import { StudioPage } from '../features/studio';
 import { mockFeedActivities } from '../services/mockData';
 
@@ -34,7 +34,7 @@ const CommandCenter = () => {
     const navigate = useNavigate();
     const [userLocation, setUserLocation] = useState(null);
     const [showLogModal, setShowLogModal] = useState(false);
-    const [dashboardMode, setDashboardMode] = useState('enthusiast'); // 'enthusiast' | 'partner' | 'expert'
+    const [dashboardMode, setDashboardMode] = useState('enthusiast'); // 'enthusiast' | 'command' | 'expert'
 
     useEffect(() => {
         if (navigator.geolocation) {
@@ -124,16 +124,16 @@ const CommandCenter = () => {
                 </button>
                 {hasPartnerAccess && (
                     <button
-                        onClick={() => setDashboardMode('partner')}
+                        onClick={() => setDashboardMode('command')}
                         style={{
                             flex: 1, padding: '8px', borderRadius: '8px', border: 'none',
-                            background: dashboardMode === 'partner' ? 'var(--accent-blue)' : 'transparent',
-                            color: dashboardMode === 'partner' ? '#000' : 'var(--text-muted)',
+                            background: dashboardMode === 'command' ? 'var(--accent-blue)' : 'transparent',
+                            color: dashboardMode === 'command' ? '#000' : 'var(--text-muted)',
                             fontWeight: 'bold', fontSize: '0.8rem', cursor: 'pointer', transition: 'all 0.2s',
                             display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px'
                         }}
                     >
-                        <Store size={14} /> PARTNER
+                        <Store size={14} /> COMMAND
                     </button>
                 )}
                 {hasExpertAccess && (
@@ -382,7 +382,7 @@ const CommandCenter = () => {
             )}
 
             {/* PARTNER VIEW */}
-            {dashboardMode === 'partner' && <PartnerDashboard isEmbedded={true} />}
+            {dashboardMode === 'command' && <CommandDashboard isEmbedded={true} />}
 
             {/* EXPERT VIEW */}
             {dashboardMode === 'expert' && <StudioPage isEmbedded={true} />}

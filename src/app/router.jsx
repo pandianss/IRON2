@@ -19,7 +19,7 @@ const Viral = lazy(() => import('../pages/Viral'));
 const StudioPage = lazy(() => import('../features/studio').then(module => ({ default: module.StudioPage })));
 const ProfilePage = lazy(() => import('../identity/profile').then(module => ({ default: module.ProfilePage })));
 const KnowledgePage = lazy(() => import('../features/knowledge').then(module => ({ default: module.KnowledgePage })));
-const PartnerDashboard = lazy(() => import('../pages/PartnerDashboard'));
+const CommandDashboard = lazy(() => import('../features/gym-admin/pages/CommandDashboard'));
 const GymDirectory = lazy(() => import('../pages/GymDirectory'));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
 const GymJoin = lazy(() => import('../pages/GymJoin'));
@@ -71,7 +71,7 @@ const router = createBrowserRouter([
             { path: 'studio', element: Loadable(StudioPage) },
             { path: 'profile', element: Loadable(ProfilePage) },
             { path: 'knowledge', element: Loadable(KnowledgePage) },
-            { path: 'partner', element: Loadable(PartnerDashboard) },
+            { path: 'command', element: Loadable(CommandDashboard) },
             { path: 'gyms', element: Loadable(GymDirectory) },
             { path: 'admin', element: Loadable(AdminDashboard) },
         ],
