@@ -8,8 +8,17 @@ import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
 import { orderBy } from 'firebase/firestore';
 import {
-    // mockProducts, mockGyms, etc removed
-} from '../../services/mockData';
+    mockGyms,
+    mockMembers,
+    mockEnquiries,
+    mockPlans,
+    mockStudioContent,
+    mockStudioExercises,
+    mockProducts,
+    mockUsers,
+    mockChallenges,
+    mockSquads
+} from '../../infrastructure/data/mockData';
 
 console.log("DataContext Module Loaded. DbService type:", typeof DbService);
 if (typeof DbService === 'undefined') console.error("CRITICAL: DbService is undefined in DataContext!");

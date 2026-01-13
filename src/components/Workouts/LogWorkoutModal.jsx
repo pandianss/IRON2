@@ -1,9 +1,9 @@
 import React, { useState, useRef } from 'react';
-import { X, Upload, Mic, Music, Lock, Globe, Camera, Play, Pause } from 'lucide-react';
+import { X, Search } from 'lucide-react';
 import Button from '../UI/Button';
 import StorageService from '../../infrastructure/StorageService';
 import { useSession, useRetention } from '../../app/context';
-import { mockAudioTracks } from '../../services/mockData';
+import { mockExercises } from '../../infrastructure/data/mockData';
 import { useUIFeedback } from '../../app/context';
 import { optimizeImage } from '../../utils/mediaOptimizer';
 

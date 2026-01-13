@@ -3,7 +3,7 @@ import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { Shield, Check, X, Building, Users, Activity, FileText } from 'lucide-react';
 import { useData, useUIFeedback } from '../app/context';
-import { AuditService } from '../services/audit';
+import { AuditService } from '../infrastructure/audit/audit';
 
 const AdminDashboard = () => {
     const { gyms, users, approveGym, rejectGym, approveMember, rejectMember, toggleGymStatus, toggleBanMember } = useData();

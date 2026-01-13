@@ -20,9 +20,9 @@ import {
     useData
 } from '../app/context';
 import LogWorkoutModal from '../components/Workouts/LogWorkoutModal';
-import CommandDashboard from '../features/gym-admin/pages/CommandDashboard';
+import PartnerDashboard from '../features/gym-admin/pages/CommandDashboard'; // Renamed to CommandDashboard but usually named export or default. Default export is CommandDashboard now.
 import { StudioPage } from '../features/studio';
-import { mockFeedActivities } from '../services/mockData';
+import { mockFeedActivities } from '../infrastructure/data/mockData';
 
 const CommandCenter = () => {
     const { isLoading, currentUser } = useSession();

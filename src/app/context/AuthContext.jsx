@@ -3,8 +3,8 @@ import PropTypes from 'prop-types';
 import {
     AuthService, DbService
 } from '../../infrastructure/firebase';
-import { where } from 'firebase/firestore';
-import { AuditService } from '../../services/audit';
+import { db, auth, googleProvider } from '../../infrastructure/firebase';
+import { AuditService } from '../../infrastructure/audit/audit';
 import { useUI } from './UIContext';
 
 export const AuthContext = createContext();
@@ -163,7 +163,7 @@ export const AuthProvider = ({ children, appMode }) => {
             } else if (error.code === 'auth/too-many-requests') {
                 msg = "Too many attempts. Reset password?";
             } else {
-                msg = `Login failed (${error.code || 'Unknown'}).`;
+                msg = `Login failed(${error.code || 'Unknown'}).`;
             }
             console.log("DEBUG TOAST MSG:", msg);
             showToast(msg);

@@ -12,6 +12,7 @@ export const INITIAL_USER_STATE = (uid) => ({
 
     current_day: new Date().toISOString().split('T')[0], // YYYY-MM-DD
     last_evaluated_day: new Date().toISOString().split('T')[0],
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
 
     // Streak Authority
     streak: {

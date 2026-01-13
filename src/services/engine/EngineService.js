@@ -1,8 +1,8 @@
 
 import { DbService, db } from '../../infrastructure/firebase';
 import { doc, runTransaction } from 'firebase/firestore';
-import { runDailyEngine } from '../../engine/DailyEngine.js';
-import { INITIAL_USER_STATE, validateState } from '../../engine/EngineSchema.js';
+import { runDailyEngine } from '../../core/behavior/DailyEngine';
+import { INITIAL_USER_STATE, validateState } from '../../core/behavior/EngineSchema';
 
 export const EngineService = {
     /**
@@ -28,9 +28,9 @@ export const EngineService = {
             }
 
             // 2. Run Deterministic Engine
-            // Server Timestamp is crucial. We use Client Time for now as simplified mock, 
-            // but in Prod this comes from Cloud Function or Server Time offset.
-            const serverDate = new Date().toISOString().split('T')[0];
+            // Use User's Timezone if available, else UTC (server default)
+            const timeZone = currentState.timezone || 'UTC';
+            const serverDate = new Date().toLocaleDateString('en-CA', { timeZone }); // YYYY-MM-DD format in specific TZ
 
             const newState = runDailyEngine(currentState, action, serverDate);
 

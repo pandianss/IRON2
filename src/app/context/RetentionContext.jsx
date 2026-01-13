@@ -3,7 +3,7 @@ import { EngineService } from '../../services/engine/EngineService';
 import { useAuth } from './AuthContext';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../infrastructure/firebase';
-import { INITIAL_USER_STATE } from '../../engine/EngineSchema';
+import { INITIAL_USER_STATE } from '../../core/behavior/EngineSchema';
 
 export const RetentionContext = createContext(null);
 
@@ -41,7 +41,8 @@ export const RetentionProvider = ({ children }) => {
     const checkIn = async (status = 'trained') => {
         if (!user) return;
         try {
-            await EngineService.processAction(user.uid, { type: 'CHECK_IN', status });
+            const actionType = status === 'rest' ? 'REST' : 'CHECK_IN';
+            await EngineService.processAction(user.uid, { type: actionType, status });
             // No need to manually update state, the snapshot will fire
             return { status: 'success' };
         } catch (err) {

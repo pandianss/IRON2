@@ -87,6 +87,15 @@ const resolveEngagement = (currentEng, streakCount, dayStatus) => {
  * @param {string} serverDate - YYYY-MM-DD
  */
 export const runDailyEngine = (previousState, action, serverDate) => {
+    // Optimization: If today is already settled and date hasn't changed, return state as-is
+    if (action && previousState.current_day === serverDate && previousState.today.primary_action_done) {
+        // Only if it's a primary action attempt
+        if (['CHECK_IN', 'REST'].includes(action.type)) {
+            console.warn("DailyEngine: Optimization - Returning previous state (Done for today).");
+            return previousState;
+        }
+    }
+
     let state = JSON.parse(JSON.stringify(previousState)); // Deep clone for immutability
 
     const lastDay = state.last_evaluated_day;
@@ -145,12 +154,31 @@ export const runDailyEngine = (previousState, action, serverDate) => {
         if (action.type === 'CHECK_IN') {
             state.today.primary_action_done = true;
             state.today.status = 'COMPLETED';
-            state.today.action_log.push(action.id);
+            state.today.action_log.push(action.id || 'check-in');
 
             // Immediate Gratification
             state.streak = resolveStreak(state.streak, 'COMPLETED');
             state.engagement = resolveEngagement(state.engagement, state.streak.count, 'COMPLETED');
             state.lifecycle.total_actions += 1;
+        }
+        else if (action.type === 'REST') {
+            state.today.primary_action_done = true;
+            state.today.status = 'RESTED'; // New Status
+            state.today.action_log.push(action.id || 'rest');
+
+            // Rest maintains streak (or increments if we want, policy decision)
+            // For now: Rest maintains, does not increment, does not break.
+            // Actually contract says: "Logs rest, increments streak (if logic allows) or maintains"
+            // Let's implemented: Maintains.
+            // EDIT: To make it feel good, let's say Rest counts as a "valid day" so streak count + 1?
+            // No, usually rest doesn't add to streak number but keeps it alive. 
+            // Let's increment for now to be generous, or user policy can decide.
+            // Contract: "Rest Day -> ... increments streak (if logic allows)"
+            // Implementation: We will increment for now to keep momentum.
+
+            state.streak = resolveStreak(state.streak, 'COMPLETED'); // Treat as completed for streak purposes
+            // Different engagement score?
+            state.engagement.score += 5; // Less points than workout
         }
     }
 
