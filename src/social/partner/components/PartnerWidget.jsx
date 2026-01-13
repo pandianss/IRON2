@@ -1,16 +1,38 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Card from '../../../components/UI/Card';
 import Button from '../../../components/UI/Button';
-import { UserPlus, ShieldCheck, Loader2 } from 'lucide-react';
+import { UserPlus, ShieldCheck, Loader2, Flame } from 'lucide-react';
 import { useAuth } from '../../../app/context/AuthContext';
 import InvitePartnerModal from './InvitePartnerModal';
+import { EngineService } from '../../../services/engine/EngineService';
 
 const PartnerWidget = () => {
     const { currentUser } = useAuth();
     const [showInviteModal, setShowInviteModal] = useState(false);
+    const [partnerState, setPartnerState] = useState(null);
+    const [loadingState, setLoadingState] = useState(false);
 
     // Partner data comes directly from the user profile (denormalized)
     const partner = currentUser?.partner;
+
+    useEffect(() => {
+        if (!partner?.uid) return;
+
+        const fetchPartnerState = async () => {
+            setLoadingState(true);
+            try {
+                // Read projection
+                const state = await EngineService.getUserState(partner.uid);
+                if (state) setPartnerState(state);
+            } catch (e) {
+                console.error("Failed to fetch partner state", e);
+            } finally {
+                setLoadingState(false);
+            }
+        };
+
+        fetchPartnerState();
+    }, [partner]);
 
     if (!partner) {
         return (
@@ -42,12 +64,9 @@ const PartnerWidget = () => {
         );
     }
 
-    // Determine partner status (Mock for now, eventually check partner's last check-in)
-    // Since we don't have the partner's live status here without a query, 
-    // we might need to rely on what was synced or just show generic "Active".
-    // For Phase 1 MVP, we just show they are linked.
-
     const initials = partner.name ? partner.name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : '??';
+    const streak = partnerState?.streak?.active ? partnerState.streak.count : 0;
+    const isTodayDone = partnerState?.today?.status === 'COMPLETED';
 
     return (
         <Card className="glass-panel" style={{ border: '1px solid var(--accent-orange)' }}>
@@ -56,11 +75,19 @@ const PartnerWidget = () => {
                     <ShieldCheck size={16} className="text-orange-500" />
                     <span className="text-xs font-bold text-orange-500 tracking-wider">PACT ACTIVE</span>
                 </div>
-                {/* 
-                  Phase 1: We don't have shared streak yet in the user doc. 
-                  We can default to 0 or hide it until synced.
-                */}
-                <div className="text-zinc-500 text-xs font-mono">LINKED</div>
+                {/* Stats Display */}
+                <div className="text-zinc-500 text-xs font-mono flex items-center gap-2">
+                    {loadingState ? (
+                        <Loader2 size={12} className="animate-spin" />
+                    ) : (
+                        <>
+                            {isTodayDone && <span className="text-green-500">READY</span>}
+                            <span className="flex items-center text-orange-400">
+                                <Flame size={12} className="mr-1" /> {streak}
+                            </span>
+                        </>
+                    )}
+                </div>
             </div>
 
             <div className="flex items-center gap-3">
@@ -70,7 +97,7 @@ const PartnerWidget = () => {
                 <div>
                     <h4 className="text-white font-bold text-sm">{partner.name || 'Partner'}</h4>
                     <p className="text-xs font-bold text-zinc-500">
-                        ACCOUNTABILITY PARTNER
+                        {partnerState ? (isTodayDone ? "Target Destroyed" : "Waiting for Check-in") : "Syncing..."}
                     </p>
                 </div>
             </div>
