@@ -65,5 +65,40 @@ export const ReplayService = {
         } else {
             return { status: 'CORRUPTED', audit, calculated, cached: cachedParams };
         }
+    },
+
+    /**
+     * DESTRUCTIVE REPLAY (The Litmus Test)
+     * Deletes the cache and rebuilds purely from the Ledger.
+     * @param {string} uid 
+     */
+    destructiveReplay: async (uid) => {
+        console.warn(`[SOVEREIGNTY] INITIATING DESTRUCTIVE REPLAY FOR ${uid}`);
+
+        // 1. Fetch Truth (Ledger)
+        const history = await InstitutionalLedger.getHistory(uid);
+        if (!history || history.length === 0) {
+            throw new Error("Cannot replay: No Ledger History found.");
+        }
+
+        // 2. PURGE CACHE (The Delete)
+        try {
+            await DbService.deleteDoc('user_state', uid);
+        } catch (e) {
+            console.warn("Cache delete failed or doc didn't exist", e);
+        }
+
+        // 3. Re-Project
+        const newState = StateProjector.reduce(history);
+
+        // 4. RESTORE (The Write)
+        // We use setDoc to force overwrite exactly what the Ledger says.
+        await DbService.setDoc('user_state', uid, newState);
+
+        return {
+            success: true,
+            eventCount: history.length,
+            finalState: newState
+        };
     }
 };

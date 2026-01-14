@@ -1,11 +1,4 @@
-/**
- * IRON — Immutable Behavior Log Schema
- * 
- * The Behavior Log is the single source of truth for user history.
- * All state is purely derived from these events.
- */
-
-import crypto from 'crypto'; // Ensure crypto is available for UUID/Hash if needed here, or standard lib
+import { ROLES, RITUALS } from './EngineSchema.js';
 
 export const EVENT_TYPES = {
     // PHYSICS EVENTS (The Engine)
@@ -71,7 +64,7 @@ export const createBehaviorEvent = ({
     if (!actor || !ACTOR_TYPES[actor.type]) throw new Error(`Invalid Actor: ${JSON.stringify(actor)}`);
 
     return {
-        eventId: crypto.randomUUID(), // Immutable ID
+        eventId: globalThis.crypto.randomUUID(), // Immutable ID
         userId: uid,
         type,
         timestamp: new Date().toISOString(), // Authoritative Time

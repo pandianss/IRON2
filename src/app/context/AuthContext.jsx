@@ -72,52 +72,54 @@ export const AuthProvider = ({ children, appMode }) => {
         if (!authUser) return;
 
         // Read-only check for cache
-        let dbUser = await DbService.getDoc('users', authUser.uid);
+        // We fetch the 'user_state' (The Truth Cache) instead of 'users' (Identity)
+        // Wait, EngineService writes to 'user_state' (Cache) AND 'users' (Identity Side Effect).
+        // For Auth, we usually read 'users' for profile info, but 'user_state' for Logic.
+        // Let's rely on 'user_state' as the primary source for Session.
+        let dbState = await DbService.getDoc('user_state', authUser.uid);
 
-        if (dbUser) {
-            // Auto-promote Super Admin on sync
-            if (authUser.email === 'sspandian.here@gmail.com' && dbUser.role !== 'super_admin') {
-                await EngineService.processAction(authUser.uid, {
+        // Fallback to 'users' if state doesn't exist but identity does (Migration edge case)
+        if (!dbState) {
+            const userIdentity = await DbService.getDoc('users', authUser.uid);
+            if (userIdentity) {
+                // We have identity but no state? Should trigger REPLAY or GENESIS check.
+                // For now, treat as new/missing.
+            }
+        }
+
+        if (dbState) {
+            // Auto-promote Super Admin on sync (Sovereign Upgrade)
+            if (authUser.email === 'sspandian.here@gmail.com' && dbState.profile?.role !== 'super_admin') {
+                dbState = await EngineService.processAction(authUser.uid, {
                     type: 'USER_UPDATED',
                     role: 'super_admin'
                 });
-                dbUser.role = 'super_admin'; // Optimistic update
             }
 
             // Force onboarding complete for super admin
-            if (dbUser.role === 'super_admin' && !onboardingCompleted) {
+            if (dbState.profile?.role === 'super_admin' && !onboardingCompleted) {
                 localStorage.setItem('iron_onboarding_done', 'true');
                 setOnboardingCompleted(true);
             }
 
-            setCurrentUser(dbUser);
-            setUserType(dbUser.role);
+            setCurrentUser(dbState);
+            setUserType(dbState.profile?.role || 'enthusiast');
         } else {
-            // GENESIS EVENT
-            // Check for pre-existing member record (from Partner Onboarding)
-            // This reads to find if we need to merge.
-            let existingMember = null;
-            if (authUser.email) {
-                const results = await DbService.queryDocs('users', [where('email', '==', authUser.email)]);
-                if (results.length > 0) existingMember = results.find(u => u.id !== authUser.uid) || results[0];
-            }
+            // GENESIS EVENT (Sovereignty: Only Engine creates State)
+            // Check for pre-existing member record (Invite) to merge?
+            // To be strictly Sovereign, we treat this as a pure new user or "Claiming" an invite via Engine.
+            // For MVP: We just create the user. Merging logic should be handled by Engine in future.
 
             const role = (authUser.email === 'sspandian.here@gmail.com') ? 'super_admin' : 'user';
 
             const payload = {
                 type: 'USER_CREATED',
                 email: authUser.email || authUser.phoneNumber,
-                displayName: authUser.displayName || existingMember?.name || 'User',
+                displayName: authUser.displayName || 'User',
                 role,
-                status: existingMember?.status || 'Active',
-                // Genesis Defaults handled by SnapshotGenerator/EngineSchema? 
-                // We pass them to ensure Profile is rich.
-                jimId: existingMember?.gymId || null, // Typo from original? gymId
-                gymId: existingMember?.gymId || null,
-                plan: existingMember?.plan || null,
-                expiry: existingMember?.expiry || null,
-                joinedVia: existingMember?.joinedVia || 'App',
-                medical: existingMember?.medical || null
+                status: 'Active',
+                // Genesis Defaults
+                joinedVia: 'App'
             };
 
             // SOVEREIGN GENESIS
@@ -125,17 +127,6 @@ export const AuthProvider = ({ children, appMode }) => {
 
             setCurrentUser(newUserState);
             setUserType(role);
-
-            // Cleanup old partial doc - This is a SYSTEM interaction, maybe Engine should handle? 
-            // For now, removing stale doc is okay here as it's legacy cleanup.
-            if (existingMember && existingMember.id !== authUser.uid) {
-                console.log("Merging pre-onboarded member doc:", existingMember.id);
-                try {
-                    await DbService.deleteDoc('users', existingMember.id);
-                } catch (e) {
-                    console.warn("Failed to delete stale member doc", e);
-                }
-            }
         }
     };
 
@@ -188,9 +179,10 @@ export const AuthProvider = ({ children, appMode }) => {
             const payload = {
                 type: 'USER_CREATED',
                 email: authUser.email,
-                ...userData,
+                displayName: userData.displayName || 'User',
                 role,
-                displayName: userData.displayName || 'User' // Ensure display name
+                ...userData // Caution: spreading provided data. Schema should sanitize.
+                // Engineside side-effect will overwrite 'users' doc with this.
             };
 
             // SOVEREIGN GENESIS
@@ -199,7 +191,7 @@ export const AuthProvider = ({ children, appMode }) => {
             setCurrentUser(newUserState);
             setUserType(role);
 
-            AuditService.log('USER_REGISTER', newUserState, { id: newUserState.uid }, { role }); // Log optional? Engine logs it.
+            // AuditService.log removed. Ledger is the Audit.
             showToast("Welcome to IRON.");
         } catch (error) {
             setIsLoading(false);

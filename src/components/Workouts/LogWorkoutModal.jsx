@@ -130,7 +130,6 @@ const LogWorkoutModal = ({ onClose, onLog }) => {
                 privacy,
                 audioMode,
                 audioTrack: audioMode === 'music' ? selectedTrack : null,
-                audioTrack: audioMode === 'music' ? selectedTrack : null,
                 timestamp: new Date().toISOString(),
                 category,
                 hubCandidate: category !== 'general'

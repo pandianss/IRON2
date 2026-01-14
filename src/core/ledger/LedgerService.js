@@ -12,7 +12,6 @@
  * - Caching: Maintains local chain for speed, but Authority is Remote.
  */
 
-import crypto from 'crypto';
 import { db } from '../../infrastructure/firebase.js'; // Infrastructure Layer
 import { collection, addDoc, query, where, orderBy, getDocs, limit, doc } from 'firebase/firestore';
 
@@ -21,9 +20,13 @@ class LedgerService {
         this.collectionName = 'ledger_blocks';
     }
 
-    calculateHash(index, prevHash, timestamp, data) {
+    async calculateHash(index, prevHash, timestamp, data) {
         const payload = `${index}|${prevHash}|${timestamp}|${JSON.stringify(data)}`;
-        return crypto.createHash('sha256').update(payload).digest('hex');
+        const msgBuffer = new TextEncoder().encode(payload);
+        const hashBuffer = await globalThis.crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        return hashHex;
     }
 
     /**
@@ -54,7 +57,7 @@ class LedgerService {
         const timestamp = new Date().toISOString();
 
         // 2. Calculate Authoritative Hash
-        const hash = this.calculateHash(index, prevHash, timestamp, eventData);
+        const hash = await this.calculateHash(index, prevHash, timestamp, eventData);
 
         const newBlock = {
             uid: eventData.userId, // Indexing Key
@@ -126,7 +129,7 @@ class LedgerService {
             }
 
             // Recompute Hash
-            const computedHash = this.calculateHash(block.index, block.prevHash, block.timestamp, block.data);
+            const computedHash = await this.calculateHash(block.index, block.prevHash, block.timestamp, block.data);
             if (computedHash !== block.hash) {
                 console.error(`CHAIN BROKEN: Data tampering detected at ${block.index}`);
                 return false;

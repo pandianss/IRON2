@@ -64,17 +64,23 @@ export const EngineService = {
             // We simulate the next state to see if it's legal.
             const projectedState = StateProjector.reduce([{ timestamp: event.timestamp, event }], currentState);
 
+            // RIGHTS PILLAR: Non-Negotiable
+            // If this throws, execution HALTS. We do not catch and proceed.
             RightsGate.enforceTransition(currentState, projectedState);
             // Optionally enforce action-specific rights
             // RightsGate.enforceAction(eventType, currentState);
 
             // 4. Narrative Generation (The Voice)
-            // "No Narrative = No Transition"
+            // NARRATIVE PILLAR: "No Narrative = No Transition"
             const narrative = Voice.generate(event, {
                 newState: projectedState.engagement_state,
                 days: projectedState.streak.count,
                 actorName: currentState.profile?.name || "User"
             });
+
+            if (!narrative || !narrative.id || !narrative.text) {
+                throw new Error("VIOLATION: Narrative Generation Failed. Transition rejected.");
+            }
             event.meta.narrativeId = narrative.id;
 
             // 5. COMMIT TO LEDGER (The Point of No Return)
