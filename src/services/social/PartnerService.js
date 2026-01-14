@@ -1,6 +1,7 @@
 
 import { DbService, db } from '../../infrastructure/firebase';
 import { runTransaction, doc, collection, query, where, getDocs } from 'firebase/firestore';
+import { EngineService } from '../engine/EngineService'; // Import Engine
 
 export const PartnerService = {
     /**
@@ -35,7 +36,7 @@ export const PartnerService = {
 
         code = code.toUpperCase();
 
-        return await runTransaction(db, async (transaction) => {
+        const result = await runTransaction(db, async (transaction) => {
             // 1. Validate Code
             const inviteRef = doc(db, 'invites', code);
             const inviteSnap = await transaction.get(inviteRef);
@@ -60,6 +61,7 @@ export const PartnerService = {
 
             const senderSnap = await transaction.get(senderRef);
             const acceptorSnap = await transaction.get(acceptorRef);
+
 
             if (!senderSnap.exists() || !acceptorSnap.exists()) {
                 throw new Error("User profile not found.");
@@ -88,34 +90,43 @@ export const PartnerService = {
 
             transaction.set(pactRef, newPact);
 
-            // 4. Update Users (Denormalize)
-            transaction.update(senderRef, {
-                partner: {
-                    uid: acceptor.uid,
-                    name: acceptor.displayName,
-                    pactId: pactId,
-                    joinedAt: new Date().toISOString()
-                }
-            });
-
-            transaction.update(acceptorRef, {
-                partner: {
-                    uid: sender.uid,
-                    name: sender.displayName,
-                    pactId: pactId,
-                    joinedAt: new Date().toISOString()
-                }
-            });
-
-            // 5. Invalidate Invite
+            // 4. Invalidate Invite
             transaction.update(inviteRef, {
                 status: 'used',
                 usedBy: acceptingUser.uid,
                 usedAt: new Date().toISOString()
             });
 
-            return { success: true, pactId, partnerName: sender.displayName };
+            // 5. ATOMIC SOVEREIGN UPDATE
+            // We now update the Ledger and User State WITHIN the same transaction.
+            // This guarantees that a Pact cannot exist without corresponding Ledger entries.
+
+            // Update Sender
+            await EngineService.processAction(inviteData.senderUid, {
+                type: 'PARTNER_LINKED',
+                partnerUid: acceptingUser.uid,
+                partnerName: acceptingUser.displayName || 'Partner',
+                pactId: pactId
+            }, transaction);
+
+            // Update Acceptor
+            await EngineService.processAction(acceptingUser.uid, {
+                type: 'PARTNER_LINKED',
+                partnerUid: inviteData.senderUid,
+                partnerName: sender.displayName || 'Partner',
+                pactId: pactId
+            }, transaction);
+
+            return {
+                success: true,
+                pactId,
+                partnerName: sender.displayName,
+                sender,
+                acceptor
+            };
         });
+
+        return result;
     },
 
     /**
@@ -137,15 +148,19 @@ export const PartnerService = {
                 dissolvedAt: new Date().toISOString()
             });
 
-            // 2. Clear Partner from both Users
-            // Use deleteField() if possible, but null is fine for now if structure allows
-            // We use 'null' or delete the field. Let's use deleteField approach conceptually by setting to null for now.
-            // Actually, firebase update with deleteField() is cleaner, but let's stick to null for simpler prop checks in UI.
+            // 2. ATOMIC SOVEREIGN UPDATE
 
-            transaction.update(userRef, { partner: null });
-            transaction.update(partnerRef, { partner: null });
+            // Update Dissolver
+            await EngineService.processAction(currentUser.uid, {
+                type: 'PARTNER_DISSOLVED'
+            }, transaction);
+
+            // Update Partner
+            await EngineService.processAction(partnerUid, {
+                type: 'PARTNER_DISSOLVED'
+            }, transaction);
 
             return { success: true };
         });
-    }
+    },
 };

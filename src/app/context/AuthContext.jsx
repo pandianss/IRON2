@@ -4,6 +4,7 @@ import {
     AuthService, DbService
 } from '../../infrastructure/firebase';
 import { db, auth, googleProvider } from '../../infrastructure/firebase';
+import { EngineService } from '../../services/engine/EngineService';
 import { AuditService } from '../../infrastructure/audit/audit';
 import { useUI } from './UIContext';
 
@@ -66,16 +67,21 @@ export const AuthProvider = ({ children, appMode }) => {
     }, [appMode]);
 
 
-    // Helper to sync user with DB
+    // Helper to sync user with DB (Sovereign Mode)
     const syncUserFromAuth = async (authUser) => {
         if (!authUser) return;
+
+        // Read-only check for cache
         let dbUser = await DbService.getDoc('users', authUser.uid);
 
         if (dbUser) {
             // Auto-promote Super Admin on sync
             if (authUser.email === 'sspandian.here@gmail.com' && dbUser.role !== 'super_admin') {
-                dbUser.role = 'super_admin';
-                await DbService.updateDoc('users', authUser.uid, { role: 'super_admin' });
+                await EngineService.processAction(authUser.uid, {
+                    type: 'USER_UPDATED',
+                    role: 'super_admin'
+                });
+                dbUser.role = 'super_admin'; // Optimistic update
             }
 
             // Force onboarding complete for super admin
@@ -87,27 +93,26 @@ export const AuthProvider = ({ children, appMode }) => {
             setCurrentUser(dbUser);
             setUserType(dbUser.role);
         } else {
+            // GENESIS EVENT
             // Check for pre-existing member record (from Partner Onboarding)
+            // This reads to find if we need to merge.
             let existingMember = null;
             if (authUser.email) {
                 const results = await DbService.queryDocs('users', [where('email', '==', authUser.email)]);
-                // Filter out any that ironically assume the same ID (shouldn't happen here but safe)
                 if (results.length > 0) existingMember = results.find(u => u.id !== authUser.uid) || results[0];
             }
 
             const role = (authUser.email === 'sspandian.here@gmail.com') ? 'super_admin' : 'user';
 
-            const newUser = {
-                uid: authUser.uid,
+            const payload = {
+                type: 'USER_CREATED',
                 email: authUser.email || authUser.phoneNumber,
                 displayName: authUser.displayName || existingMember?.name || 'User',
                 role,
-                joinedAt: new Date().toISOString(),
                 status: existingMember?.status || 'Active',
-                xp: 0,
-                level: 1,
-                rank: 'IRON IV',
-                // Validation Data from Partner
+                // Genesis Defaults handled by SnapshotGenerator/EngineSchema? 
+                // We pass them to ensure Profile is rich.
+                jimId: existingMember?.gymId || null, // Typo from original? gymId
                 gymId: existingMember?.gymId || null,
                 plan: existingMember?.plan || null,
                 expiry: existingMember?.expiry || null,
@@ -115,11 +120,14 @@ export const AuthProvider = ({ children, appMode }) => {
                 medical: existingMember?.medical || null
             };
 
-            await DbService.setDoc('users', authUser.uid, newUser);
-            setCurrentUser(newUser);
+            // SOVEREIGN GENESIS
+            const newUserState = await EngineService.processAction(authUser.uid, payload);
+
+            setCurrentUser(newUserState);
             setUserType(role);
 
-            // Cleanup old partial doc
+            // Cleanup old partial doc - This is a SYSTEM interaction, maybe Engine should handle? 
+            // For now, removing stale doc is okay here as it's legacy cleanup.
             if (existingMember && existingMember.id !== authUser.uid) {
                 console.log("Merging pre-onboarded member doc:", existingMember.id);
                 try {
@@ -142,30 +150,16 @@ export const AuthProvider = ({ children, appMode }) => {
         } catch (error) {
             setIsLoading(false);
             console.error("Login Error Details:", error);
-
             let msg = "Login failed.";
-
             if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-credential') {
-                // 1. Differentiate "Not Found" vs "Wrong Password"
                 try {
                     const exists = await AuthService.checkEmailExists(email);
-                    if (!exists) {
-                        msg = "Account currently not registered. Please Join.";
-                    } else {
-                        msg = "Incorrect password.";
-                    }
-                } catch (e) {
-                    // If check fails (security rules?), fallback to generic
-                    msg = "Invalid credentials. If you are new, please Join.";
-                }
-            } else if (error.code === 'auth/wrong-password') {
-                msg = "Incorrect password.";
-            } else if (error.code === 'auth/too-many-requests') {
-                msg = "Too many attempts. Reset password?";
-            } else {
-                msg = `Login failed(${error.code || 'Unknown'}).`;
-            }
-            console.log("DEBUG TOAST MSG:", msg);
+                    if (!exists) msg = "Account currently not registered. Please Join.";
+                    else msg = "Incorrect password.";
+                } catch (e) { msg = "Invalid credentials. If you are new, please Join."; }
+            } else if (error.code === 'auth/wrong-password') msg = "Incorrect password.";
+            else if (error.code === 'auth/too-many-requests') msg = "Too many attempts. Reset password?";
+            else msg = `Login failed(${error.code || 'Unknown'}).`;
             showToast(msg);
             return false;
         }
@@ -191,31 +185,21 @@ export const AuthProvider = ({ children, appMode }) => {
             let role = userData.role || 'enthusiast';
             if (email === 'sspandian.here@gmail.com') role = 'super_admin';
 
-            const status = role === 'gym_owner' ? 'Pending' : 'Active';
-            // We set the doc HERE before the listener fires ideally, but listener might fire fast.
-            // Actually listener fires on creation.
-            // To ensure data consistency, we can rely on syncUserFromAuth dealing with "missing doc" 
-            // OR we set it here. 
-            // Let's set it here to be sure we have the custom fields (userData)
-
-            const newUser = {
-                uid: authUser.uid,
+            const payload = {
+                type: 'USER_CREATED',
                 email: authUser.email,
                 ...userData,
                 role,
-                joinedAt: new Date().toISOString(),
-                status,
-                xp: 0,
-                level: 1,
-                rank: 'IRON IV'
+                displayName: userData.displayName || 'User' // Ensure display name
             };
 
-            await DbService.setDoc('users', authUser.uid, newUser);
-            // The listener will pick this up or we set explicit
-            setCurrentUser(newUser);
+            // SOVEREIGN GENESIS
+            const newUserState = await EngineService.processAction(authUser.uid, payload);
+
+            setCurrentUser(newUserState);
             setUserType(role);
 
-            AuditService.log('USER_REGISTER', newUser, { id: newUser.uid }, { role });
+            AuditService.log('USER_REGISTER', newUserState, { id: newUserState.uid }, { role }); // Log optional? Engine logs it.
             showToast("Welcome to IRON.");
         } catch (error) {
             setIsLoading(false);
@@ -231,18 +215,18 @@ export const AuthProvider = ({ children, appMode }) => {
             const pendingProof = localStorage.getItem('iron_pending_proof');
             if (pendingProof && currentUser) {
                 console.log("Logout with pending proof - S applying penalty.");
-                const penalty = 100;
-                const newXp = Math.max(0, (currentUser.xp || 0) - penalty);
 
-                // Penalize immediately before auth cut
-                await DbService.updateDoc('users', currentUser.uid, { xp: newXp });
+                // SOVEREIGN PUNISHMENT
+                // We submit a 'CONTRACT_BREACH' or 'LOG_ACTIVITY' with negative XP?
+                // Let's use LOG_ACTIVITY for generic XP loss for now, or MISSED_DAY?
+                // LOG_ACTIVITY is safer.
+                await EngineService.processAction(currentUser.uid, {
+                    type: 'LOG_ACTIVITY',
+                    activityType: 'BREACH_PENALTY',
+                    xp: -100
+                });
 
-                // Log Breach (Optional but good for history)
-                // We'll skip complex logging to avoid race conditions with auth cutoff, 
-                // just rely on the toast and XP calc.
-                showToast(`CONTRACT BREACH: -${penalty} XP`, 'hero'); // Show prominent error
-
-                // Clear the flag so it doesn't persist
+                showToast(`CONTRACT BREACH: -100 XP`, 'hero');
                 localStorage.removeItem('iron_pending_proof');
             }
 
@@ -259,10 +243,15 @@ export const AuthProvider = ({ children, appMode }) => {
 
     const updateUser = async (uid, data) => {
         try {
-            await DbService.updateDoc('users', uid, data);
-            setCurrentUser(prev => ({ ...prev, ...data }));
+            // SOVEREIGN UPDATE
+            const newState = await EngineService.processAction(uid, {
+                type: 'USER_UPDATED',
+                ...data
+            });
+
+            setCurrentUser(newState);
             if (data.role) setUserType(data.role);
-            AuditService.log('USER_UPDATE', { uid, ...currentUser }, { id: uid }, { updates: data });
+            AuditService.log('USER_UPDATE', { uid, ...newState }, { id: uid }, { updates: data });
             return { success: true };
         } catch (error) {
             console.error("Update User Failed", error);

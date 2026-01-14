@@ -4,6 +4,7 @@ import PropTypes from 'prop-types';
 import {
     DbService, AuthService
 } from '../../infrastructure/firebase';
+import { EngineService } from '../../services/engine/EngineService'; // Import EngineService
 import { useUI } from './UIContext';
 import { useAuth } from './AuthContext';
 import { orderBy } from 'firebase/firestore';
@@ -169,12 +170,27 @@ export const DataProvider = ({ children, appMode }) => {
             const newGym = await DbService.addDoc('gyms', { ...gymData, status: 'Pending' });
             setGyms(prev => [...prev, newGym]);
 
-            const newOwner = await DbService.addDoc('users', {
+            // SOVEREIGN: Create Gym Owner via Engine
+            const newOwnerId = 'user_' + Date.now() + '_owner';
+
+            await EngineService.processAction(newOwnerId, {
+                type: 'USER_CREATED',
+                id: newOwnerId,
                 ...ownerData,
                 gymId: newGym.id,
                 role: 'gym_owner',
                 status: 'Pending'
             });
+
+            // Optimistic Update
+            const newOwner = {
+                id: newOwnerId,
+                uid: newOwnerId,
+                ...ownerData,
+                gymId: newGym.id,
+                role: 'gym_owner',
+                status: 'Pending'
+            };
             setUsers(prev => [...prev, newOwner]);
 
             // If current user is the requester, update them
@@ -236,26 +252,61 @@ export const DataProvider = ({ children, appMode }) => {
     };
 
     const addMember = async (memberData) => {
+        // SOVEREIGN: Create User via Engine
+        // We generate a deterministic or random ID for the new user
+        const newUserId = 'user_' + Date.now() + '_' + Math.floor(Math.random() * 1000);
         let status = 'Pending';
-        const newMember = await DbService.addDoc('users', { ...memberData, status, joinedAt: new Date().toISOString() });
-        setUsers(prev => [...prev, newMember]);
 
-        const notification = {
-            type: 'alert',
-            message: 'New Request: ' + memberData.name,
-            time: 'Just now',
-            read: false,
-            gymId: memberData.gymId,
-            payload: { memberId: newMember.id, name: memberData.name }
-        };
-        await DbService.addDoc('notifications', notification);
-        setNotifications(prev => [notification, ...prev]);
-        showToast("Member request submitted.");
+        try {
+            await EngineService.processAction(newUserId, {
+                type: 'USER_CREATED',
+                id: newUserId, // Pass ID in payload too for side-effect
+                ...memberData,
+                status,
+                joinedAt: new Date().toISOString()
+                // Role? Default to 'member'?
+            });
+
+            // Local State Update (Optimistic)
+            // We reconstruct the object as it would be projected
+            const newMember = {
+                id: newUserId, // DbService uses 'id', Firestore uses 'uid' usually. Let's normalize to id/uid. 
+                uid: newUserId,
+                ...memberData,
+                status,
+                joinedAt: new Date().toISOString()
+            };
+            setUsers(prev => [...prev, newMember]);
+
+            const notification = {
+                type: 'alert',
+                message: 'New Request: ' + memberData.name,
+                time: 'Just now',
+                read: false,
+                gymId: memberData.gymId,
+                payload: { memberId: newUserId, name: memberData.name }
+            };
+            await DbService.addDoc('notifications', notification);
+            setNotifications(prev => [notification, ...prev]);
+            showToast("Member request submitted.");
+
+        } catch (e) {
+            console.error(e);
+            showToast("Failed to add member.");
+        }
     };
 
     const approveMember = async (memberId) => {
         try {
-            await DbService.updateDoc('users', memberId, { status: 'Active', rank: 'IRON I' });
+            // SOVEREIGN: Update User Status
+            // Changing status to 'Active' is a significant lifecycle event.
+            await EngineService.processAction(memberId, {
+                type: 'USER_UPDATED',
+                status: 'Active',
+                rank: 'IRON I'
+            });
+
+            // Local Update
             setUsers(prev => prev.map(u => u.id === memberId ? { ...u, status: 'Active', rank: 'IRON I' } : u));
             showToast("Member Approved.");
 
@@ -275,7 +326,11 @@ export const DataProvider = ({ children, appMode }) => {
 
     const rejectMember = async (memberId) => {
         try {
-            await DbService.updateDoc('users', memberId, { status: 'Rejected' });
+            // SOVEREIGN
+            await EngineService.processAction(memberId, {
+                type: 'USER_UPDATED',
+                status: 'Rejected'
+            });
             setUsers(prev => prev.map(u => u.id === memberId ? { ...u, status: 'Rejected' } : u));
             showToast("Member Rejected.");
         } catch (error) {
@@ -287,19 +342,20 @@ export const DataProvider = ({ children, appMode }) => {
         const member = users.find(u => u.id === memberId);
         if (!member) return;
         const newStatus = member.status === 'Banned' ? 'Active' : 'Banned';
-        await DbService.updateDoc('users', memberId, { status: newStatus });
+
+        // SOVEREIGN
+        await EngineService.processAction(memberId, {
+            type: 'USER_UPDATED',
+            status: newStatus
+        });
+
         setUsers(prev => prev.map(u => u.id === memberId ? { ...u, status: newStatus } : u));
         showToast('Member ' + newStatus);
     };
 
     const logActivity = async (activityData) => {
-        if (!DbService) {
-            console.error("logActivity aborted: DbService is undefined");
-            showToast("Error: Service unavailable");
-            return;
-        }
+        if (!currentUser) return;
 
-        // Destructure robust data
         // Destructure robust data with absolute defaults
         const {
             activityType = "Log",
@@ -309,10 +365,29 @@ export const DataProvider = ({ children, appMode }) => {
             mediaType = null,
             description = null,
             privacy = 'public',
-            audioMode = null
+            audioMode = null,
+            xp = 50
         } = activityData;
 
+        // SOVEREIGN: Submit to Engine
+        // Side-effect will create the 'feed_activities' doc.
+        const newState = await EngineService.processAction(currentUser.uid, {
+            type: 'LOG_ACTIVITY',
+            activityType,
+            description,
+            xp,
+            // Payload for side-effect creation
+            location,
+            coordinates,
+            mediaUrl,
+            mediaType,
+            privacy,
+            audioMode
+        });
+
+        // Optimistic Local Feed Update (Approximate)
         const feedItem = {
+            id: 'temp-' + Date.now(), // Temp ID until refresh
             activityType,
             location,
             coordinates,
@@ -321,31 +396,21 @@ export const DataProvider = ({ children, appMode }) => {
             description,
             visibility: privacy,
             audioMode,
-            userId: currentUser?.uid,
-            userName: currentUser?.displayName || 'Unknown',
-            userPhoto: currentUser?.photoURL || null,
+            userId: currentUser.uid,
+            userName: currentUser.displayName || 'Unknown',
+            userPhoto: currentUser.photoURL || null,
             date: new Date().toISOString(),
             likes: 0,
             isVerified: false,
             verifications: 0
         };
 
-        const newFeed = await DbService.addDoc('feed_activities', feedItem);
-
         // Only add to local feed state if public or if we implement a 'my feed' filter
-        // For now, adding it. UI should filter if needed.
-        setFeedActivities(prev => [newFeed, ...prev]);
+        setFeedActivities(prev => [feedItem, ...prev]);
 
-        if (currentUser) {
-            const xpGain = activityData.xp || 50;
-            const newXp = (currentUser.xp || 0) + xpGain;
-            const newLevel = Math.floor(Math.sqrt(newXp) * 0.5) || 1;
-            await DbService.updateDoc('users', currentUser.id, { xp: newXp, level: newLevel, lastActivityDate: new Date().toISOString() });
-            setCurrentUser(prev => ({ ...prev, xp: newXp, level: newLevel }));
-
-            // Clear Rust
-            localStorage.setItem('iron_last_activity', new Date().toISOString());
-        }
+        // State Update derived from Engine Response
+        setCurrentUser(newState);
+        localStorage.setItem('iron_last_activity', new Date().toISOString());
         showToast("Activity Logged!");
     };
 
@@ -528,7 +593,13 @@ export const DataProvider = ({ children, appMode }) => {
 
     const verifyActivity = async (activityId) => {
         try {
-            await DbService.updateDoc('feed_activities', activityId, { isVerified: true });
+            // SOVEREIGN: Verify via Engine
+            await EngineService.processAction(currentUser.uid, {
+                type: 'ACTIVITY_VERIFIED',
+                activityId,
+                status: 'Verified',
+                verifierId: currentUser.uid
+            });
 
             // Update local state
             setFeedActivities(prev => prev.map(act =>

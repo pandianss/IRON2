@@ -62,23 +62,98 @@ export class SnapshotGenerator {
 
             case EVENT_TYPES.APPEAL_FILED:
                 state.civil.ritual_history.appeals_filed++;
+                this.handleAppealFiled(state, event);
                 break;
-
             case EVENT_TYPES.PARDON_GRANTED:
-                if (payload.restore_state) {
-                    state.engagement_state = payload.restore_state;
-                }
-                state.civil.ritual_history.pardons_received++;
+                this.handlePardonGranted(state, event);
                 break;
-
             case EVENT_TYPES.WITNESS_VOUCH:
-                state.social.social_capital += 1;
-                state.civil.service_history.witness_events++;
+                this.handleWitnessVouch(state, event);
+                break;
+            case EVENT_TYPES.PARTNER_LINKED:
+                this.handlePartnerLinked(state, event);
+                break;
+            case EVENT_TYPES.PARTNER_DISSOLVED:
+                this.handlePartnerDissolved(state, event);
+                break;
+            case EVENT_TYPES.USER_CREATED:
+                this.handleUserCreated(state, event);
+                break;
+            case EVENT_TYPES.USER_UPDATED:
+                this.handleUserUpdated(state, event);
+                break;
+            case EVENT_TYPES.LOG_ACTIVITY:
+                this.handleLogActivity(state, event);
                 break;
         }
 
         // Global Update
         state.lifecycle.total_actions++;
+        return state;
+    }
+
+    /**
+     * PARTNER LINKED
+     */
+    handlePartnerLinked(state, event) {
+        // payload: { partnerUid, partnerName, pactId }
+        state.social.partner = {
+            uid: event.payload.partnerUid,
+            name: event.payload.partnerName,
+            pactId: event.payload.pactId,
+            joinedAt: event.timestamp
+        };
+        // Social Capital boost?
+        state.social.social_capital += 10;
+    }
+
+    /**
+     * PARTNER DISSOLVED
+     */
+    handlePartnerDissolved(state, event) {
+        state.social.partner = null;
+        // Decay?
+        state.social.social_capital = Math.max(0, state.social.social_capital - 5);
+    }
+
+    /**
+     * GENESIS: Initialize User State from Event
+     */
+    handleUserCreated(state, event) {
+        // payload contains { email, displayName, role, ... }
+        state.profile = {
+            ...state.profile,
+            ...event.payload
+        };
+        // Reset or Init Stats if forced?
+        // Usually creation implies fresh state, which INITIAL_USER_STATE provides.
+        // So we just overlay payload data.
+    }
+
+    /**
+     * PROFILE UPDATE
+     */
+    handleUserUpdated(state, event) {
+        // payload contains updates
+        state.profile = {
+            ...state.profile,
+            ...event.payload
+        };
+    }
+
+    /**
+     * ACTIVITY LOGGED -> XP Gain
+     */
+    handleLogActivity(state, event) {
+        const { xp = 0, activityType } = event.payload;
+
+        // Update XP/Level
+        state.xp = (state.xp || 0) + xp;
+        // Simple Level Logic: Level = 1 + floor(XP / 1000)
+        state.level = 1 + Math.floor(state.xp / 1000);
+
+        // Update Activity Timestamp
+        state.last_activity = event.timestamp;
     }
 
     /**
@@ -95,9 +170,6 @@ export class SnapshotGenerator {
             if (state.today.status === 'RESTED' && status === 'COMPLETED') {
                 state.today.status = 'COMPLETED';
                 state.last_checkin = event.timestamp;
-                // Streak logic: If it was Rested, streak might not have incremented? 
-                // Iron Logic: Rest consumes freeze token or maintains streak? 
-                // For MVP: We assume Rest maintains streak. So Upgrade just changes status.
                 return;
             }
 
@@ -117,9 +189,6 @@ export class SnapshotGenerator {
                 // Gap detected -> Reset
                 state.streak.current = 1;
                 state.engagement_state = RISK_STATES.RECOVERING;
-            } else {
-                // Time travel (negative diff)? strict ordering assumed.
-                // If diff < 0, ignore or log error?
             }
         } else {
             // First check-in ever
@@ -139,6 +208,57 @@ export class SnapshotGenerator {
         // Update Daily Sandbox
         state.today.status = status;
         state.today.primary_action_done = true;
+    }
+
+    /**
+     * Logic for MISSED_DAY event
+     */
+    handleMissedDay(state, event) {
+        state.lifecycle.days_missed++;
+        // If explicit missed day event, break streak
+        state.engagement_state = RISK_STATES.STREAK_FRACTURED; // Or similar
+        state.streak.current = 0;
+    }
+
+    /**
+     * Logic for FRACTURE event
+     */
+    handleFracture(state, event) {
+        state.engagement_state = RISK_STATES.STREAK_FRACTURED;
+        state.streak.current = 0;
+    }
+
+    /**
+     * Logic for MOMENTUM_GAINED event
+     */
+    handleMomentumGained(state, event) {
+        state.engagement_state = RISK_STATES.ENGAGED;
+    }
+
+    /**
+     * Logic for APPEAL_FILED event
+     */
+    handleAppealFiled(state, event) {
+        state.civil.ritual_history.appeals_filed++;
+    }
+
+    /**
+     * Logic for PARDON_GRANTED event
+     */
+    handlePardonGranted(state, event) {
+        const { payload } = event;
+        if (payload.restore_state) {
+            state.engagement_state = payload.restore_state;
+        }
+        state.civil.ritual_history.pardons_received++;
+    }
+
+    /**
+     * Logic for WITNESS_VOUCH event
+     */
+    handleWitnessVouch(state, event) {
+        state.social.social_capital += 1;
+        state.civil.service_history.witness_events++;
     }
 }
 

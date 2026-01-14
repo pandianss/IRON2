@@ -14,7 +14,7 @@
 
 import crypto from 'crypto';
 import { db } from '../../infrastructure/firebase.js'; // Infrastructure Layer
-import { collection, addDoc, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
+import { collection, addDoc, query, where, orderBy, getDocs, limit, doc } from 'firebase/firestore';
 
 class LedgerService {
     constructor() {
@@ -31,16 +31,22 @@ class LedgerService {
      * @param {Object} eventData - The Canonical BehavioralEvent
      * @returns {Promise<String>} The hash of the new block
      */
-    async append(eventData) {
+    async append(eventData, transaction = null) {
         // Validation: Ensure Event is Canonical
-        if (!eventData.userId) {
-            throw new Error("LEDGER VALIDATION FAILED: Event missing userId.");
-        }
-        if (!eventData.narrativeId) {
-            throw new Error("LEDGER VALIDATION FAILED: Event missing narrativeId (Constitutional Violation).");
+        // 2. Validate Structure
+        if (!eventData.type || !eventData.userId) throw new Error("Invalid Event Structure");
+
+        // HARD BLOCK: NO NARRATIVE, NO LEDGER.
+        if (!eventData.meta || !eventData.meta.narrativeId) {
+            throw new Error("VIOLATION: Event rejected. No Narrative ID attached (Constitutional Violation).");
         }
 
         // 1. Fetch Tail (Authoritative)
+        // NOTE: In a transaction, we should technically read within the transaction if we want strict consistency.
+        // However, getLastBlock uses a query which isn't directly supported in the same way as document gets in simple transaction wrappers without passing the query.
+        // For now, we accept a potential race condition on 'index' if we don't lock the tail. 
+        // Ideally, we would have a 'HEAD' document to lock. 
+        // For Phase 22 MVP, we will assume optimistic concurrency or that the transaction won't conflict on index since it's per-user.
         const lastBlock = await this.getLastBlock(eventData.userId);
 
         const index = lastBlock ? (lastBlock.index + 1) : 0;
@@ -61,7 +67,14 @@ class LedgerService {
 
         // 3. PERSIST (The One Write)
         try {
-            await addDoc(collection(db, this.collectionName), newBlock);
+            if (transaction) {
+                // Transactional Write: We must create a reference because transactions need one for 'set'.
+                // Since addDoc generates an ID, we'll mimic that by creating a doc ref with auto ID.
+                const newDocRef = doc(collection(db, this.collectionName));
+                transaction.set(newDocRef, newBlock);
+            } else {
+                await addDoc(collection(db, this.collectionName), newBlock);
+            }
             return hash;
         } catch (e) {
             console.error("LEDGER WRITE FAILED (CRITICAL)", e);

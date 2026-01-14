@@ -1,14 +1,10 @@
-
-import { DbService, db, StorageService } from '../../infrastructure/firebase';
-import { runTransaction, doc, updateDoc, arrayUnion, arrayRemove, increment } from 'firebase/firestore';
+import { StorageService } from '../../infrastructure/firebase'; // Keep Storage
+import { EngineService } from '../engine/EngineService';
 
 export const FeedService = {
     /**
      * Create a new post in the feed.
-     * @param {object} user - The user creating the post.
-     * @param {string} content - The text content.
-     * @param {string} type - 'check_in', 'workout', 'status', etc.
-     * @param {File} imageFile - Optional image file to upload.
+     * SOVEREIGN: Routes through Engine.
      */
     createPost: async (user, content, type = 'status', imageFile = null) => {
         if (!user) throw new Error("User required to post.");
@@ -16,7 +12,7 @@ export const FeedService = {
 
         let mediaUrl = null;
 
-        // 1. Upload Image if present
+        // 1. Upload Image (Side Effect allowed here as it's Storage, not State)
         if (imageFile) {
             try {
                 mediaUrl = await StorageService.uploadFile(imageFile);
@@ -26,45 +22,24 @@ export const FeedService = {
             }
         }
 
-        // 2. Create Post Document
-        const postData = {
-            userId: user.uid,
-            userName: user.displayName,
-            userPhoto: user.photoURL || null,
-            type,
+        // 2. Submit Event to Engine
+        return await EngineService.processAction(user.uid, {
+            type: 'POST_CREATED',
             content,
-            mediaUrl,
-            likes: 0,
-            likedBy: [],
-            commentsCount: 0,
-            location: 'Iron Gym', // Default for now
-            date: new Date().toISOString() // This maps to 'date' in the schema used by useFeed
-        };
-
-        return await DbService.addDoc('feed', postData);
+            postType: type, // differentiate from Action Type
+            mediaUrl
+        });
     },
 
     /**
      * Toggle like on a post.
-     * @param {string} postId 
-     * @param {string} userId 
-     * @param {boolean} currentLikeStatus - If true, we unlike. If false, we like.
+     * SOVEREIGN: Routes through Engine.
      */
     toggleLike: async (postId, userId, currentLikeStatus) => {
-        const postRef = doc(db, 'feed', postId);
-
-        if (currentLikeStatus) {
-            // Unlike
-            await updateDoc(postRef, {
-                likes: increment(-1),
-                likedBy: arrayRemove(userId)
-            });
-        } else {
-            // Like
-            await updateDoc(postRef, {
-                likes: increment(1),
-                likedBy: arrayUnion(userId)
-            });
-        }
+        return await EngineService.processAction(userId, {
+            type: 'POST_LIKED',
+            postId,
+            action: currentLikeStatus ? 'UNLIKE' : 'LIKE'
+        });
     }
 };
