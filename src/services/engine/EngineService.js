@@ -23,49 +23,58 @@ export const EngineService = {
      * The Single Entry Point for User Actions.
      * Now in Sovereign Ledger Mode.
      * @param {string} uid 
-     * @param {object} action { type: 'CHECK_IN', ... }
+     * @param {object} action { type: 'CHECK_IN', status: 'trained' | 'rest' }
      */
     processAction: async (uid, action) => {
         try {
             // 1. Fetch Current State (Cache)
             // We use the cache for speed, but rights checks depend on it.
-            // Ideally, we'd verify hash, but for v1.0, trusting cache is acceptable if Ledger is write-path.
             const userStateRef = doc(db, 'user_state', uid);
             const stateDoc = await getDoc(userStateRef);
 
             let currentState = stateDoc.exists() ? stateDoc.data() : INITIAL_USER_STATE(uid);
 
             // 2. Construct Canonical Event (The Atom)
+            // Map Action to Event Type
+            let eventType = action.type; // Default
+            if (action.type === 'CHECK_IN') eventType = 'CHECK_IN';
+
+            const eventPayload = {
+                status: action.status || 'COMPLETED', // Default to COMPLETED (Trained) if not set
+                ...action
+            };
+
             const event = createBehaviorEvent({
                 uid,
-                type: action.type,
-                actor: { type: ACTOR_TYPES.USER, id: uid }, // Assuming User action for now
-                payload: action,
-                meta: {} // To be filled by detailed logic later?
+                type: eventType,
+                actor: { type: ACTOR_TYPES.USER, id: uid },
+                payload: eventPayload,
+                meta: {}
             });
 
             // 3. Dry Run / Pre-Flight Check (RightsGate)
             // We simulate the next state to see if it's legal.
-            // This requires the SnapshotGenerator to "peek" forward.
-            const projectedState = StateProjector.reduce([{ timestamp: event.timestamp, event }], currentState); // Incremental Apply
+            const projectedState = StateProjector.reduce([{ timestamp: event.timestamp, event }], currentState);
 
             RightsGate.enforceTransition(currentState, projectedState);
+            // Optionally enforce action-specific rights
+            // RightsGate.enforceAction(eventType, currentState);
 
             // 4. Narrative Generation (The Voice)
             // "No Narrative = No Transition"
             const narrative = Voice.generate(event, {
                 newState: projectedState.engagement_state,
-                days: projectedState.streak.count
+                days: projectedState.streak.count,
+                actorName: currentState.profile?.name || "User"
             });
             event.meta.narrativeId = narrative.id;
 
             // 5. COMMIT TO LEDGER (The Point of No Return)
             // This is the only "Write" that matters.
-            const blockHash = await InstitutionalLedger.append(event);
+            await InstitutionalLedger.append(event);
 
             // 6. Update Cache (The Projection)
             // We write the Projected State to Firestore so the UI is fast.
-            // But this is technically just a cache of the Ledger.
             validateState(projectedState); // Ensure schema validity
             await setDoc(userStateRef, projectedState);
 
