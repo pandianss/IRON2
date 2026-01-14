@@ -8,29 +8,20 @@
  * Features:
  * - Hash Chaining (Blockchain-lite) ensures immutability.
  * - Append-Only semantics.
- * - Integrity Verification.
- * - Indexed by User.
+ * - Persistence: Writes to 'ledger_blocks' collection in Firestore.
+ * - Caching: Maintains local chain for speed, but Authority is Remote.
  */
 
 import crypto from 'crypto';
+import { db } from '../../infrastructure/firebase.js'; // Infrastructure Layer
+import { collection, addDoc, query, where, orderBy, getDocs, limit } from 'firebase/firestore';
 
 class LedgerService {
     constructor() {
         this.chain = [];
         this.userIndex = {}; // uid -> [blockIndex]
-        this.genesisBlock();
-    }
-
-    genesisBlock() {
-        const timestamp = new Date().toISOString();
-        const genesisData = { type: 'SYSTEM_EVENT', payload: 'LEDGER_INITIALIZED' };
-        this.chain.push({
-            index: 0,
-            timestamp: timestamp,
-            data: genesisData,
-            prevHash: "0000000000000000000000000000000000000000000000000000000000000000",
-            hash: this.calculateHash(0, "0000000000000000000000000000000000000000000000000000000000000000", timestamp, genesisData)
-        });
+        this.collectionName = 'ledger_blocks';
+        // Note: Real system would async load genesis or latest block here.
     }
 
     calculateHash(index, prevHash, timestamp, data) {
@@ -41,79 +32,86 @@ class LedgerService {
     /**
      * Write an Event to the Ledger.
      * @param {Object} eventData - The Canonical BehavioralEvent
-     * @returns {String} The hash of the new block
+     * @returns {Promise<String>} The hash of the new block
      */
-    append(eventData) {
+    async append(eventData) {
         // Validation: Ensure Event is Canonical
-        // Note: In JS, simple check. 
         if (!eventData.userId) {
             throw new Error("LEDGER VALIDATION FAILED: Event missing userId.");
         }
-        // In a strictly typed system, we would validate instanceOf CanonicalEvent
 
-        const lastBlock = this.chain[this.chain.length - 1];
+        // 1. Fetch Tail (Network Call or Cache)
+        // For simplicity/safety, we fetch the LAST block for this user (or global if single chain).
+        // IRON Design: User-specific hash chains (Micro-chains) are more scalable.
+        const lastBlock = await this.getLastBlock(eventData.userId); // Fetch authoritative tail
 
-        const index = lastBlock.index + 1;
+        const index = lastBlock ? (lastBlock.index + 1) : 0;
+        const prevHash = lastBlock ? lastBlock.hash : "0000000000000000000000000000000000000000000000000000000000000000";
         const timestamp = new Date().toISOString();
-        const prevHash = lastBlock.hash;
 
-        // Calculate Authoritative Hash
+        // 2. Calculate Authoritative Hash
         const hash = this.calculateHash(index, prevHash, timestamp, eventData);
 
         const newBlock = {
+            uid: eventData.userId, // Indexing Key
             index,
             timestamp,
-            data: eventData,
+            data: eventData, // Payload
             prevHash,
             hash
         };
 
-        // COMMIT
-        this.chain.push(newBlock);
+        // 3. PERSIST (The One Write)
+        // We write to Firestore.
+        try {
+            await addDoc(collection(db, this.collectionName), newBlock);
 
-        // UPDATING INDICES
-        if (!this.userIndex[eventData.userId]) {
-            this.userIndex[eventData.userId] = [];
+            // Update local cache
+            this.chain.push(newBlock);
+            if (!this.userIndex[eventData.userId]) this.userIndex[eventData.userId] = [];
+            this.userIndex[eventData.userId].push(index);
+
+            return hash;
+        } catch (e) {
+            console.error("LEDGER WRITE FAILED (CRITICAL)", e);
+            throw new Error("CRITICAL: Ledger Write Failed. State mutation aborted.");
         }
-        this.userIndex[eventData.userId].push(index);
-
-        return hash;
     }
 
-    verify() {
-        for (let i = 1; i < this.chain.length; i++) {
-            const currentBlock = this.chain[i];
-            const prevBlock = this.chain[i - 1];
+    /**
+     * Fetch the authoritative tail of the chain for a user.
+     * @param {String} uid 
+     */
+    async getLastBlock(uid) {
+        // Optimization: Local cache check?
+        // Relying on Firestore for authority.
+        const q = query(
+            collection(db, this.collectionName),
+            where("uid", "==", uid),
+            orderBy("index", "desc"),
+            limit(1)
+        );
 
-            if (currentBlock.prevHash !== prevBlock.hash) {
-                console.error(`[LEDGER] Broken Link at Index ${i}`);
-                return false;
-            }
+        const snapshot = await getDocs(q);
+        if (snapshot.empty) return null;
 
-            const recalculatedHash = this.calculateHash(
-                currentBlock.index,
-                currentBlock.prevHash,
-                currentBlock.timestamp,
-                currentBlock.data
-            );
-
-            if (currentBlock.hash !== recalculatedHash) {
-                console.error(`[LEDGER] Corrupted Data at Index ${i}`);
-                return false;
-            }
-        }
-        return true;
+        return snapshot.docs[0].data();
     }
 
     /**
      * Get the full case file (history) for a user.
-     * Uses the Index for O(1) lookup of range.
      * @param {String} uid 
      */
-    getHistory(uid) {
-        const indices = this.userIndex[uid] || [];
-        return indices.map(idx => {
-            const block = this.chain[idx];
+    async getHistory(uid) {
+        const q = query(
+            collection(db, this.collectionName),
+            where("uid", "==", uid),
+            orderBy("index", "asc")
+        );
+
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => {
+            const block = doc.data();
             return {
                 timestamp: block.timestamp,
                 hash: block.hash,
@@ -121,9 +119,6 @@ class LedgerService {
             };
         });
     }
-
-    // NO UPDATE method.
-    // NO DELETE method.
 }
 
 export const InstitutionalLedger = new LedgerService();

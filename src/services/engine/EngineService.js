@@ -1,83 +1,88 @@
+/**
+ * ENGINE SERVICE (The Pivot)
+ * Authority: Behavioral Engine
+ * 
+ * Migrated to PHASE 22: Sovereign Ledger Integration.
+ * - Writes are now explicit Append-Only events to the ledger.
+ * - State is derived (Cached), not stored as authoritative.
+ */
 
-import { DbService, db } from '../../infrastructure/firebase';
-import { doc, runTransaction } from 'firebase/firestore';
-import { runDailyEngine } from '../../core/behavior/DailyEngine';
-import { INITIAL_USER_STATE, validateState } from '../../core/behavior/EngineSchema';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../../infrastructure/firebase.js';
+
+import { createBehaviorEvent, ACTOR_TYPES } from '../../core/behavior/LogSchema.js';
+import { InstitutionalLedger } from '../../core/ledger/LedgerService.js';
+import { StateProjector } from '../../core/ledger/SnapshotGenerator.js';
+import { RightsGate } from '../../core/governance/RightsGate.js';
+import { Voice } from '../../core/narrative/NarrativeEngine.js';
+import { INITIAL_USER_STATE, validateState } from '../../core/behavior/EngineSchema.js';
 
 export const EngineService = {
+
     /**
-     * The Single Entry Point for User Actions that affect State.
+     * The Single Entry Point for User Actions.
+     * Now in Sovereign Ledger Mode.
      * @param {string} uid 
-     * @param {object} action { type: 'CHECK_IN' | 'WORKOUT', ...payload }
+     * @param {object} action { type: 'CHECK_IN', ... }
      */
     processAction: async (uid, action) => {
-        const userStateRef = doc(db, 'user_state', uid);
-        const logRef = doc(db, 'behavior_logs', `${uid}_${Date.now()}`); // Auto-ordered by TS roughly
+        try {
+            // 1. Fetch Current State (Cache)
+            // We use the cache for speed, but rights checks depend on it.
+            // Ideally, we'd verify hash, but for v1.0, trusting cache is acceptable if Ledger is write-path.
+            const userStateRef = doc(db, 'user_state', uid);
+            const stateDoc = await getDoc(userStateRef);
 
-        return await runTransaction(db, async (transaction) => {
-            // 1. Fetch Current State
-            const stateDoc = await transaction.get(userStateRef);
-            let currentState;
+            let currentState = stateDoc.exists() ? stateDoc.data() : INITIAL_USER_STATE(uid);
 
-            if (!stateDoc.exists()) {
-                currentState = INITIAL_USER_STATE(uid);
-            } else {
-                currentState = stateDoc.data();
-            }
-
-            // 2. Prepare Immutable Event
-            // We strip 'type' from action to avoid duping it if it's already there, 
-            // but for safety we explicitly construct it.
-            const eventPayload = { ...action };
-            delete eventPayload.type; // Type is top-level in event
-
-            const behaviorEvent = {
+            // 2. Construct Canonical Event (The Atom)
+            const event = createBehaviorEvent({
                 uid,
                 type: action.type,
-                payload: eventPayload,
-                server_ts: new Date().toISOString(),
-                schema_version: 1
-            };
+                actor: { type: ACTOR_TYPES.USER, id: uid }, // Assuming User action for now
+                payload: action,
+                meta: {} // To be filled by detailed logic later?
+            });
 
-            // 3. Run Deterministic Engine (Derive State)
-            // Use User's Timezone if available, else UTC (server default)
-            const timeZone = currentState.timezone || 'UTC';
-            const serverDate = new Date().toLocaleDateString('en-CA', { timeZone });
+            // 3. Dry Run / Pre-Flight Check (RightsGate)
+            // We simulate the next state to see if it's legal.
+            // This requires the SnapshotGenerator to "peek" forward.
+            const projectedState = StateProjector.reduce([{ timestamp: event.timestamp, event }], currentState); // Incremental Apply
 
-            const newState = runDailyEngine(currentState, action, serverDate);
+            RightsGate.enforceTransition(currentState, projectedState);
 
-            // 4. Validate Result
-            validateState(newState);
+            // 4. Narrative Generation (The Voice)
+            // "No Narrative = No Transition"
+            const narrative = Voice.generate(event, {
+                newState: projectedState.engagement_state,
+                days: projectedState.streak.count
+            });
+            event.meta.narrativeId = narrative.id;
 
-            // 5. Commit Writes (Log First, Then State)
+            // 5. COMMIT TO LEDGER (The Point of No Return)
+            // This is the only "Write" that matters.
+            const blockHash = await InstitutionalLedger.append(event);
 
-            // A. Write to Immutable Log
-            transaction.set(logRef, behaviorEvent);
+            // 6. Update Cache (The Projection)
+            // We write the Projected State to Firestore so the UI is fast.
+            // But this is technically just a cache of the Ledger.
+            validateState(projectedState); // Ensure schema validity
+            await setDoc(userStateRef, projectedState);
 
-            // B. Update Canonical State
-            transaction.set(userStateRef, newState);
+            return projectedState;
 
-            // C. Legacy/Optimization Logs (Optional: streak_transitions)
-            // We keep this for easy querying without replaying logs
-            if (newState.streak.count !== currentState.streak.count) {
-                const transitionRef = doc(db, 'streak_transitions', `${uid}_${Date.now()}`);
-                transaction.set(transitionRef, {
-                    uid,
-                    from: currentState.streak.count,
-                    to: newState.streak.count,
-                    reason: action.type,
-                    day: serverDate
-                });
-            }
-
-            return newState;
-        });
+        } catch (error) {
+            console.error("[ENGINE FAILURE] Action Aborted:", error);
+            throw error; // Propagate error (Rights Violation, Ledger Failure)
+        }
     },
 
     /**
      * Read-only projection
      */
     getUserState: async (uid) => {
-        return await DbService.getDoc('user_state', uid);
+        const docRef = doc(db, 'user_state', uid);
+        const snapshot = await getDoc(docRef);
+        return snapshot.exists() ? snapshot.data() : null;
     }
 };
