@@ -1,76 +1,80 @@
-import { RETENTION_STATES } from '../governance/RetentionPolicy.js';
-
 /**
  * NARRATIVE ENGINE
- * Authority: Transparency Layer
+ * Authority: Legibility Layer
  * 
- * Translates System State & Physics into Human Language.
- * Ensures the "Right to Explanability".
+ * Replaces simple strings with Evidence Objects.
+ * No State Change is valid without a generated Narrative Object.
  */
 
-export const generateNarrative = (user, previousState) => {
-    const state = user.engagement_state;
-    const streak = user.streak.count;
+// Narrative Object Schema
+// {
+//    id: "uuid",
+//    eventId: "uuid",  // Link to the Physics Event
+//    text: "Review complete. Momentum extended.",
+//    tone: "AUTHORITATIVE", 
+//    ruleId: "Physics.1.1",
+//    forwardPath: "/dashboard/streak" // UI Hint
+// }
 
-    let narrative = {
-        headline: "",
-        explanation: "",
-        action: "",
+export const NARRATIVE_TEMPLATES = {
+    'CHECK_IN': {
+        template: "Review logged. Momentum verified for 24 hours.",
+        rule: "Physics.CheckIn",
         tone: "NEUTRAL"
-    };
-
-    switch (state) {
-        case RETENTION_STATES.ONBOARDING:
-            narrative.headline = "Welcome to IRON.";
-            narrative.explanation = "Your journey begins with a single action.";
-            narrative.action = "Complete your first check-in.";
-            narrative.tone = "WELCOMING";
-            break;
-
-        case RETENTION_STATES.ENGAGED:
-            narrative.headline = "System Active.";
-            narrative.explanation = `You are consistent. Streak: ${streak} days.`;
-            narrative.action = "Keep the momentum.";
-            narrative.tone = "POSITIVE";
-            break;
-
-        case RETENTION_STATES.MOMENTUM:
-            narrative.headline = "Velocity High.";
-            narrative.explanation = "You have achieved self-sustaining momentum.";
-            narrative.action = "Do not break the chain. The cost is high.";
-            narrative.tone = "INTENSE";
-            break;
-
-        case RETENTION_STATES.AT_RISK:
-            narrative.headline = "Warning: Fracture Imminent.";
-            narrative.explanation = previousState.engagement_state === RETENTION_STATES.MOMENTUM
-                ? "You are slipping from peak performance."
-                : "You missed yesterday.";
-            narrative.action = "Check in within 24h to save your streak.";
-            narrative.tone = "URGENT";
-            break;
-
-        case RETENTION_STATES.STREAK_FRACTURED:
-            narrative.headline = "System Lockout.";
-            narrative.explanation = "Entropy has set in. Your streak is frozen.";
-            narrative.action = "Begin Recovery Protocol (3 Days Required).";
-            narrative.tone = "CRITICAL";
-            break;
-
-        case RETENTION_STATES.RECOVERING:
-            narrative.headline = "Rebuilding Trust.";
-            narrative.explanation = "System is verifying your consistency.";
-            narrative.action = "Complete your daily actions to restore full access.";
-            narrative.tone = "SERIOUS";
-            break;
-
-        case RETENTION_STATES.DORMANT:
-            narrative.headline = "Signal Lost.";
-            narrative.explanation = "You have decayed out of the active system.";
-            narrative.action = "Pay Identity Debt to Resurrect.";
-            narrative.tone = "FINAL";
-            break;
+    },
+    'MOMENTUM_LOST': {
+        template: "Silence detected. Momentum State degraded to {newState}.",
+        rule: "Physics.Entropy.1",
+        tone: "WARNING"
+    },
+    'FRACTURE': {
+        template: "Critical failure. Continuity broken after {days} days.",
+        rule: "Physics.Fracture",
+        tone: "CRITICAL",
+        path: "/intervention/fracture"
+    },
+    'WITNESS_VOUCH': {
+        template: "{actor} witnessed your effort. +1 Social Capital minted.",
+        rule: "Social.Vouch",
+        tone: "POSITIVE"
     }
-
-    return narrative;
 };
+
+export class NarrativeEngine {
+
+    /**
+     * Generate a Formal Narrative Object for an Event.
+     * @param {Object} event - Canonical BehavioralEvent
+     * @param {Object} context - { newState: "AT_RISK", days: 12 }
+     */
+    generate(event, context = {}) {
+        const templateData = NARRATIVE_TEMPLATES[event.type] || {
+            template: "System Event Recorded.",
+            rule: "System.General",
+            tone: "NEUTRAL"
+        };
+
+        // Interpolate Text
+        let text = templateData.template;
+        Object.keys(context).forEach(key => {
+            text = text.replace(`{${key}}`, context[key]);
+        });
+
+        // Use Actor Name if available in context, else generic
+        if (context.actorName) {
+            text = text.replace(`{actor}`, context.actorName);
+        }
+
+        return {
+            id: crypto.randomUUID(),
+            eventId: event.eventId, // Link to the Physics Truth
+            text: text,
+            ruleId: templateData.rule,
+            tone: templateData.tone,
+            forwardPath: templateData.path || null,
+            timestamp: new Date().toISOString()
+        };
+    }
+}
+
+export const Voice = new NarrativeEngine();

@@ -9,6 +9,7 @@
  * - Hash Chaining (Blockchain-lite) ensures immutability.
  * - Append-Only semantics.
  * - Integrity Verification.
+ * - Indexed by User.
  */
 
 import crypto from 'crypto';
@@ -16,12 +17,10 @@ import crypto from 'crypto';
 class LedgerService {
     constructor() {
         this.chain = [];
+        this.userIndex = {}; // uid -> [blockIndex]
         this.genesisBlock();
     }
 
-    /**
-     * Create the anchor for the chain.
-     */
     genesisBlock() {
         const timestamp = new Date().toISOString();
         const genesisData = { type: 'SYSTEM_EVENT', payload: 'LEDGER_INITIALIZED' };
@@ -34,9 +33,6 @@ class LedgerService {
         });
     }
 
-    /**
-     * Generate SHA-256 Hash of block contents.
-     */
     calculateHash(index, prevHash, timestamp, data) {
         const payload = index + prevHash + timestamp + JSON.stringify(data);
         return crypto.createHash('sha256').update(payload).digest('hex');
@@ -44,10 +40,17 @@ class LedgerService {
 
     /**
      * Write an Event to the Ledger.
-     * @param {Object} eventData - The standardized BehaviorEvent
+     * @param {Object} eventData - The Canonical BehavioralEvent
      * @returns {String} The hash of the new block
      */
     append(eventData) {
+        // Validation: Ensure Event is Canonical
+        // Note: In JS, simple check. 
+        if (!eventData.userId) {
+            throw new Error("LEDGER VALIDATION FAILED: Event missing userId.");
+        }
+        // In a strictly typed system, we would validate instanceOf CanonicalEvent
+
         const lastBlock = this.chain[this.chain.length - 1];
 
         const index = lastBlock.index + 1;
@@ -65,28 +68,28 @@ class LedgerService {
             hash
         };
 
-        // Commit to Memory (In real impl, write to disk/DB immediately)
+        // COMMIT
         this.chain.push(newBlock);
+
+        // UPDATING INDICES
+        if (!this.userIndex[eventData.userId]) {
+            this.userIndex[eventData.userId] = [];
+        }
+        this.userIndex[eventData.userId].push(index);
 
         return hash;
     }
 
-    /**
-     * Verify the integrity of the entire chain.
-     * @returns {Boolean} True if valid, False if tampered.
-     */
     verify() {
         for (let i = 1; i < this.chain.length; i++) {
             const currentBlock = this.chain[i];
             const prevBlock = this.chain[i - 1];
 
-            // 1. Link Check
             if (currentBlock.prevHash !== prevBlock.hash) {
                 console.error(`[LEDGER] Broken Link at Index ${i}`);
                 return false;
             }
 
-            // 2. Data Integrity Check
             const recalculatedHash = this.calculateHash(
                 currentBlock.index,
                 currentBlock.prevHash,
@@ -104,25 +107,23 @@ class LedgerService {
 
     /**
      * Get the full case file (history) for a user.
+     * Uses the Index for O(1) lookup of range.
      * @param {String} uid 
      */
     getHistory(uid) {
-        return this.chain
-            .filter(block => block.data.uid === uid)
-            .map(block => ({
+        const indices = this.userIndex[uid] || [];
+        return indices.map(idx => {
+            const block = this.chain[idx];
+            return {
                 timestamp: block.timestamp,
                 hash: block.hash,
                 event: block.data
-            }));
+            };
+        });
     }
 
-    /**
-     * debug: Dump chain size
-     */
-    size() {
-        return this.chain.length;
-    }
+    // NO UPDATE method.
+    // NO DELETE method.
 }
 
-// Singleton Instance
 export const InstitutionalLedger = new LedgerService();

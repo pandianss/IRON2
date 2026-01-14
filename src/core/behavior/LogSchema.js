@@ -1,4 +1,3 @@
-
 /**
  * IRON — Immutable Behavior Log Schema
  * 
@@ -6,43 +5,81 @@
  * All state is purely derived from these events.
  */
 
+import crypto from 'crypto'; // Ensure crypto is available for UUID/Hash if needed here, or standard lib
+
 export const EVENT_TYPES = {
-    CHECK_IN: 'CHECK_IN',       // Standard daily action
-    REST: 'REST',               // Valid rest day
-    WORKOUT_LOG: 'WORKOUT_LOG', // Detailed workout data
-    SYSTEM_ADJUSTMENT: 'SYSTEM_ADJUSTMENT', // Admin/System fix
-    MIGRATION: 'MIGRATION',      // Legacy data import
-    WITNESS_WORKOUT: 'WITNESS_WORKOUT', // Partner validation
-    SEND_SUPPORT: 'SEND_SUPPORT', // Partner encouragement (Pact Save)
-    GROUP_CHECKIN: 'GROUP_CHECKIN', // Collective action
-    ENCOURAGED: 'ENCOURAGED',    // Momentum booster / Identity reinforcement
-    GOVERNANCE_ACTION: 'GOVERNANCE_ACTION' // Pardons, Appeals, Bans
+    // PHYSICS EVENTS (The Engine)
+    CHECK_IN: "CHECK_IN",
+    MISSED_DAY: "MISSED_DAY",
+    FRACTURE: "FRACTURE",
+    MOMENTUM_GAINED: "MOMENTUM_GAINED",
+    MOMENTUM_LOST: "MOMENTUM_LOST", // Decay
+
+    // SOCIAL EVENTS (The People)
+    WITNESS_VOUCH: "WITNESS_VOUCH",
+    MENTOR_ASSIGNED: "MENTOR_ASSIGNED",
+    GROUP_CHECKIN: "GROUP_CHECKIN",
+
+    // GOVERNANCE EVENTS (The Institution)
+    GOVERNANCE_ACTION: "GOVERNANCE_ACTION", // General bucket for Rights/Mercy
+    SYSTEM_INTERVENTION: "SYSTEM_INTERVENTION", // Forced state change (e.g. Lockout)
+    APPEAL_FILED: "APPEAL_FILED",
+    APPEAL_DECISION: "APPEAL_DECISION",
+    PARDON_GRANTED: "PARDON_GRANTED"
+};
+
+export const ACTOR_TYPES = {
+    SYSTEM: "SYSTEM",
+    USER: "USER",
+    WITNESS: "WITNESS",
+    COURT: "COURT"
 };
 
 /**
- * Creates a standard Behavior Event object
- * @param {string} uid - User ID
- * @param {string} type - Event Type (from EVENT_TYPES)
- * @param {object} payload - Specific data (e.g. { status: 'trained', workoutId: '...' })
- * @param {object} context - Metadata (app_version, timezone, etc.)
+ * Creates a Canonical Behavioral Event.
+ * This is the ATOM of the Institution.
+ * 
+ * @param {Object} params - The event parameters
+ * @param {String} params.uid - User ID
+ * @param {String} params.type - Event Type (from EVENT_TYPES)
+ * @param {Object} params.actor - { type: ACTOR_TYPES.*, id: string }
+ * @param {Object} params.payload - Schema-bound data specific to the event
+ * @param {Object} params.meta - Traceability metadata { ruleIds, narrativeId, rightsChecked }
+ * @param {String} [params.prevHash] - Optional hash of previous state (for verification)
  */
-export const createBehaviorEvent = (uid, type, payload = {}, context = {}, causal_link_id = null) => {
+export const createBehaviorEvent = ({
+    uid,
+    type,
+    actor,
+    payload = {},
+    meta = {},
+    prevHash = null
+}) => {
     if (!EVENT_TYPES[type]) throw new Error(`Invalid Event Type: ${type}`);
+    if (!actor || !ACTOR_TYPES[actor.type]) throw new Error(`Invalid Actor: ${JSON.stringify(actor)}`);
 
     return {
-        uid,
+        eventId: crypto.randomUUID(), // Immutable ID
+        userId: uid,
         type,
-        payload,
-        causal_link_id, // UUID of the event that caused this one
-        context: {
-            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-            timestamp: new Date().toISOString(),
-            ...context
+        timestamp: new Date().toISOString(), // Authoritative Time
+        actor: {
+            type: actor.type,
+            id: actor.id
         },
-        // In a real system, we might hash previous event for blockchain-like integrity
+        payload,
         integrity: {
-            schema_version: 1,
-            hash: null
+            prevHash: prevHash, // Link to previous state hash if available
+            hash: null // To be calculated by LedgerService
+        },
+        meta: {
+            ruleIds: meta.ruleIds || [],          // 'Why' (Architecture Rule)
+            narrativeId: meta.narrativeId || null, // 'How' (NarrativeService)
+            rightsChecked: meta.rightsChecked || [] // 'Guard' (RightsGate)
+        },
+        // Legacy support (optional, can be phased out)
+        context: {
+            timezone: Intl.DateTimeFormat().resolvedOptions().timeZone
         }
     };
 };
