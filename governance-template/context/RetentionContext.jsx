@@ -4,7 +4,6 @@ import { useAuth } from './AuthContext';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../infrastructure/firebase';
 import { INITIAL_USER_STATE } from '../../core/behavior/EngineSchema';
-import { ScarService } from '../../core/governance/ScarService';
 
 export const RetentionContext = createContext(null);
 
@@ -12,8 +11,6 @@ export const RetentionProvider = ({ children }) => {
     const { currentUser: user } = useAuth();
     const [userState, setUserState] = useState(null);
     const [loading, setLoading] = useState(true);
-    const [integrity, setIntegrity] = useState(100);
-    const [scars, setScars] = useState([]);
 
     // Subscribe to Canonical State
     useEffect(() => {
