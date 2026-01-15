@@ -107,8 +107,15 @@ service cloud.firestore {
       // APPEND-ONLY + NARRATIVE BINDING
       allow create: if isAuthenticated() 
                     && request.resource.data.uid == request.auth.uid
-                    && request.resource.data.meta.narrativeId != null; // PILLAR 4: No Narrative -> No Write
+                    && request.resource.data.data.meta.narrativeId != null; // PILLAR 4: No Narrative -> No Write
       allow update, delete: if false; // PILLAR 1: Immutable
+    }
+
+    // INSTITUTIONAL AUDIT (Write-Only for App)
+    match /institutional_alerts/{alertId} {
+      allow create: if isAuthenticated(); // For EngineService logging
+      allow read: if isSuperAdmin(); // Only Admin can view alerts
+      allow update, delete: if false; // Audit logs are immutable
     }
 
     match /user_state/{userId} {

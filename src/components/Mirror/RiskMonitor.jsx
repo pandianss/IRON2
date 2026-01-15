@@ -7,7 +7,10 @@ import { RETENTION_STATES } from '../../core/governance/RetentionPolicy';
  * Answers: "What is about to happen?"
  */
 export const RiskMonitor = ({ userState }) => {
-    const { engagement_state, recovery, retention, current_day, last_evaluated_day } = userState;
+    // Safety Check
+    if (!userState || !userState.engagement_state) return null;
+
+    const { engagement_state, recovery, retention, current_day, last_evaluated_day, streak } = userState;
 
     // Logic: Calculate Time Remaining (Simulated)
     // In a real app, we'd diff timestamps. Here we use state flags.

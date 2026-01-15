@@ -112,6 +112,7 @@ export const EngineService = {
 
         } catch (error) {
             console.error("[ENGINE FAILURE] Action Aborted:", error);
+
             throw error; // Propagate error (Rights Violation, Ledger Failure)
         }
     },

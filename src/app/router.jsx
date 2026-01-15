@@ -24,6 +24,7 @@ const GymDirectory = lazy(() => import('../pages/GymDirectory'));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
 const GymJoin = lazy(() => import('../pages/GymJoin'));
 const CourtPage = lazy(() => import('../pages/CourtPage'));
+const MirrorPage = lazy(() => import('../components/Mirror/MirrorPage').then(module => ({ default: module.MirrorPage })));
 
 // Loading Fallback
 const PageLoader = () => (
@@ -76,6 +77,7 @@ const router = createBrowserRouter([
             { path: 'gyms', element: Loadable(GymDirectory) },
             { path: 'admin', element: Loadable(AdminDashboard) },
             { path: 'court', element: Loadable(CourtPage) },
+            { path: 'mirror', element: Loadable(MirrorPage) },
         ],
     },
 ]);

@@ -97,11 +97,11 @@ export const INITIAL_USER_STATE = (uid) => ({
 });
 
 export const TIERS = {
-    DORMANT: { min: 0, decay: 5 },
-    ACTIVE: { min: 10, decay: 2 },
-    COMMITTED: { min: 50, decay: 1 },
-    DISCIPLINED: { min: 150, decay: 0.5 },
-    ELITE: { min: 500, decay: 0.1 }
+    DORMANT: { label: "DORMANT", min: 0, decay: 5 },
+    ACTIVE: { label: "ACTIVE", min: 10, decay: 2 },
+    COMMITTED: { label: "COMMITTED", min: 50, decay: 1 },
+    DISCIPLINED: { label: "DISCIPLINED", min: 150, decay: 0.5 },
+    ELITE: { label: "ELITE", min: 500, decay: 0.1 }
 };
 
 export const RISK_STATES = {
