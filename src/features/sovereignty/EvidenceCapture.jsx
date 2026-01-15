@@ -60,12 +60,20 @@ export const EvidenceCapture = ({ onBack, onSubmit, isSubmitting }) => {
                 />
 
                 {preview ? (
-                    <button
-                        onClick={() => onSubmit(selectedFile)}
-                        className="w-full h-16 bg-emerald-500 text-black font-black tracking-widest rounded hover:bg-emerald-400 transition-colors"
-                    >
-                        COMMIT EVIDENCE
-                    </button>
+                    <div className="flex flex-col gap-4">
+                        <input
+                            type="text"
+                            placeholder="Activity Label (e.g. Leg Day, Run, Cardio)"
+                            className="bg-slate-800 text-white p-4 rounded border border-slate-700 focus:border-emerald-500 outline-none font-mono text-sm"
+                            onChange={(e) => fileInputRef.current.tagValue = e.target.value} // HACK: Storing on ref to avoid re-render loop if using state carelessly, or just use state.
+                        />
+                        <button
+                            onClick={() => onSubmit(selectedFile, fileInputRef.current.tagValue || "General")}
+                            className="w-full h-16 bg-emerald-500 text-black font-black tracking-widest rounded hover:bg-emerald-400 transition-colors"
+                        >
+                            COMMIT EVIDENCE
+                        </button>
+                    </div>
                 ) : (
                     <div className="grid grid-cols-2 gap-4">
                         <button

@@ -9,8 +9,12 @@ import { ScarService } from '../../core/governance/ScarService';
 import { EraService } from '../../core/governance/EraService';
 import { EvidenceService } from '../../core/governance/EvidenceService';
 import { ProtocolService } from '../../core/protocols/ProtocolService';
-import { StandingSystem, STANDING } from '../../core/governance/StandingSystem';
+import { StandingSystem, STANDING as LEGACY_STANDING } from '../../core/governance/StandingSystem';
 import { LocationService } from '../../core/governance/LocationService';
+import { evaluateInstitution, STANDING as SOVEREIGN_STANDING } from '../../core/governance/StandingEngine';
+
+// Alias for compatibility during migration
+const STANDING = SOVEREIGN_STANDING;
 
 export const RetentionContext = createContext(null);
 
@@ -60,7 +64,7 @@ export const RetentionProvider = ({ children }) => {
     };
 
     // Action: End Session / Check-in (The Seal)
-    const endSession = async (proofFile) => {
+    const endSession = async (proofFile, tag = "General") => {
         if (!sessionActive) {
             return { status: 'error', error: "No active session to end." };
         }
@@ -84,7 +88,8 @@ export const RetentionProvider = ({ children }) => {
                     duration: durationMinutes,
                     zone: sessionZone,
                     startTime: sessionStartTime,
-                    endTime: Date.now()
+                    endTime: Date.now(),
+                    tag: tag
                 }
             });
 

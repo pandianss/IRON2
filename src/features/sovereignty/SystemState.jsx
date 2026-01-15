@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useRetention } from '../../app/context/RetentionContext';
 import { StandingSystem } from '../../core/governance/StandingSystem';
-import { Shield, AlertTriangle, CheckCircle2, ArrowRight } from 'lucide-react';
 import { ObligationCorridor } from './ObligationCorridor';
 
 export const SystemState = () => {

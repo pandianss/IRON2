@@ -30,8 +30,8 @@ export const ActiveSession = () => {
         return (
             <EvidenceCapture
                 onBack={() => setEnding(false)} // Abort end, return to timer
-                onSubmit={async (file) => {
-                    await endSession(file);
+                onSubmit={async (file, tag) => {
+                    await endSession(file, tag);
                     // DailyLoop will auto-switch to SystemState upon sessionActive becoming false
                 }}
                 isSubmitting={false} // Managed by EvidenceCapture internal or pass explicit
