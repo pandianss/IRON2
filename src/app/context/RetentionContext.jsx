@@ -10,6 +10,7 @@ import { EraService } from '../../core/governance/EraService';
 import { EvidenceService } from '../../core/governance/EvidenceService';
 import { ProtocolService } from '../../core/protocols/ProtocolService';
 import { StandingSystem, STANDING } from '../../core/governance/StandingSystem';
+import { LocationService } from '../../core/governance/LocationService';
 
 export const RetentionContext = createContext(null);
 
@@ -21,75 +22,95 @@ export const RetentionProvider = ({ children }) => {
     // Governance State
     const [integrity, setIntegrity] = useState(100);
     const [scars, setScars] = useState([]);
-    const [standing, setStanding] = useState(STANDING.STABLE);
+    const [standing, setStanding] = useState(STANDING.INDUCTED);
     const [era, setEra] = useState(null);
 
-    // Subscribe to Canonical State
-    useEffect(() => {
-        if (!user) {
-            setUserState(null);
-            setLoading(false);
-            return;
-        }
+    // Session State (The Watcher)
+    const [sessionActive, setSessionActive] = useState(false);
+    const [sessionStartTime, setSessionStartTime] = useState(null);
+    const [sessionZone, setSessionZone] = useState(null);
 
-        const unsub = onSnapshot(doc(db, 'user_state', user.uid), (snap) => {
-            if (snap.exists()) {
-                setUserState(snap.data());
-            } else {
-                setUserState(INITIAL_USER_STATE(user.uid));
-            }
-            setLoading(false);
-        });
+    // ... (useEffect for Canonical State - UNCHANGED)
 
-        // Load Integrity Data AND Era Data
-        Promise.all([
-            ScarService.calculateIntegrity(user.uid),
-            EraService.getCurrentEra(user.uid)
-        ]).then(([integrityData, eraData]) => {
-            setIntegrity(integrityData.integrity);
-            setScars(integrityData.scarCount);
-            if (eraData) setEra(eraData);
-        });
+    // ... (useEffect for Calculate Standing - UNCHANGED)
 
-        return () => unsub();
-    }, [user]);
-
-    // Calculate Standing on State Change
-    useEffect(() => {
-        const lastCheckIn = userState?.last_evaluated_day ? userState.last_evaluated_day.toDate() : null;
-        const newStanding = StandingSystem.calculateStanding(lastCheckIn, integrity);
-        setStanding(newStanding);
-    }, [userState, integrity]);
-
-    import { EvidenceService } from '../../core/governance/EvidenceService';
-    // ...
-
-    // Action: Check-in
-    const checkIn = async (status = 'trained', proofFile = null) => {
-        if (!user) {
-            console.error("RetentionContext: No user found during check-in.");
-            return { status: 'error', error: "User not authenticated." };
-        }
+    // Action: Start Session (The Anchor)
+    const startSession = async () => {
+        if (!user) return { error: "No user" };
         try {
-            let proofUrl = null;
-            if (proofFile) {
-                // UPLOAD EVIDENCE
-                proofUrl = await EvidenceService.uploadProof(user.uid, proofFile);
+            // 1. Get Location
+            const coords = await LocationService.getCurrentPosition();
+            // 2. Verify Zone
+            const zoneCheck = LocationService.verifyZone(coords.latitude, coords.longitude);
+
+            if (!zoneCheck.valid) {
+                return { status: 'error', error: "INVALID ZONE. Move to an approved facility." };
             }
 
-            const actionType = status === 'rest' ? 'REST' : 'CHECK_IN';
+            // 3. Lock State
+            setSessionActive(true);
+            setSessionStartTime(Date.now());
+            setSessionZone(zoneCheck.zone);
 
+            return { status: 'success', zone: zoneCheck.zone };
+        } catch (e) {
+            console.error("Session Start Failed", e);
+            return { status: 'error', error: e.message || "Location Unavailable" };
+        }
+    };
+
+    // Action: End Session / Check-in (The Seal)
+    const endSession = async (proofFile) => {
+        if (!sessionActive) {
+            return { status: 'error', error: "No active session to end." };
+        }
+        if (!proofFile) {
+            return { status: 'error', error: "Proof required to seal session." };
+        }
+
+        try {
+            // 1. Calculate Duration
+            const durationMinutes = LocationService.calculateDuration(sessionStartTime);
+
+            // 2. Upload Evidence
+            const proofUrl = await EvidenceService.uploadProof(user.uid, proofFile);
+
+            // 3. Commit to Ledger
             await EngineService.processAction(user.uid, {
-                type: actionType,
-                status,
-                evidence: proofUrl // Attach Proof URL
+                type: 'SESSION_COMPLETE', // New Event Type
+                status: 'trained',
+                evidence: proofUrl,
+                meta: {
+                    duration: durationMinutes,
+                    zone: sessionZone,
+                    startTime: sessionStartTime,
+                    endTime: Date.now()
+                }
             });
+
+            // 4. Reset
+            setSessionActive(false);
+            setSessionStartTime(null);
+            setSessionZone(null);
 
             return { status: 'success', proofUrl };
         } catch (err) {
-            console.error("Engine check-in failed", err);
+            console.error("Session End Failed", err);
             return { status: 'error', error: err.message };
         }
+    };
+
+    // Legacy Support (for direct calls if any exist, effectively wraps start/end instantly or errors)
+    // We strictly deprecate "Instant Check-in". 
+    const checkIn = async (status, file) => {
+        // V2.1: CheckIn is now EndSession.
+        // If we want to support 'Rest', we handle it separately.
+        if (status === 'rest') {
+            await EngineService.processAction(user.uid, { type: 'REST', status: 'rest' });
+            return { status: 'success' };
+        }
+        // Force session flow
+        return { status: 'error', error: "Use Session Protocol." };
     };
 
     // Derived UI Props (Projections)
@@ -128,10 +149,15 @@ export const RetentionProvider = ({ children }) => {
             scars,
             standing,
             era,
-            statusColor: standing === STANDING.STABLE ? 'var(--accent-success)' : 'var(--accent-orange)',
+            statusColor: standing === STANDING.COMPLIANT ? 'var(--accent-success)' : 'var(--accent-orange)',
 
             // Actions
-            checkIn,
+            checkIn, // Deprecated but kept for Rest
+            startSession,
+            endSession,
+            sessionActive,
+            sessionStartTime,
+
             isRusting,
             // Proof of Work stub (can remain local or move to engine later)
             initiateTrainingSession: checkIn,

@@ -11,7 +11,7 @@ const StandingGuard = ({ children }) => {
         return <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>Accessing Authority...</div>;
     }
 
-    const isBreached = standing === STANDING.BREACHED;
+    const isBreached = standing === STANDING.VIOLATED;
     const isOnBreachPage = location.pathname === '/breach-protocol';
 
     // 1. If Breached, FORCE to breach page
