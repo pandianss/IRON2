@@ -1,48 +1,17 @@
-# IRON – Product Vision
+# IRON exists to become a personal institution.
 
-IRON exists to solve one of the biggest silent problems in fitness:  
-**people don’t fail because they lack information — they fail because they lose consistency.**
+Not a tracker.
+Not a motivator.
+Not a wellness platform.
 
-Fitness is not a knowledge problem.  
-It is a **behavioral and social problem**.
+An authority layer between intention and behaviour.
 
----
+IRON’s long‑term role is to provide individuals with something modern life removed:
 
-## Why IRON?
+A system that remembers, evaluates, and holds them to account.
 
-Most fitness apps:
-- Track data
-- Count calories
-- Log workouts
+Success for IRON is not daily active users.
 
-But they fail to answer:
-> *Who keeps me going when motivation fades?*
+Success is the existence of long, continuous behavioural histories that cannot be faked, gamed, or erased.
 
-IRON’s answer is **people**.
-
----
-
-## Long-Term Goal
-
-To become:
-- The default social layer for fitness
-- A trusted community for health-first lifestyles
-- A platform where fitness is reinforced daily through interaction
-
----
-
-## What Success Looks Like
-
-- Users stay active for **years**, not weeks
-- Communities form around gyms, cities, and goals
-- Trainers grow sustainable digital followings
-- Fitness becomes part of identity, not obligation
-
----
-
-## Non-Negotiables
-
-- Positive, non-toxic community
-- Health-first over aesthetics-first
-- Consistency over extremes
-- Long-term engagement over vanity metrics
+IRON is built for the decade horizon, not the app store horizon.
