@@ -23,6 +23,7 @@ const CommandDashboard = lazy(() => import('../features/gym-admin/pages/CommandD
 const GymDirectory = lazy(() => import('../pages/GymDirectory'));
 const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
 const GymJoin = lazy(() => import('../pages/GymJoin'));
+const CourtPage = lazy(() => import('../pages/CourtPage'));
 
 // Loading Fallback
 const PageLoader = () => (
@@ -74,6 +75,7 @@ const router = createBrowserRouter([
             { path: 'command', element: Loadable(CommandDashboard) },
             { path: 'gyms', element: Loadable(GymDirectory) },
             { path: 'admin', element: Loadable(AdminDashboard) },
+            { path: 'court', element: Loadable(CourtPage) },
         ],
     },
 ]);

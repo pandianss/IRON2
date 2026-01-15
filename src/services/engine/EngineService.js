@@ -55,7 +55,7 @@ export const EngineService = {
             const event = createBehaviorEvent({
                 uid,
                 type: eventType,
-                actor: { type: ACTOR_TYPES.USER, id: uid },
+                actor: action.actor || { type: ACTOR_TYPES.USER, id: uid },
                 payload: eventPayload,
                 meta: {}
             });
