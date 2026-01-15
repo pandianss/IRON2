@@ -20,13 +20,13 @@ const AuthPage = () => {
     // Session Context (Auth & Mode)
     const {
         login, loginWithGoogle, registerUser, checkEmail,
-        AuthService, syncUserFromAuth, appMode
+        AuthService, syncUserFromAuth, appMode, currentUser // Add currentUser
     } = useSession();
 
     // UI Feedback Context
     const { showToast } = useUIFeedback();
 
-    const location = useLocation(); // Add useLocation import hook
+    const location = useLocation();
 
     // Form States
     const [mode, setMode] = useState(location.state?.mode || 'login');
@@ -41,8 +41,8 @@ const AuthPage = () => {
 
     // Initial Check for Magic Link Finish or Existing Session
     useEffect(() => {
-        // If already logged in, go home
-        if (AuthService.auth.currentUser) {
+        // If already logged in (Context Synced), go home
+        if (currentUser) {
             navigate('/', { replace: true });
             return;
         }

@@ -9,10 +9,10 @@ const BottomNav = () => {
     const navigate = useNavigate();
 
     const navItems = [
-        { icon: Home, label: 'Command', path: '/', minStreak: 0 },
-        { icon: BookOpen, label: 'Library', path: '/hub', minStreak: 3 }, // Unlock with Partner
+        { icon: Home, label: 'Console', path: '/', minStreak: 0 },
+        { icon: BookOpen, label: 'Protocols', path: '/hub', minStreak: 3 }, // Unlock with Partner
         { icon: Trophy, label: 'Arena', path: '/arena', minStreak: 7 }, // Unlock with Squads
-        { icon: Activity, label: 'Pulse', path: '/viral', minStreak: 14 }, // Unlock with Challenges
+        { icon: Activity, label: 'Ledger', path: '/mirror', minStreak: 0 }, // Ledger/Mirror
         { icon: User, label: 'Identity', path: '/profile', minStreak: 0 },
     ];
 

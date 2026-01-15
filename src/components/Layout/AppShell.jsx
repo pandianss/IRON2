@@ -24,6 +24,8 @@ const AppShell = () => {
     const navigate = useNavigate();
     const location = useLocation();
 
+    console.log("DEBUG: AppShell Location:", location.pathname);
+
     // 2. Retention Gate (Handles Check-in Logic)
     const {
         shouldShowCheckIn,
@@ -85,6 +87,7 @@ const AppShell = () => {
         switch (path) {
             case '/viral': return 'PULSE';
             case '/studio': return 'STUDIO';
+            case '/hub': return 'PROTOCOLS';
             case '/settings': return 'SETTINGS';
             case '/profile': return 'IDENTITY';
             case '/partner': return 'COMMAND';
@@ -134,7 +137,7 @@ const AppShell = () => {
                                     textTransform: 'uppercase',
                                     cursor: 'pointer'
                                 }}>
-                                IRON<span style={{ color: 'var(--accent-orange)' }}>.</span>
+                                CONSOLE<span style={{ color: 'var(--accent-orange)' }}>.</span>
                             </div>
                         )}
                     </div>

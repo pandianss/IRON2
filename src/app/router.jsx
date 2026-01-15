@@ -4,40 +4,13 @@ import { Loader2 } from 'lucide-react';
 import AppShell from '../components/Layout/AppShell';
 
 // Eager Imports (Critical Path)
-import CommandCenter from '../pages/CommandCenter';
-import InitialCheckIn from '../pages/InitialCheckIn';
+import GovernanceConsole from '../pages/GovernanceConsole'; // Replaces CommandCenter
+import ContractInitiation from '../pages/ContractInitiation'; // Replaces InitialCheckIn
 import Onboarding from '../pages/Onboarding';
 import AuthPage from '../pages/AuthPage';
 import SplashScreen from '../pages/SplashScreen';
 
-// Lazy Imports (Feature Bundles)
-const Lab = lazy(() => import('../pages/Lab'));
-const Arena = lazy(() => import('../pages/Arena'));
-const Bazaar = lazy(() => import('../pages/Bazaar'));
-const Hub = lazy(() => import('../pages/Hub'));
-const Viral = lazy(() => import('../pages/Viral'));
-const StudioPage = lazy(() => import('../features/studio').then(module => ({ default: module.StudioPage })));
-const ProfilePage = lazy(() => import('../identity/profile').then(module => ({ default: module.ProfilePage })));
-const KnowledgePage = lazy(() => import('../features/knowledge').then(module => ({ default: module.KnowledgePage })));
-const CommandDashboard = lazy(() => import('../features/gym-admin/pages/CommandDashboard'));
-const GymDirectory = lazy(() => import('../pages/GymDirectory'));
-const AdminDashboard = lazy(() => import('../pages/AdminDashboard'));
-const GymJoin = lazy(() => import('../pages/GymJoin'));
-const CourtPage = lazy(() => import('../pages/CourtPage'));
-const MirrorPage = lazy(() => import('../components/Mirror/MirrorPage').then(module => ({ default: module.MirrorPage })));
-
-// Loading Fallback
-const PageLoader = () => (
-    <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '50vh', width: '100%' }}>
-        <Loader2 className="animate-spin" color="var(--accent-orange)" size={48} />
-    </div>
-);
-
-const Loadable = (Component) => (
-    <Suspense fallback={<PageLoader />}>
-        <Component />
-    </Suspense>
-);
+// ... (Lazy Imports)
 
 const router = createBrowserRouter([
     {
@@ -54,7 +27,7 @@ const router = createBrowserRouter([
     },
     {
         path: '/checkin/initial',
-        element: <InitialCheckIn />,
+        element: <ContractInitiation />,
     },
     {
         path: '/join/:gymId',
@@ -64,7 +37,7 @@ const router = createBrowserRouter([
         path: '/',
         element: <AppShell />,
         children: [
-            { index: true, element: <CommandCenter /> },
+            { index: true, element: <GovernanceConsole /> },
             { path: 'lab', element: Loadable(Lab) },
             { path: 'arena', element: Loadable(Arena) },
             { path: 'bazaar', element: Loadable(Bazaar) },

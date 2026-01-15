@@ -146,3 +146,10 @@ export const mockAudioTracks = [
 ];
 
 export const mockBpm = 72;
+
+export const mockMembers = [];
+export const mockEnquiries = [];
+export const mockStudioContent = [];
+export const mockStudioExercises = [];
+export const mockSquads = [];
+export const mockExercises = [];

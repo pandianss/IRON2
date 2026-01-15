@@ -5,3 +5,4 @@ export * from './ActivityContext';
 export * from './UIFeedbackContext';
 export * from './BluetoothContext';
 export * from './DataContext';
+export * from './UIContext';

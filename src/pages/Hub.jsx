@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import Card from '../components/UI/Card';
 import Button from '../components/UI/Button';
 import { Users, PenTool, Dumbbell, Apple, BookOpen, Plus, CheckCircle2 } from 'lucide-react';
-import { useData, useUIFeedback, useSession } from '../app/context';
+import { useData, useUIFeedback, useSession, useRetention } from '../app/context';
 import StarRating from '../components/UI/StarRating';
 import ReviewModal from '../components/UI/ReviewModal';
 import { useNavigate } from 'react-router-dom';

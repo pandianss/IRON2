@@ -3,7 +3,7 @@ import PropTypes from 'prop-types';
 import {
     AuthService, DbService
 } from '../../infrastructure/firebase';
-import { db, auth, googleProvider } from '../../infrastructure/firebase';
+import { db, auth } from '../../infrastructure/firebase';
 import { EngineService } from '../../services/engine/EngineService';
 import { AuditService } from '../../infrastructure/audit/audit';
 import { useUI } from './UIContext';
@@ -51,6 +51,13 @@ export const AuthProvider = ({ children, appMode }) => {
                 } catch (error) {
                     console.error("Session Sync Failed:", error);
                     showToast("Session restored with limited connectivity.");
+                    // Safe Fallback for Offline/Error Mode
+                    setCurrentUser({
+                        uid: firebaseUser.uid,
+                        email: firebaseUser.email,
+                        profile: { name: firebaseUser.displayName || 'Offline User' },
+                        role: 'enthusiast'
+                    });
                 }
             } else {
                 // No user

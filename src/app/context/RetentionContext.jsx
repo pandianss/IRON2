@@ -39,7 +39,10 @@ export const RetentionProvider = ({ children }) => {
 
     // Action: Check-in
     const checkIn = async (status = 'trained') => {
-        if (!user) return;
+        if (!user) {
+            console.error("RetentionContext: No user found during check-in.");
+            return { status: 'error', error: "User not authenticated." };
+        }
         try {
             const actionType = status === 'rest' ? 'REST' : 'CHECK_IN';
             await EngineService.processAction(user.uid, { type: actionType, status });
