@@ -24,10 +24,19 @@ export class SnapshotGenerator {
      */
     reduce(history, baseState = null) {
         // deep copy initial state
-        let currentState = baseState ? JSON.parse(JSON.stringify(baseState)) : JSON.parse(JSON.stringify(INITIAL_USER_STATE));
+        let currentState;
+        if (baseState) {
+            currentState = JSON.parse(JSON.stringify(baseState));
+        } else {
+            // Try to deduce UID from history, else arbitrary. LedgerService uses 'data' field.
+            const uid = history.length > 0 ? (history[0].data?.userId || history[0].event?.userId) : 'unknown_user';
+            currentState = JSON.parse(JSON.stringify(INITIAL_USER_STATE(uid)));
+        }
 
         for (const block of history) {
-            this.applyEvent(currentState, block.event);
+            // LedgerService blocks have 'data'. Legacy might have 'event'.
+            const event = block.data || block.event;
+            if (event) this.applyEvent(currentState, event);
         }
 
         return currentState;
@@ -85,11 +94,100 @@ export class SnapshotGenerator {
             case EVENT_TYPES.LOG_ACTIVITY:
                 this.handleLogActivity(state, event);
                 break;
+            case EVENT_TYPES.APPEAL_SUBMITTED:
+                this.handleAppealSubmitted(state, event);
+                break;
+            case EVENT_TYPES.EVIDENCE_SUBMITTED:
+                this.handleEvidenceSubmitted(state, event);
+                break;
+            case EVENT_TYPES.WITNESS_VOTE:
+                this.handleWitnessVote(state, event);
+                break;
+            case EVENT_TYPES.APPEAL_DECIDED:
+                this.handleAppealDecided(state, event);
+                break;
         }
 
         // Global Update
         state.lifecycle.total_actions++;
         return state;
+    }
+
+    /**
+     * APPEAL SUBMITTED
+     * Payload: { appealId, type, reason }
+     */
+    handleAppealSubmitted(state, event) {
+        state.civil.active_appeals = state.civil.active_appeals || {};
+        state.civil.active_appeals[event.payload.appealId] = {
+            id: event.payload.appealId,
+            uid: event.userId,
+            type: event.payload.type, // 'STREAK_RESTORE' etc
+            reason: event.payload.reason,
+            evidence_ids: [],
+            witnesses: {},
+            status: "PENDING_WITNESS",
+            created_at: event.timestamp
+        };
+        state.civil.ritual_history.appeals_filed++;
+    }
+
+    /**
+     * EVIDENCE SUBMITTED
+     * Payload: { appealId, evidenceId, type, url }
+     */
+    handleEvidenceSubmitted(state, event) {
+        const appeal = state.civil.active_appeals?.[event.payload.appealId];
+        if (appeal) {
+            appeal.evidence_ids.push(event.payload.evidenceId);
+        }
+    }
+
+    /**
+     * WITNESS VOTE
+     * Payload: { appealId, vote, commentary }
+     */
+    handleWitnessVote(state, event) {
+        const appeal = state.civil.active_appeals?.[event.payload.appealId];
+        if (appeal) {
+            appeal.witnesses[event.actor.id] = {
+                vote: event.payload.vote, // 'VOUCH' | 'REJECT'
+                commentary: event.payload.commentary,
+                timestamp: event.timestamp
+            };
+            // Auto-transition if enough witnesses? (Logic for later)
+        }
+        // Also track service history for the witness (if we had access to witness state, but we only have Subject State here)
+        // Note: Witness Service History is tracked on the WITNESS's own chain.
+    }
+
+    /**
+     * APPEAL DECIDED
+     * Payload: { appealId, verdict, narrative }
+     */
+    handleAppealDecided(state, event) {
+        const appeal = state.civil.active_appeals?.[event.payload.appealId];
+        if (!appeal) return;
+
+        appeal.status = event.payload.verdict; // APPROVED | REJECTED
+        appeal.decision_narrative = event.payload.narrative;
+        appeal.closed_at = event.timestamp;
+
+        // Apply Consequence
+        if (appeal.status === 'APPROVED' && appeal.type === 'STREAK_RESTORE') {
+            state.engagement_state = 'ENGAGED';
+            state.streak.current = state.streak.freeze_tokens; // Or logic to restore
+            // Simplified for now:
+            state.streak.current += 1; // Mercy +1
+        }
+
+        // Archive
+        state.civil.appeal_history.push(appeal);
+        delete state.civil.active_appeals[event.payload.appealId];
+
+        if (appeal.status === 'APPROVED') {
+            state.civil.ritual_history.pardons_received++;
+        }
     }
 
     /**

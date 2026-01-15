@@ -4,6 +4,7 @@ import Button from '../components/UI/Button';
 import PassportCard from '../components/UI/PassportCard';
 import { Settings, Save, Activity, Zap, Heart, ShieldCheck, Calendar, History, ArrowLeft } from 'lucide-react';
 import { useAppContext } from '../app/context/AppContext';
+import VerificationDashboard from '../features/governance/VerificationDashboard';
 
 const Lab = () => {
     const { bpm, showToast } = useAppContext();
@@ -70,6 +71,11 @@ const Lab = () => {
                     </p>
                 </div>
             </header>
+
+            {/* SOVEREIGNTY VERIFICATION */}
+            <section style={{ marginBottom: '32px' }}>
+                <VerificationDashboard />
+            </section>
 
             {/* Biometric Sync Status */}
             <section style={{ marginBottom: '32px' }}>

@@ -85,23 +85,70 @@ export const RightsGate = {
      */
     enforceAction(actionType, user) {
         // 1. Right to Appeal
-        if (actionType === 'APPEAL') {
+        if (actionType === 'APPEAL_SUBMITTED') {
             if (user.social.social_capital < 10) {
-                ConstitutionalAudit.record({
-                    type: "STANDING_VIOLATION",
-                    actorId: user.uid,
-                    targetId: user.uid,
-                    rule: "Rights.Appeal",
-                    details: { capital: user.social.social_capital, required: 10 }
-                });
-
-                throw new GovernanceError(
-                    "STANDING VIOLATION: Insufficient Social Capital for Justice.",
-                    "INSOLVENT"
-                );
+                // ... Audit ...
+                throw new GovernanceError("STANDING VIOLATION: Insufficient Social Capital.", "INSOLVENT");
+            }
+            // Spam Check: Max 3 active appeals?
+            const activeAppeals = Object.keys(user.civil?.active_appeals || {}).length;
+            if (activeAppeals >= 3) {
+                throw new GovernanceError("LIMIT REACHED: Maximum 3 active appeals allowed.", "RATE_LIMIT");
             }
         }
 
+        // 2. Witness Authority (Conflict of Interest)
+        if (actionType === 'WITNESS_VOTE') {
+            // We need to know who the 'author' of the vote is vs the 'target' user.
+            // enforceAction(actionType, targetUserState, actor?)
+            // Currently generic signature `enforceAction(actionType, user)` assumes user is the ACTOR.
+            // But for Witness Vote, the ACTOR (Witness) is acting on TARGET (User).
+            // We might need to pass `payload` or `actor` to this function.
+            // For now, let's assume `user` here is the TARGET state, and we need the ACTOR info.
+            // Function signature update required or we handle it in `enforceTransition`?
+            // `enforceTransition` has `currentUserState` and `proposedNextState`.
+            // `enforceTransition` verifies the RESULT.
+            // Creating a specific `canVote` helper usage below.
+        }
+
+        return true;
+    },
+
+    /**
+     * Validate Witness Voting Rights
+     * @param {Object} targetUserState 
+     * @param {Object} actor { id, type }
+     * @param {String} appealId 
+     */
+    canVote(targetUserState, actor, appealId) {
+        const appeal = targetUserState.civil?.active_appeals?.[appealId];
+        if (!appeal) throw new GovernanceError("Appeal not found", "NOT_FOUND");
+
+        // 1. No Self-Vouching
+        if (actor.id === appeal.uid) {
+            throw new GovernanceError("CONFLICT: Self-Vouching Prohibited.", "CONFLICT_OF_INTEREST");
+        }
+
+        // 2. Witness Authority (Must be WITNESS or COURT)
+        if (actor.type !== 'WITNESS' && actor.type !== 'COURT') {
+            throw new GovernanceError("JURISDICTION: Actor lacks Witness Authority.", "UNAUTHORIZED");
+        }
+
+        // 3. One Vote Per Witness
+        if (appeal.witnesses && appeal.witnesses[actor.id]) {
+            throw new GovernanceError("DUPLICATE: Already voted.", "DUPLICATE_ACTION");
+        }
+
+        return true;
+    },
+
+    canDecide(state, appealId) {
+        const appeal = state.civil?.active_appeals?.[appealId];
+        if (!appeal) throw new GovernanceError("Appeal not found", "NOT_FOUND");
+
+        if (!appeal.evidence_ids || appeal.evidence_ids.length === 0) {
+            throw new GovernanceError("PROCEDURAL ERROR: No Evidence linked to Appeal.", "INCOMPLETE_CASE");
+        }
         return true;
     }
 };

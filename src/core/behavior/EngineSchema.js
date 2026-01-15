@@ -79,6 +79,8 @@ export const INITIAL_USER_STATE = (uid) => ({
         role: "PARTICIPANT", // PARTICIPANT | WITNESS | MENTOR | SENTINEL | CHRONICLER | STEWARD
         authority_level: 0,  // 0-5
         active_rituals: [],  // Currently active ritual states
+        active_appeals: {},  // Map<AppealId, AppealObject>
+        appeal_history: [],  // Array of closed appeals
         ritual_history: {
             oath_signed: null, // Date
             first_fracture_acknowledged: null,
@@ -128,6 +130,20 @@ export const RITUALS = {
     APPEAL_PETITION: "APPEAL_PETITION",
     RETURN_CEREMONY: "RETURN_CEREMONY",
     SERVICE_OATH: "SERVICE_OATH"
+};
+
+export const APPEAL_STATUS = {
+    PENDING_WITNESS: "PENDING_WITNESS", // Waiting for Vouch
+    PENDING_JUDGE: "PENDING_JUDGE",     // Ready for Sovereign Decision
+    APPROVED: "APPROVED",
+    REJECTED: "REJECTED",
+    EXPIRED: "EXPIRED"
+};
+
+export const EVIDENCE_TYPES = {
+    IMAGE: "IMAGE",
+    URL: "URL",
+    TEXT_NARRATIVE: "TEXT_NARRATIVE"
 };
 
 /**

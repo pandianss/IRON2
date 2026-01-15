@@ -101,6 +101,23 @@ service cloud.firestore {
     match /certifications/{id} { allow read, write: if isAuthenticated(); }
     match /audit_logs/{id} { allow read, write: if isAuthenticated(); }
     
+    // SOVEREIGN LEDGER RULES
+    match /ledger_blocks/{blockId} {
+      allow read: if isAuthenticated() && resource.data.uid == request.auth.uid;
+      // APPEND-ONLY + NARRATIVE BINDING
+      allow create: if isAuthenticated() 
+                    && request.resource.data.uid == request.auth.uid
+                    && request.resource.data.meta.narrativeId != null; // PILLAR 4: No Narrative -> No Write
+      allow update, delete: if false; // PILLAR 1: Immutable
+    }
+
+    match /user_state/{userId} {
+      allow read: if isAuthenticated();
+      // Write allowed by owner (Engine runs as owner).
+      // Ideally we'd verify the state matches the ledger tail, but that requires Cloud Functions.
+      allow write: if isOwner(userId);
+    }
+
     match /workouts/{id} { allow read, write: if isAuthenticated(); }
     match /verifications/{id} { allow read, write: if isAuthenticated(); }
   }
