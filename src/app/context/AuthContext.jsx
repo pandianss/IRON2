@@ -4,7 +4,7 @@ import {
     AuthService, DbService
 } from '../../infrastructure/firebase';
 import { db, auth } from '../../infrastructure/firebase';
-import { EngineService } from '../../services/engine/EngineService';
+import { EngineService } from '../../infrastructure/engine/EngineService';
 import { AuditService } from '../../infrastructure/audit/audit';
 import { useUI } from './UIContext';
 

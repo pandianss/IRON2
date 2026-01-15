@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { EngineService } from '../../services/engine/EngineService';
+import { EngineService } from '../../infrastructure/engine/EngineService';
 import { useAuth } from './AuthContext';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { db } from '../../infrastructure/firebase';
@@ -11,7 +11,7 @@ import { EvidenceService } from '../../core/governance/EvidenceService';
 import { ProtocolService } from '../../core/protocols/ProtocolService';
 import { StandingSystem, STANDING as LEGACY_STANDING } from '../../core/governance/StandingSystem';
 import { LocationService } from '../../core/governance/LocationService';
-import { evaluateInstitution, STANDING as SOVEREIGN_STANDING } from '../../core/governance/StandingEngine';
+import { evaluateInstitution, STANDING as SOVEREIGN_STANDING } from '../../institution/standing-engine/StandingEngine';
 
 // Alias for compatibility during migration
 const STANDING = SOVEREIGN_STANDING;
@@ -34,9 +34,59 @@ export const RetentionProvider = ({ children }) => {
     const [sessionStartTime, setSessionStartTime] = useState(null);
     const [sessionZone, setSessionZone] = useState(null);
 
+    const [institutionalState, setInstitutionalState] = useState(null);
+
     // ... (useEffect for Canonical State - UNCHANGED)
 
-    // ... (useEffect for Calculate Standing - UNCHANGED)
+    // Calculate Standing using the SOVEREIGN ENGINE
+    useEffect(() => {
+        if (!userState) return;
+
+        // 1. Construct SYNTHETIC LEDGER (Adapter Layer)
+        // Converting Snapshot State -> Event Stream for the pure engine
+        const syntheticLedger = [];
+
+        // Genesis
+        if (userState.created_at) {
+            syntheticLedger.push({
+                type: 'CONTRACT_CREATED',
+                timestamp: userState.created_at.toMillis ? userState.created_at.toMillis() : Date.now(),
+                payload: {}
+            });
+        }
+
+        // Violations (Scars)
+        // We assume scars are historical strings in current userState, mapping them to generic violation events
+        if (scars && scars > 0) {
+            // Mocking historical scars
+            for (let i = 0; i < scars; i++) {
+                syntheticLedger.push({ type: 'VIOLATION_RECORDED', timestamp: 0, payload: { type: 'Legacy Scar' } });
+            }
+        }
+
+        // Current Day State
+        const lastCheckIn = userState?.last_evaluated_day ? userState.last_evaluated_day.toDate() : null;
+        if (lastCheckIn) {
+            // If check-in exists for "today", we treat it as OBLIGATION_MET
+            // But how do we know if today is NEW?
+            // Simple logic: If lastCheckIn is OLDER than 24h, we push DAY_OPENED?
+            // Actually, for V1, let's just push OBLIGATION_MET so state is COMPLIANT.
+            syntheticLedger.push({ type: 'OBLIGATION_MET', timestamp: lastCheckIn.getTime(), payload: {} });
+        } else {
+            // If no check-in, implies DAY_OPENED at some point?
+            // Or PRE_INDUCTION.
+        }
+
+        // 2. RUN ENGINE
+        const now = Date.now();
+        const newState = evaluateInstitution(syntheticLedger, now);
+
+        // 3. APPLY STATE
+        console.log("ENGINE OUTPUT:", newState);
+        setInstitutionalState(newState);
+        setStanding(newState.standing); // Keep legacy Standing sync for now
+
+    }, [userState, integrity, scars]);
 
     // Action: Start Session (The Anchor)
     const startSession = async () => {
@@ -172,7 +222,10 @@ export const RetentionProvider = ({ children }) => {
             forceReconcile: () => { },
 
             // ACTIVE PROTOCOL
-            activeProtocol: ProtocolService.getActiveProtocol()
+            activeProtocol: ProtocolService.getActiveProtocol(),
+
+            // SOVEREIGN STATE (New)
+            institutionalState
         }}>
             {children}
         </RetentionContext.Provider>

@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useRetention } from '../../app/context/RetentionContext';
 import { MapPin, Timer, Square } from 'lucide-react';
-import { EvidenceCapture } from './EvidenceCapture';
+import { EvidenceCapture } from '../evidence-capture/EvidenceCapture';
 
 export const ActiveSession = () => {
     const { sessionStartTime, endSession } = useRetention();

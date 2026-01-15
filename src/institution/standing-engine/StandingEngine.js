@@ -8,35 +8,10 @@
  * - Total (Always returns valid state)
  */
 
-// --- 1. CONSTANTS & ENUMS ---
+import { STANDING, SURFACE, PROTOCOL } from '../../domain/standing/constants';
 
-export const STANDING = {
-    PRE_INDUCTION: 'PRE_INDUCTION',
-    INDUCTED: 'INDUCTED',
-    COMPLIANT: 'COMPLIANT',
-    STRAINED: 'STRAINED',
-    BREACH_RISK: 'BREACH_RISK',
-    VIOLATED: 'VIOLATED',
-    RECOVERY: 'RECOVERY',
-    RECONSTITUTED: 'RECONSTITUTED',
-    INSTITUTIONAL: 'INSTITUTIONAL'
-};
-
-export const SURFACE = {
-    SYSTEM_STATE: 'SYSTEM_STATE',
-    OBLIGATION: 'OBLIGATION',
-    EVIDENCE: 'EVIDENCE',
-    LEDGER_CLOSURE: 'LEDGER_CLOSURE',
-    CONSEQUENCE: 'CONSEQUENCE',
-    INDUCTION: 'INDUCTION'
-};
-
-const PROTOCOL = {
-    DAY_LENGTH_MS: 24 * 60 * 60 * 1000,
-    WARNING_THRESHOLD_MS: 20 * 60 * 60 * 1000,
-    INTEGRITY_DECAY_PER_HOUR: 5,
-    RECOVERY_WINDOW_MS: 48 * 60 * 60 * 1000 // Hypothetical 48h to recover
-};
+// --- 1. CONSTANTS (Imported from Domain) ---
+// See src/domain/standing/constants.js
 
 // --- 2. TYPES (JSDoc) ---
 

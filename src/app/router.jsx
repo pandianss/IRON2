@@ -9,6 +9,7 @@ import Onboarding from '../pages/Onboarding';
 import AuthPage from '../pages/AuthPage';
 import SplashScreen from '../pages/SplashScreen';
 import { DailyLoop } from '../features/sovereignty/DailyLoop';
+import { InstitutionShell } from '../experience/shell/InstitutionShell';
 
 // Helpers
 const Loadable = (Component) => (props) => (
@@ -47,7 +48,7 @@ const router = createBrowserRouter([
     },
     {
         path: '/*', // Catch-all for Sovereign Flow
-        element: <DailyLoop />
+        element: <InstitutionShell />
     }
 ]);
 

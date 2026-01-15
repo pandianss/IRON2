@@ -1,23 +1,41 @@
 import React, { useState } from 'react';
 import { useRetention } from '../../app/context/RetentionContext';
 import { StandingSystem } from '../../core/governance/StandingSystem';
-import { ObligationCorridor } from './ObligationCorridor';
+import { ObligationCorridor } from '../obligation-corridor/ObligationCorridor';
+import { SystemDossier } from './SystemDossier';
+import { SystemArchives } from './SystemArchives';
+import { Shield, User, Database, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export const SystemState = () => {
     const { standing, streak, checkInStatus, integrity } = useRetention();
     const [actionIntent, setActionIntent] = useState(false);
+    const [showDossier, setShowDossier] = useState(false);
+    const [showArchives, setShowArchives] = useState(false);
 
     // Get UI Data derived from Authority
     const { label, color } = StandingSystem.getLabel(standing);
 
     // If user clicked "Proceed", we lift them to Phase B (Obligation)
-    // purely as a local UI state for now, managed by DailyLoop in future.
     if (actionIntent) {
         return <ObligationCorridor onCancel={() => setActionIntent(false)} />;
     }
 
     return (
-        <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center justify-center font-sans">
+        <div className="min-h-screen bg-black text-white p-6 flex flex-col items-center justify-center font-sans relative">
+
+            {/* OVERLAYS */}
+            {showDossier && <SystemDossier onClose={() => setShowDossier(false)} />}
+            {showArchives && <SystemArchives onClose={() => setShowArchives(false)} />}
+
+            {/* 0. NAVIGATION (Restricted) */}
+            <div className="absolute top-6 right-6 flex gap-4">
+                <button onClick={() => setShowArchives(true)} className="text-slate-600 hover:text-slate-400">
+                    <Database size={20} />
+                </button>
+                <button onClick={() => setShowDossier(true)} className="text-slate-600 hover:text-slate-400">
+                    <User size={20} />
+                </button>
+            </div>
 
             {/* 1. AUTHORITY HEADER */}
             <div className="mb-12 text-center">
