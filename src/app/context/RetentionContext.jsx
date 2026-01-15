@@ -6,14 +6,23 @@ import { db } from '../../infrastructure/firebase';
 import { INITIAL_USER_STATE } from '../../core/behavior/EngineSchema';
 import { ScarService } from '../../core/governance/ScarService';
 
+import { EraService } from '../../core/governance/EraService';
+import { EvidenceService } from '../../core/governance/EvidenceService';
+import { ProtocolService } from '../../core/protocols/ProtocolService';
+import { StandingSystem, STANDING } from '../../core/governance/StandingSystem';
+
 export const RetentionContext = createContext(null);
 
 export const RetentionProvider = ({ children }) => {
     const { currentUser: user } = useAuth();
     const [userState, setUserState] = useState(null);
     const [loading, setLoading] = useState(true);
+
+    // Governance State
     const [integrity, setIntegrity] = useState(100);
     const [scars, setScars] = useState([]);
+    const [standing, setStanding] = useState(STANDING.STABLE);
+    const [era, setEra] = useState(null);
 
     // Subscribe to Canonical State
     useEffect(() => {
@@ -27,30 +36,56 @@ export const RetentionProvider = ({ children }) => {
             if (snap.exists()) {
                 setUserState(snap.data());
             } else {
-                // If no state exists (new user or migration needed), we might need to initialize it.
-                // For now, in UI context, we can show a default shell or trigger initialization.
                 setUserState(INITIAL_USER_STATE(user.uid));
             }
             setLoading(false);
-        }, (err) => {
-            console.error("State subscription failed", err);
-            setLoading(false);
+        });
+
+        // Load Integrity Data AND Era Data
+        Promise.all([
+            ScarService.calculateIntegrity(user.uid),
+            EraService.getCurrentEra(user.uid)
+        ]).then(([integrityData, eraData]) => {
+            setIntegrity(integrityData.integrity);
+            setScars(integrityData.scarCount);
+            if (eraData) setEra(eraData);
         });
 
         return () => unsub();
     }, [user]);
 
+    // Calculate Standing on State Change
+    useEffect(() => {
+        const lastCheckIn = userState?.last_evaluated_day ? userState.last_evaluated_day.toDate() : null;
+        const newStanding = StandingSystem.calculateStanding(lastCheckIn, integrity);
+        setStanding(newStanding);
+    }, [userState, integrity]);
+
+    import { EvidenceService } from '../../core/governance/EvidenceService';
+    // ...
+
     // Action: Check-in
-    const checkIn = async (status = 'trained') => {
+    const checkIn = async (status = 'trained', proofFile = null) => {
         if (!user) {
             console.error("RetentionContext: No user found during check-in.");
             return { status: 'error', error: "User not authenticated." };
         }
         try {
+            let proofUrl = null;
+            if (proofFile) {
+                // UPLOAD EVIDENCE
+                proofUrl = await EvidenceService.uploadProof(user.uid, proofFile);
+            }
+
             const actionType = status === 'rest' ? 'REST' : 'CHECK_IN';
-            await EngineService.processAction(user.uid, { type: actionType, status });
-            // No need to manually update state, the snapshot will fire
-            return { status: 'success' };
+
+            await EngineService.processAction(user.uid, {
+                type: actionType,
+                status,
+                evidence: proofUrl // Attach Proof URL
+            });
+
+            return { status: 'success', proofUrl };
         } catch (err) {
             console.error("Engine check-in failed", err);
             return { status: 'error', error: err.message };
@@ -88,6 +123,13 @@ export const RetentionProvider = ({ children }) => {
             recoveryProgress,
             socialStats: userState?.social || { pact_saves: 0, witness_count: 0 },
 
+            // GOVERNANCE STATE
+            integrity,
+            scars,
+            standing,
+            era,
+            statusColor: standing === STANDING.STABLE ? 'var(--accent-success)' : 'var(--accent-orange)',
+
             // Actions
             checkIn,
             isRusting,
@@ -96,7 +138,10 @@ export const RetentionProvider = ({ children }) => {
             verifyProofOfWork: () => { }, // No-op for now in simplified V2
 
             // Debug Tools
-            forceReconcile: () => { }
+            forceReconcile: () => { },
+
+            // ACTIVE PROTOCOL
+            activeProtocol: ProtocolService.getActiveProtocol()
         }}>
             {children}
         </RetentionContext.Provider>

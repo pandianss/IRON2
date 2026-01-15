@@ -96,6 +96,19 @@ export const LedgerFeed = ({ uid }) => {
                                 </div>
 
                                 <div className="mt-2 pt-2 border-t border-slate-800/50 flex justify-between items-center">
+                                    {event.payload.evidence && (
+                                        <div className="mt-3 mb-2">
+                                            <div className="text-[9px] text-slate-500 mb-1 uppercase tracking-wider">Evidence Locker</div>
+                                            <a href={event.payload.evidence} target="_blank" rel="noopener noreferrer">
+                                                <img
+                                                    src={event.payload.evidence}
+                                                    alt="Proof of Work"
+                                                    className="w-full h-32 object-cover rounded border border-slate-700 opacity-80 hover:opacity-100 transition-opacity"
+                                                />
+                                            </a>
+                                        </div>
+                                    )}
+
                                     {event.meta?.narrativeId ? (
                                         <span className="text-[10px] text-slate-400 italic">
                                             "{event.meta.narrativeId.substring(0, 8)}..."

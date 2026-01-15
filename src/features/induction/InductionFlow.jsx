@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Shield, ChevronRight, FileSignature, BookOpen, Fingerprint } from 'lucide-react';
 import { useSession } from '../../app/context';
 import Button from '../../components/UI/Button';
+import { ContractService } from '../../core/governance/ContractService';
+import { EraService } from '../../core/governance/EraService'; // Import EraService
 
 // INDUCTION STEPS
 const STEPS = {
@@ -23,14 +25,12 @@ const InductionFlow = () => {
         setStep(prev => prev + 1);
     };
 
-    import { ContractService } from '../../core/governance/ContractService';
-
-    // ... 
-
     const handleSignContract = async () => {
         setLoading(true);
         try {
             await ContractService.signContract(currentUser.uid);
+            await EraService.startNewEra(currentUser.uid); // Start Era 1
+
             // Artificial delay for "Weighty" feeling
             setTimeout(() => {
                 setLoading(false);

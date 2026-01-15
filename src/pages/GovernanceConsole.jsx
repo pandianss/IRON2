@@ -12,22 +12,17 @@ import Button from '../components/UI/Button';
 const GovernanceConsole = () => {
     const navigate = useNavigate();
     const { currentUser } = useSession();
-    const { activeProtocol, checkInStatus, streak, fileProof, integrity, scars } = useRetention();
+    const { activeProtocol, checkInStatus, streak, fileProof, integrity, scars, standing, era } = useRetention();
 
-    // SYSTEM STATE LOGIC
-    let riskLevel = 'STABLE';
-    let riskColor = 'var(--accent-success)';
+    // COLOR MAPPING
+    const STATUS_COLORS = {
+        'STABLE': 'var(--accent-success)',
+        'WARNING': 'var(--accent-orange)',
+        'CRITICAL': 'var(--accent-red)',
+        'BREACHED': '#ff0000' // Alarm red
+    };
 
-    if (!checkInStatus) {
-        riskLevel = 'ACTION REQUIRED';
-        riskColor = 'var(--accent-orange)';
-    }
-
-    // Integrity Override
-    if (integrity < 80) {
-        riskLevel = 'INTEGRITY CRITICAL';
-        riskColor = 'var(--accent-red)';
-    }
+    const riskColor = STATUS_COLORS[standing] || 'var(--text-primary)';
 
     return (
         <div className="system-status" style={{ padding: '20px', maxWidth: '600px', margin: '0 auto', minHeight: '80vh', display: 'flex', flexDirection: 'column' }}>
@@ -44,14 +39,19 @@ const GovernanceConsole = () => {
                     color: riskColor,
                     textShadow: `0 0 20px ${riskColor}30`
                 }}>
-                    {riskLevel}
+                    {standing}
                 </div>
-                {!checkInStatus && (
+                {standing !== 'STABLE' && (
                     <div style={{ color: 'var(--text-secondary)', marginTop: '8px' }}>
                         Compliance window active.
                     </div>
                 )}
             </header>
+
+            {/* ERA INDICATOR */}
+            <div style={{ textAlign: 'center', marginBottom: '20px', opacity: 0.6, fontSize: '0.8rem', letterSpacing: '1px' }}>
+                {era ? (era.title || `ERA ${era.index}`).toUpperCase() : 'NO ERA ESTABLISHED'}
+            </div>
 
             {/* 2. PRIMARY ACTION */}
             <section style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', marginBottom: '40px' }}>
@@ -64,14 +64,35 @@ const GovernanceConsole = () => {
                         </p>
                     </Card>
                 ) : (
-                    <Button
-                        onClick={() => navigate('/checkin/initial')}
-                        variant="primary"
-                        style={{ height: '120px', fontSize: '1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}
-                    >
-                        <FileText size={32} />
-                        SUBMIT PROOF
-                    </Button>
+                    <>
+                        <input
+                            type="file"
+                            id="proof-upload"
+                            style={{ display: 'none' }}
+                            accept="image/*"
+                            onChange={async (e) => {
+                                const file = e.target.files[0];
+                                if (!file) return;
+
+                                const btn = document.getElementById('submit-btn');
+                                if (btn) btn.innerText = "UPLOADING EVIDENCE...";
+
+                                await checkIn('trained', file);
+                            }}
+                        />
+                        <Button
+                            id="submit-btn"
+                            onClick={() => document.getElementById('proof-upload').click()}
+                            variant="primary"
+                            style={{ height: '120px', fontSize: '1.5rem', display: 'flex', flexDirection: 'column', gap: '8px' }}
+                        >
+                            <FileText size={32} />
+                            SUBMIT PROOF
+                        </Button>
+                        <div style={{ textAlign: 'center', marginTop: '12px', fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                            * PHOTO EVIDENCE REQUIRED
+                        </div>
+                    </>
                 )}
             </section>
 

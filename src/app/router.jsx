@@ -7,6 +7,8 @@ import AppShell from '../components/Layout/AppShell';
 import GovernanceConsole from '../pages/GovernanceConsole'; // Replaces CommandCenter
 import ContractInitiation from '../pages/ContractInitiation';
 import InductionFlow from '../features/induction/InductionFlow'; // Replaces InitialCheckIn
+import BreachProtocol from '../pages/BreachProtocol';
+import StandingGuard from '../components/Auth/StandingGuard';
 import Onboarding from '../pages/Onboarding';
 import AuthPage from '../pages/AuthPage';
 import SplashScreen from '../pages/SplashScreen';
